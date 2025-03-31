@@ -87,6 +87,53 @@ try {
 }
 ```
 
+## API Reference
+
+### `convertJsonSchemaToZod(schema)`
+
+Converts a JSON Schema object to a complete Zod schema.
+
+- **Parameters**:
+  - `schema` (Object): A JSON Schema object
+- **Returns**: 
+  - A Zod schema that validates according to the JSON Schema
+
+### `jsonSchemaObjectToZodRawShape(schema)`
+
+Extracts the object properties from a JSON Schema object into a Zod raw shape. This is useful when you want to combine the properties with other Zod object configurations.
+
+- **Parameters**:
+  - `schema` (Object): A JSON Schema object that should have a `properties` field
+- **Returns**: 
+  - A `ZodRawShape` object that can be used with `z.object()`
+
+**Example**:
+
+```typescript
+import { jsonSchemaObjectToZodRawShape } from 'zod-from-json-schema';
+import { z } from 'zod';
+
+const jsonSchema = {
+  properties: {
+    name: { type: "string" },
+    age: { type: "integer" }
+  },
+  required: ["name"]
+};
+
+// Get just the property definitions
+const rawShape = jsonSchemaObjectToZodRawShape(jsonSchema);
+
+// Add custom handling
+const customSchema = z.object({
+  ...rawShape,
+  // Add additional fields not in the JSON Schema
+  createdAt: z.date().default(() => new Date())
+}).refine(data => data.age > 18, {
+  message: "Age must be over 18 to continue"
+});
+```
+
 ## Supported JSON Schema Features
 
 This library supports the following JSON Schema features:
