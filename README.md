@@ -76,10 +76,15 @@ const jsonSchema = {
 const zodSchema = convertJsonSchemaToZod(jsonSchema);
 
 // Use the Zod schema to validate data
-const validData = zodSchema.parse({
-  name: "John Doe",
-  age: 30
-});
+try {
+  const validData = zodSchema.parse({
+    name: "John Doe",
+    age: 30
+  });
+  console.log("Valid data:", validData);
+} catch (error) {
+  console.error("Validation error:", error);
+}
 ```
 
 ## Supported JSON Schema Features
