@@ -25,6 +25,7 @@
     },
     "author": "Mark Probst <mark.probst@gmail.com>",
     "license": "MIT",
+    "repository": "glideapps/zod-from-json-schema",
     "dependencies": {
         "zod": "^3.24.2"
     },
