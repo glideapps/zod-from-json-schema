@@ -1,13 +1,45 @@
 import { z } from "zod";
 
 /**
+ * Type representing a JSON Schema object
+ */
+export type JSONSchema = {
+    $schema?: string;
+    type?: string;
+    properties?: Record<string, JSONSchema>;
+    required?: string[];
+    additionalProperties?: boolean;
+    items?: JSONSchema;
+    enum?: Array<string | number | boolean | null>;
+    const?: any;
+    description?: string;
+    anyOf?: JSONSchema[];
+    allOf?: JSONSchema[];
+    oneOf?: JSONSchema[];
+    // String validations
+    minLength?: number;
+    maxLength?: number;
+    pattern?: string;
+    // Number validations
+    minimum?: number;
+    maximum?: number;
+    exclusiveMinimum?: number;
+    exclusiveMaximum?: number;
+    multipleOf?: number;
+    // Array validations
+    minItems?: number;
+    maxItems?: number;
+    uniqueItems?: boolean;
+};
+
+/**
  * Converts a JSON Schema object to a Zod schema
  */
-export function convertJsonSchemaToZod(schema: any): z.ZodTypeAny {
+export function convertJsonSchemaToZod(schema: JSONSchema): z.ZodTypeAny {
     // Create a helper function to add metadata like description
     function addMetadata(
         zodSchema: z.ZodTypeAny,
-        jsonSchema: any,
+        jsonSchema: JSONSchema,
     ): z.ZodTypeAny {
         if (jsonSchema.description) {
             zodSchema = zodSchema.describe(jsonSchema.description);
@@ -100,12 +132,14 @@ export function convertJsonSchemaToZod(schema: any): z.ZodTypeAny {
                     }
 
                     // Create the schema with or without passthrough based on additionalProperties
-                    let zodSchema = z.object(shape);
-
+                    let zodSchema: z.ZodTypeAny;
+                    
                     // By default, JSON Schema allows additional properties, so use passthrough
                     // unless additionalProperties is explicitly set to false
                     if (schema.additionalProperties !== false) {
-                        zodSchema = zodSchema.passthrough();
+                        zodSchema = z.object(shape).passthrough();
+                    } else {
+                        zodSchema = z.object(shape);
                     }
 
                     return addMetadata(zodSchema, schema);
@@ -158,13 +192,16 @@ export function convertJsonSchemaToZod(schema: any): z.ZodTypeAny {
 
     // Handle enum
     if (schema.enum) {
-        return addMetadata(z.enum(schema.enum), schema);
+        // Ensure enum values are strings for Zod enum compatibility
+        const enumValues = schema.enum.map(val => String(val));
+        return addMetadata(z.enum(enumValues as [string, ...string[]]), schema);
     }
 
     // Handle combinations
-    if (schema.anyOf) {
+    if (schema.anyOf && schema.anyOf.length >= 2) {
+        const schemas = schema.anyOf.map(convertJsonSchemaToZod);
         return addMetadata(
-            z.union(schema.anyOf.map(convertJsonSchemaToZod)),
+            z.union([schemas[0], schemas[1], ...schemas.slice(2)]),
             schema,
         );
     }
@@ -172,7 +209,7 @@ export function convertJsonSchemaToZod(schema: any): z.ZodTypeAny {
     if (schema.allOf) {
         return addMetadata(
             schema.allOf.reduce(
-                (acc: z.ZodTypeAny, s: any) =>
+                (acc: z.ZodTypeAny, s: JSONSchema) =>
                     z.intersection(acc, convertJsonSchemaToZod(s)),
                 z.object({}),
             ),
@@ -180,9 +217,10 @@ export function convertJsonSchemaToZod(schema: any): z.ZodTypeAny {
         );
     }
 
-    if (schema.oneOf) {
+    if (schema.oneOf && schema.oneOf.length >= 2) {
+        const schemas = schema.oneOf.map(convertJsonSchemaToZod);
         return addMetadata(
-            z.union(schema.oneOf.map(convertJsonSchemaToZod)),
+            z.union([schemas[0], schemas[1], ...schemas.slice(2)]),
             schema,
         );
     }
@@ -191,9 +229,14 @@ export function convertJsonSchemaToZod(schema: any): z.ZodTypeAny {
     return addMetadata(z.any(), schema);
 }
 
-export function jsonSchemaObjectToZodRawShape(schema: any): z.ZodRawShape {
+/**
+ * Converts a JSON Schema object to a Zod raw shape
+ * @param schema The JSON Schema object to convert
+ * @returns A Zod raw shape for use with z.object()
+ */
+export function jsonSchemaObjectToZodRawShape(schema: JSONSchema): z.ZodRawShape {
     let raw: z.ZodRawShape = {};
-    for (const [key, value] of Object.entries(schema.properties ?? [])) {
+    for (const [key, value] of Object.entries(schema.properties ?? {})) {
         raw[key] = convertJsonSchemaToZod(value);
     }
     return raw;
