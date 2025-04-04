@@ -1,6 +1,7 @@
 # zod-from-json-schema
 
 [![CI](https://github.com/glideapps/zod-from-json-schema/actions/workflows/ci.yml/badge.svg)](https://github.com/glideapps/zod-from-json-schema/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/zod-from-json-schema.svg)](https://www.npmjs.com/package/zod-from-json-schema)
 
 A library that creates [Zod](https://github.com/colinhacks/zod) types from [JSON Schema](https://json-schema.org/) at runtime.  This is in contrast to [json-schema-to-zod](https://www.npmjs.com/package/json-schema-to-zod), which generates JavaScript source code.
 

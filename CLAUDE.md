@@ -1,22 +1,29 @@
 # zod-from-json-schema Development Guidelines
 
 ## Commands
-- **Build:** `npm run build` (generates CJS and ESM outputs)
-- **Test all:** `npm test`
-- **Test single file:** `npx vitest run src/path/to/file.test.ts`
-- **Test with pattern:** `npx vitest run -t "test pattern"`
-- **Clean:** `npm run clean` (removes dist directory)
+- **Build**: `npm run build` (generates CJS and ESM outputs)
+- **Test all**: `npm test`
+- **Test single file**: `npx vitest run src/path/to/file.test.ts`
+- **Test with pattern**: `npx vitest run -t "test pattern"`
+- **Run specific test**: `npx vitest run src/index.test.ts -t "should extract properties"`
+- **Clean**: `npm run clean` (removes dist directory)
+- **Prepare for publishing**: `npm run prepublishOnly`
 
 ## Code Style
-- **TypeScript:** Use strict types, avoid `any` except in JSON Schema interfaces
-- **Imports:** Use named imports from zod (`import { z } from "zod"`)
-- **Formatting:** 4-space indentation, avoid lines > 80 chars
-- **Naming:** Use camelCase for functions/variables, PascalCase for types/interfaces
-- **Error handling:** Use Zod's built-in validation or custom refinements
-- **Comments:** Document functions with JSDoc comments including params, return types
-- **Compatibility:** Keep dual-module support (CJS/ESM) for all exported functions
+- **TypeScript**: Use strict types with proper JSON Schema interface typing
+- **Imports**: Use named imports (`import { z } from "zod"`)
+- **Formatting**: 4-space indentation, prefer lines under 80 chars
+- **Functions**: Pure functions with no side effects, descriptive names in camelCase
+- **Types/Interfaces**: Use PascalCase, export types used in public API
+- **Error handling**: Use Zod's built-in validation rather than throwing errors
+- **Documentation**: JSDoc comments for all exported functions and types
 
 ## Architecture
-- Functions should be pure with no side effects
-- Keep JSON Schema to Zod conversion logic separate from utility functions
-- Write tests for each supported feature and edge case
+- Maintain dual module support (CJS/ESM) for all exports
+- Keep conversion logic modular with single-responsibility functions
+- Write tests for each feature and edge cases, including type validation
+- CI runs tests on Node 18, 20, and 22 through GitHub Actions workflow
+- Use esbuild for bundling with targeted ES2018 output
+- Follow semantic versioning for releases
+
+For release process, see RELEASE.md
