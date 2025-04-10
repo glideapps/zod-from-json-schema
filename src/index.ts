@@ -66,6 +66,12 @@ export function convertJsonSchemaToZod(schema: JSONSchema): z.ZodTypeAny {
     if (schema.type) {
         switch (schema.type) {
             case "string": {
+                // Handle enum first if it exists for string type
+                if (schema.enum) {
+                    // Since we know this is a string type, we can safely cast enum values
+                    return addMetadata(z.enum(schema.enum as [string, ...string[]]), schema);
+                }
+                
                 let stringSchema = z.string();
 
                 // Apply string-specific constraints
@@ -84,6 +90,13 @@ export function convertJsonSchemaToZod(schema: JSONSchema): z.ZodTypeAny {
             }
             case "number":
             case "integer": {
+                // Handle enum first if it exists for number type
+                if (schema.enum) {
+                    // For numbers we need a union of literals since z.enum only works with strings
+                    const options = schema.enum.map(val => z.literal(val as number));
+                    return addMetadata(z.union(options as [z.ZodLiteral<any>, z.ZodLiteral<any>, ...z.ZodLiteral<any>[]]), schema);
+                }
+                
                 let numberSchema = schema.type === "integer" ? z.number().int() : z.number();
 
                 // Apply number-specific constraints
@@ -106,6 +119,11 @@ export function convertJsonSchemaToZod(schema: JSONSchema): z.ZodTypeAny {
                 return addMetadata(numberSchema, schema);
             }
             case "boolean":
+                // Handle enum for boolean type if present
+                if (schema.enum) {
+                    const options = schema.enum.map(val => z.literal(val as boolean));
+                    return addMetadata(z.union(options as [z.ZodLiteral<any>, ...z.ZodLiteral<any>[]]), schema);
+                }
                 return addMetadata(z.boolean(), schema);
             case "null":
                 return addMetadata(z.null(), schema);
@@ -190,11 +208,19 @@ export function convertJsonSchemaToZod(schema: JSONSchema): z.ZodTypeAny {
         }
     }
 
-    // Handle enum
+    // Handle enum (when type is not specified)
     if (schema.enum) {
-        // Ensure enum values are strings for Zod enum compatibility
-        const enumValues = schema.enum.map(val => String(val));
-        return addMetadata(z.enum(enumValues as [string, ...string[]]), schema);
+        // Check if all enum values are strings
+        const allStrings = schema.enum.every(val => typeof val === 'string');
+        
+        if (allStrings) {
+            // If all values are strings, use z.enum which is more efficient
+            return addMetadata(z.enum(schema.enum as [string, ...string[]]), schema);
+        } else {
+            // For mixed types or non-strings, use a union of literals
+            const options = schema.enum.map(val => z.literal(val));
+            return addMetadata(z.union(options as [z.ZodLiteral<any>, z.ZodLiteral<any>, ...z.ZodLiteral<any>[]]), schema);
+        }
     }
 
     // Handle combinations

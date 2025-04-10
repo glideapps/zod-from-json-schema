@@ -30,6 +30,18 @@
     {
         "type": "object",
         "properties": {
+            "mode": {
+                "type": "string",
+                "enum": ["Dashboard", "Data", "Layout", "Workflows", "Settings"]
+            }
+        },
+        "required": ["mode"],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    {
+        "type": "object",
+        "properties": {
             "kind": {
                 "type": "string",
                 "const": "ai-custom-chat-component",

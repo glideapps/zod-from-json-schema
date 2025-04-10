@@ -18,7 +18,7 @@
     ],
     "scripts": {
         "build": "npm run clean && tsc -d --emitDeclarationOnly --outDir dist && node build.js",
-        "test": "vitest run",
+        "test": "vitest run --coverage",
         "prepublishOnly": "npm run build",
         "clean": "rm -rf dist",
         "prepare": "npm run build"
@@ -30,6 +30,7 @@
         "zod": "^3.24.2"
     },
     "devDependencies": {
+        "@vitest/coverage-v8": "^3.0.9",
         "esbuild": "^0.25.2",
         "typescript": "^5.8.2",
         "vitest": "^3.0.9",
