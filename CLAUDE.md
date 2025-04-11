@@ -1,8 +1,12 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 # zod-from-json-schema Development Guidelines
 
 ## Commands
 - **Build**: `npm run build` (generates CJS and ESM outputs)
-- **Test all**: `npm test`
+- **Test all**: `npm test` (runs with coverage)
 - **Test single file**: `npx vitest run src/path/to/file.test.ts`
 - **Test with pattern**: `npx vitest run -t "test pattern"`
 - **Run specific test**: `npx vitest run src/index.test.ts -t "should extract properties"`
@@ -21,9 +25,9 @@
 ## Architecture
 - Maintain dual module support (CJS/ESM) for all exports
 - Keep conversion logic modular with single-responsibility functions
-- Write tests for each feature and edge cases, including type validation
-- CI runs tests on Node 18, 20, and 22 through GitHub Actions workflow
-- Use esbuild for bundling with targeted ES2018 output
+- Write tests for each feature and edge cases, achieving 100% coverage
+- Target ES2018 for maximum compatibility (Node 10+)
+- Use esbuild for bundling with optimized output
 - Follow semantic versioning for releases
 
 For release process, see RELEASE.md
