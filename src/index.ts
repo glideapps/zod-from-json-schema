@@ -182,6 +182,12 @@ export function convertJsonSchemaToZod(schema: JSONSchema): z.ZodTypeAny {
                                 shape[key] = shape[key].optional();
                             }
                         }
+                    } else {
+                        // In JSON Schema, properties are optional by default
+                        // if no required array is specified
+                        for (const key of Object.keys(shape)) {
+                            shape[key] = shape[key].optional();
+                        }
                     }
 
                     // Create the schema with or without passthrough based on additionalProperties

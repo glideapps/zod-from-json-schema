@@ -42,6 +42,17 @@
     {
         "type": "object",
         "properties": {
+            "filter": {
+                "type": "string",
+                "description": "Filter the apps by name or description. Looks for substrings."
+            }
+        },
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    {
+        "type": "object",
+        "properties": {
             "kind": {
                 "type": "string",
                 "const": "ai-custom-chat-component",
