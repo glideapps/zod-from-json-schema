@@ -38,6 +38,13 @@
         "typescript": "^5.8.3",
         "vitest": "^3.0.9"
     },
+    "vitest": {
+        "coverage": {
+            "exclude": [
+                "build.js"
+            ]
+        }
+    },
     "keywords": [
         "zod",
         "json-schema",
