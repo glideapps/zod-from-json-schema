@@ -11,6 +11,11 @@ A library that creates [Zod](https://github.com/colinhacks/zod) types from [JSON
 npm install zod-from-json-schema
 ```
 
+## Zod 3 vs 4
+
+- If you need Zod 4, use the latest version of this package.
+- If you need Zod 3, use the latest version that's less than 0.4.0 (at the of writing that's 0.0.5)
+
 ## Usage
 
 This package supports both ESM and CommonJS formats.
@@ -96,7 +101,7 @@ Converts a JSON Schema object to a complete Zod schema.
 
 - **Parameters**:
   - `schema` (Object): A JSON Schema object
-- **Returns**: 
+- **Returns**:
   - A Zod schema that validates according to the JSON Schema
 
 ### `jsonSchemaObjectToZodRawShape(schema)`
@@ -105,7 +110,7 @@ Extracts the object properties from a JSON Schema object into a Zod raw shape. T
 
 - **Parameters**:
   - `schema` (Object): A JSON Schema object that should have a `properties` field
-- **Returns**: 
+- **Returns**:
   - A `ZodRawShape` object that can be used with `z.object()`
 
 **Example**:
