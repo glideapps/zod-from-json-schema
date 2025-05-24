@@ -5,3 +5,4 @@ dist
 coverage
 .nyc_output
 .vscode
+.claude/settings.local.json

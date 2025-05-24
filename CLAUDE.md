@@ -15,7 +15,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Code Style
 - **TypeScript**: Use strict types with proper JSON Schema interface typing
-- **Imports**: Use named imports (`import { z } from "zod"`)
+- **Imports**: Use named imports (`import { z } from "zod/v4"`)
 - **Formatting**: 4-space indentation, prefer lines under 80 chars
 - **Functions**: Pure functions with no side effects, descriptive names in camelCase
 - **Types/Interfaces**: Use PascalCase, export types used in public API

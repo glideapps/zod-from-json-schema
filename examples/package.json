@@ -3,11 +3,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "cjs": "node cjs-example.js",
-    "esm": "node esm-example.js"
+    "cjs": "node cjs-example.cjs",
+    "esm": "node esm-example.mjs"
   },
   "dependencies": {
-    "zod": "^3.24.2",
+    "zod": "^3.25.25",
     "zod-from-json-schema": "file:.."
   }
 }
