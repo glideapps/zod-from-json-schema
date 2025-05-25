@@ -691,6 +691,135 @@ describe("convertJsonSchemaToZod", () => {
       ];
       expect(() => zodSchema.parse(duplicateObjects)).toThrow();
     });
+
+    describe("Tuple arrays (items as array)", () => {
+      it("should handle tuple array with different types", () => {
+        const jsonSchema = {
+          $schema: "https://json-schema.org/draft/2020-12/schema",
+          type: "array",
+          items: [
+            { type: "string" },
+            { type: "number" },
+            { type: "boolean" }
+          ]
+        };
+
+        const zodSchema = convertJsonSchemaToZod(jsonSchema);
+
+        // Valid tuple should pass
+        expect(() => zodSchema.parse(["hello", 42, true])).not.toThrow();
+        
+        // Wrong types should fail
+        expect(() => zodSchema.parse([42, "hello", true])).toThrow();
+        expect(() => zodSchema.parse(["hello", "world", true])).toThrow();
+        
+        // Wrong length should fail
+        expect(() => zodSchema.parse(["hello", 42])).toThrow();
+        expect(() => zodSchema.parse(["hello", 42, true, "extra"])).toThrow();
+      });
+
+      it("should handle tuple array with single item type", () => {
+        const jsonSchema = {
+          $schema: "https://json-schema.org/draft/2020-12/schema",
+          type: "array",
+          items: [
+            { type: "string" }
+          ]
+        };
+
+        const zodSchema = convertJsonSchemaToZod(jsonSchema);
+
+        expect(() => zodSchema.parse(["hello"])).not.toThrow();
+        expect(() => zodSchema.parse([42])).toThrow();
+        expect(() => zodSchema.parse(["hello", "world"])).toThrow();
+        expect(() => zodSchema.parse([])).toThrow();
+      });
+
+      it("should handle empty tuple array", () => {
+        const jsonSchema = {
+          $schema: "https://json-schema.org/draft/2020-12/schema",
+          type: "array",
+          items: []
+        };
+
+        const zodSchema = convertJsonSchemaToZod(jsonSchema);
+
+        expect(() => zodSchema.parse([])).not.toThrow();
+        expect(() => zodSchema.parse(["anything"])).toThrow();
+      });
+
+      it("should handle tuple array with complex item types", () => {
+        const jsonSchema = {
+          $schema: "https://json-schema.org/draft/2020-12/schema",
+          type: "array",
+          items: [
+            { 
+              type: "object",
+              properties: {
+                name: { type: "string" }
+              },
+              required: ["name"]
+            },
+            { type: "number", minimum: 0 },
+            { 
+              type: "array",
+              items: { type: "string" }
+            }
+          ]
+        };
+
+        const zodSchema = convertJsonSchemaToZod(jsonSchema);
+
+        // Valid tuple should pass
+        expect(() => zodSchema.parse([
+          { name: "John" },
+          5,
+          ["a", "b", "c"]
+        ])).not.toThrow();
+        
+        // Invalid object should fail
+        expect(() => zodSchema.parse([
+          { age: 25 },
+          5,
+          ["a", "b", "c"]
+        ])).toThrow();
+        
+        // Invalid number should fail
+        expect(() => zodSchema.parse([
+          { name: "John" },
+          -5,
+          ["a", "b", "c"]
+        ])).toThrow();
+        
+        // Invalid nested array should fail
+        expect(() => zodSchema.parse([
+          { name: "John" },
+          5,
+          ["a", 123, "c"]
+        ])).toThrow();
+      });
+
+      it("should convert tuple to proper JSON schema", () => {
+        const jsonSchema = {
+          $schema: "https://json-schema.org/draft/2020-12/schema",
+          type: "array",
+          items: [
+            { type: "string" },
+            { type: "number" }
+          ]
+        };
+
+        const zodSchema = convertJsonSchemaToZod(jsonSchema);
+        const resultSchema = z.toJSONSchema(zodSchema);
+        
+        // Zod converts tuples to use prefixItems (which is correct for draft 2020-12)
+        expect(resultSchema.type).toEqual("array");
+        expect(resultSchema.prefixItems).toEqual([
+          { type: "string" },
+          { type: "number" }
+        ]);
+      });
+    });
   });
 });
 

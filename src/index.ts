@@ -178,7 +178,9 @@ export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema): z.ZodType
 
                 let arraySchema;
                 if (Array.isArray(s.items)) {
-                    throw new Error("FIXME: implement this case, which describes a tuple");
+                    // Handle tuple arrays - items is an array of schemas
+                    const tupleItems = s.items.map(itemSchema => convertJsonSchemaToZod(itemSchema));
+                    arraySchema = z.tuple(tupleItems as [z.ZodTypeAny, ...z.ZodTypeAny[]]);
                 } else if (s.items) {
                     arraySchema = z.array(convertJsonSchemaToZod(s.items));
                 } else {
