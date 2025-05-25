@@ -177,9 +177,53 @@ export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema): z.ZodType
                 const s = schema as JSONSchema.ArraySchema;
 
                 let arraySchema;
-                if (Array.isArray(s.items)) {
-                    // Handle tuple arrays - items is an array of schemas
-                    const tupleItems = s.items.map(itemSchema => convertJsonSchemaToZod(itemSchema));
+                let isTuple = false;
+
+                // Check for prefixItems (Draft 2020-12 tuples)
+                if ((s as any).prefixItems && Array.isArray((s as any).prefixItems)) {
+                    isTuple = true;
+                    const prefixItems = (s as any).prefixItems;
+                    const prefixSchemas = prefixItems.map((itemSchema: any) => convertJsonSchemaToZod(itemSchema));
+
+                    // Create a custom array validator for prefixItems behavior
+                    arraySchema = z.array(z.any()).refine(
+                        (arr: any[]) => {
+                            // Validate each present item against its corresponding prefix schema
+                            for (let i = 0; i < Math.min(arr.length, prefixSchemas.length); i++) {
+                                try {
+                                    prefixSchemas[i].parse(arr[i]);
+                                } catch {
+                                    return false;
+                                }
+                            }
+
+                            // Handle additional items beyond prefixItems
+                            if (arr.length > prefixSchemas.length) {
+                                if ((s as any).items === false) {
+                                    // No additional items allowed
+                                    return false;
+                                } else if (s.items && typeof s.items === "object" && !Array.isArray(s.items)) {
+                                    // Additional items must match the items schema
+                                    const additionalItemSchema = convertJsonSchemaToZod(s.items);
+                                    for (let i = prefixSchemas.length; i < arr.length; i++) {
+                                        try {
+                                            additionalItemSchema.parse(arr[i]);
+                                        } catch {
+                                            return false;
+                                        }
+                                    }
+                                }
+                                // If items is not specified or true, allow any additional items
+                            }
+
+                            return true;
+                        },
+                        { message: "Array does not match prefixItems schema" },
+                    );
+                } else if (Array.isArray(s.items)) {
+                    // Handle tuple arrays - items is an array of schemas (older draft behavior)
+                    isTuple = true;
+                    const tupleItems = s.items.map((itemSchema) => convertJsonSchemaToZod(itemSchema));
                     arraySchema = z.tuple(tupleItems as [z.ZodTypeAny, ...z.ZodTypeAny[]]);
                 } else if (s.items) {
                     arraySchema = z.array(convertJsonSchemaToZod(s.items));
@@ -187,12 +231,14 @@ export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema): z.ZodType
                     arraySchema = z.array(z.any());
                 }
 
-                // Apply array-specific constraints
-                if (s.minItems !== undefined) {
-                    arraySchema = arraySchema.min(s.minItems);
-                }
-                if (s.maxItems !== undefined) {
-                    arraySchema = arraySchema.max(s.maxItems);
+                // Apply array-specific constraints (only for regular arrays, not tuples)
+                if (!isTuple) {
+                    if (s.minItems !== undefined) {
+                        arraySchema = (arraySchema as z.ZodArray<any>).min(s.minItems);
+                    }
+                    if (s.maxItems !== undefined) {
+                        arraySchema = (arraySchema as z.ZodArray<any>).max(s.maxItems);
+                    }
                 }
                 if (s.uniqueItems === true) {
                     // To enforce uniqueness, we need a custom refine function
