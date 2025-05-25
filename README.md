@@ -167,6 +167,8 @@ This library supports the following JSON Schema features:
 - `multipleOf`
 
 ### Array Validations
+- `items`
+- `prefixItems`
 - `minItems`
 - `maxItems`
 - `uniqueItems`
