@@ -691,6 +691,328 @@ describe("convertJsonSchemaToZod", () => {
       ];
       expect(() => zodSchema.parse(duplicateObjects)).toThrow();
     });
+
+    describe("Tuple arrays (items as array)", () => {
+      it("should handle tuple array with different types", () => {
+        const jsonSchema = {
+          $schema: "https://json-schema.org/draft/2020-12/schema",
+          type: "array",
+          items: [
+            { type: "string" },
+            { type: "number" },
+            { type: "boolean" }
+          ]
+        };
+
+        const zodSchema = convertJsonSchemaToZod(jsonSchema);
+
+        // Valid tuple should pass
+        expect(() => zodSchema.parse(["hello", 42, true])).not.toThrow();
+        
+        // Wrong types should fail
+        expect(() => zodSchema.parse([42, "hello", true])).toThrow();
+        expect(() => zodSchema.parse(["hello", "world", true])).toThrow();
+        
+        // Wrong length should fail
+        expect(() => zodSchema.parse(["hello", 42])).toThrow();
+        expect(() => zodSchema.parse(["hello", 42, true, "extra"])).toThrow();
+      });
+
+      it("should handle tuple array with single item type", () => {
+        const jsonSchema = {
+          $schema: "https://json-schema.org/draft/2020-12/schema",
+          type: "array",
+          items: [
+            { type: "string" }
+          ]
+        };
+
+        const zodSchema = convertJsonSchemaToZod(jsonSchema);
+
+        expect(() => zodSchema.parse(["hello"])).not.toThrow();
+        expect(() => zodSchema.parse([42])).toThrow();
+        expect(() => zodSchema.parse(["hello", "world"])).toThrow();
+        expect(() => zodSchema.parse([])).toThrow();
+      });
+
+      it("should handle empty tuple array", () => {
+        const jsonSchema = {
+          $schema: "https://json-schema.org/draft/2020-12/schema",
+          type: "array",
+          items: []
+        };
+
+        const zodSchema = convertJsonSchemaToZod(jsonSchema);
+
+        expect(() => zodSchema.parse([])).not.toThrow();
+        expect(() => zodSchema.parse(["anything"])).toThrow();
+      });
+
+      it("should handle tuple array with complex item types", () => {
+        const jsonSchema = {
+          $schema: "https://json-schema.org/draft/2020-12/schema",
+          type: "array",
+          items: [
+            { 
+              type: "object",
+              properties: {
+                name: { type: "string" }
+              },
+              required: ["name"]
+            },
+            { type: "number", minimum: 0 },
+            { 
+              type: "array",
+              items: { type: "string" }
+            }
+          ]
+        };
+
+        const zodSchema = convertJsonSchemaToZod(jsonSchema);
+
+        // Valid tuple should pass
+        expect(() => zodSchema.parse([
+          { name: "John" },
+          5,
+          ["a", "b", "c"]
+        ])).not.toThrow();
+        
+        // Invalid object should fail
+        expect(() => zodSchema.parse([
+          { age: 25 },
+          5,
+          ["a", "b", "c"]
+        ])).toThrow();
+        
+        // Invalid number should fail
+        expect(() => zodSchema.parse([
+          { name: "John" },
+          -5,
+          ["a", "b", "c"]
+        ])).toThrow();
+        
+        // Invalid nested array should fail
+        expect(() => zodSchema.parse([
+          { name: "John" },
+          5,
+          ["a", 123, "c"]
+        ])).toThrow();
+      });
+
+      it("should convert tuple to proper JSON schema", () => {
+        const jsonSchema = {
+          $schema: "https://json-schema.org/draft/2020-12/schema",
+          type: "array",
+          items: [
+            { type: "string" },
+            { type: "number" }
+          ]
+        };
+
+        const zodSchema = convertJsonSchemaToZod(jsonSchema);
+        const resultSchema = z.toJSONSchema(zodSchema);
+        
+        // Zod converts tuples to use prefixItems (which is correct for draft 2020-12)
+        expect(resultSchema.type).toEqual("array");
+        expect(resultSchema.prefixItems).toEqual([
+          { type: "string" },
+          { type: "number" }
+        ]);
+      });
+    });
+
+    describe("prefixItems (Draft 2020-12 tuples)", () => {
+      it("should handle prefixItems with different types", () => {
+        const jsonSchema = {
+          $schema: "https://json-schema.org/draft/2020-12/schema",
+          type: "array",
+          prefixItems: [
+            { type: "string" },
+            { type: "number" },
+            { type: "boolean" }
+          ]
+        };
+
+        const zodSchema = convertJsonSchemaToZod(jsonSchema);
+
+        // Valid tuple should pass
+        expect(() => zodSchema.parse(["hello", 42, true])).not.toThrow();
+        
+        // Wrong types should fail
+        expect(() => zodSchema.parse([42, "hello", true])).toThrow();
+        expect(() => zodSchema.parse(["hello", "world", true])).toThrow();
+        
+        // Partial tuples should be allowed - prefixItems doesn't require all items
+        expect(() => zodSchema.parse(["hello"])).not.toThrow();
+        expect(() => zodSchema.parse(["hello", 42])).not.toThrow();
+        
+        // Additional items should be allowed by default with prefixItems
+        expect(() => zodSchema.parse(["hello", 42, true, "extra"])).not.toThrow();
+        expect(() => zodSchema.parse(["hello", 42, true, 999, { any: "thing" }])).not.toThrow();
+      });
+
+      it("should handle prefixItems with single item type", () => {
+        const jsonSchema = {
+          $schema: "https://json-schema.org/draft/2020-12/schema",
+          type: "array",
+          prefixItems: [
+            { type: "string" }
+          ]
+        };
+
+        const zodSchema = convertJsonSchemaToZod(jsonSchema);
+
+        expect(() => zodSchema.parse(["hello"])).not.toThrow();
+        expect(() => zodSchema.parse([42])).toThrow();
+        expect(() => zodSchema.parse(["hello", "world"])).not.toThrow(); // extra items allowed
+        expect(() => zodSchema.parse([])).not.toThrow(); // empty array is valid - no items required
+      });
+
+      it("should handle empty prefixItems array", () => {
+        const jsonSchema = {
+          $schema: "https://json-schema.org/draft/2020-12/schema",
+          type: "array",
+          prefixItems: []
+        };
+
+        const zodSchema = convertJsonSchemaToZod(jsonSchema);
+
+        expect(() => zodSchema.parse([])).not.toThrow();
+        expect(() => zodSchema.parse(["anything"])).not.toThrow(); // extra items allowed with empty prefixItems
+        expect(() => zodSchema.parse([1, 2, 3])).not.toThrow();
+      });
+
+      it("should handle prefixItems with complex nested types", () => {
+        const jsonSchema = {
+          $schema: "https://json-schema.org/draft/2020-12/schema",
+          type: "array",
+          prefixItems: [
+            { 
+              type: "object",
+              properties: {
+                id: { type: "number" },
+                name: { type: "string" }
+              },
+              required: ["id", "name"]
+            },
+            { 
+              type: "array",
+              items: { type: "string" }
+            },
+            { type: "number", minimum: 0, maximum: 100 }
+          ]
+        };
+
+        const zodSchema = convertJsonSchemaToZod(jsonSchema);
+
+        // Valid tuple should pass
+        expect(() => zodSchema.parse([
+          { id: 1, name: "Alice" },
+          ["tag1", "tag2"],
+          50
+        ])).not.toThrow();
+        
+        // Invalid object should fail
+        expect(() => zodSchema.parse([
+          { name: "Alice" }, // missing id
+          ["tag1", "tag2"],
+          50
+        ])).toThrow();
+        
+        // Invalid array should fail
+        expect(() => zodSchema.parse([
+          { id: 1, name: "Alice" },
+          ["tag1", 123], // number in string array
+          50
+        ])).toThrow();
+        
+        // Invalid number should fail
+        expect(() => zodSchema.parse([
+          { id: 1, name: "Alice" },
+          ["tag1", "tag2"],
+          150 // exceeds maximum
+        ])).toThrow();
+      });
+
+      it("should validate prefixItems behavior correctly", () => {
+        const jsonSchema = {
+          $schema: "https://json-schema.org/draft/2020-12/schema",
+          type: "array",
+          prefixItems: [
+            { type: "string" },
+            { type: "number" }
+          ]
+        };
+
+        const zodSchema = convertJsonSchemaToZod(jsonSchema);
+        
+        // Test the behavior instead of schema round-trip since we use custom validation
+        expect(() => zodSchema.parse(["hello", 42])).not.toThrow();
+        expect(() => zodSchema.parse(["hello"])).not.toThrow();
+        expect(() => zodSchema.parse([])).not.toThrow();
+        expect(() => zodSchema.parse(["hello", 42, "extra"])).not.toThrow();
+        expect(() => zodSchema.parse([42, "hello"])).toThrow();
+      });
+
+      it("should handle prefixItems with constraints", () => {
+        const jsonSchema = {
+          $schema: "https://json-schema.org/draft/2020-12/schema",
+          type: "array",
+          prefixItems: [
+            { type: "string", minLength: 2 },
+            { type: "number", minimum: 0 }
+          ],
+          minItems: 2,
+          maxItems: 2
+        };
+
+        const zodSchema = convertJsonSchemaToZod(jsonSchema);
+
+        expect(() => zodSchema.parse(["hi", 5])).not.toThrow();
+        expect(() => zodSchema.parse(["a", 5])).toThrow(); // string too short
+        expect(() => zodSchema.parse(["hi", -1])).toThrow(); // number too small
+      });
+
+      it("should handle prefixItems with items: false (strict tuple)", () => {
+        const jsonSchema = {
+          $schema: "https://json-schema.org/draft/2020-12/schema",
+          type: "array",
+          prefixItems: [
+            { type: "string" },
+            { type: "number" }
+          ],
+          items: false
+        };
+
+        const zodSchema = convertJsonSchemaToZod(jsonSchema);
+
+        expect(() => zodSchema.parse(["hello", 42])).not.toThrow();
+        expect(() => zodSchema.parse(["hello", 42, "extra"])).toThrow(); // no additional items allowed
+        expect(() => zodSchema.parse(["hello"])).not.toThrow(); // partial tuple OK
+        expect(() => zodSchema.parse([])).not.toThrow(); // empty array OK
+      });
+
+      it("should handle prefixItems with items schema (constrained additional items)", () => {
+        const jsonSchema = {
+          $schema: "https://json-schema.org/draft/2020-12/schema",
+          type: "array",
+          prefixItems: [
+            { type: "string" },
+            { type: "number" }
+          ],
+          items: { type: "boolean" }
+        };
+
+        const zodSchema = convertJsonSchemaToZod(jsonSchema);
+
+        expect(() => zodSchema.parse(["hello", 42])).not.toThrow();
+        expect(() => zodSchema.parse(["hello", 42, true])).not.toThrow();
+        expect(() => zodSchema.parse(["hello", 42, true, false])).not.toThrow();
+        expect(() => zodSchema.parse(["hello", 42, "string"])).toThrow(); // additional item wrong type
+        expect(() => zodSchema.parse(["hello"])).not.toThrow(); // partial tuple OK
+        expect(() => zodSchema.parse([])).not.toThrow(); // empty array OK
+      });
+    });
   });
 });
 

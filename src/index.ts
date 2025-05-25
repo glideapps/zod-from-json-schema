@@ -1,44 +1,12 @@
 import { z } from "zod/v4";
-
-/**
- * Type representing a JSON Schema object
- */
-// FIXME: use zod's JSON Schema type for this
-export type JSONSchema = {
-    $schema?: string;
-    type?: string;
-    properties?: Partial<Record<string, JSONSchema>>;
-    required?: string[];
-    additionalProperties?: boolean;
-    items?: JSONSchema;
-    enum?: Array<string | number | boolean | null>;
-    const?: any;
-    description?: string;
-    anyOf?: JSONSchema[];
-    allOf?: JSONSchema[];
-    oneOf?: JSONSchema[];
-    // String validations
-    minLength?: number;
-    maxLength?: number;
-    pattern?: string;
-    // Number validations
-    minimum?: number;
-    maximum?: number;
-    exclusiveMinimum?: number;
-    exclusiveMaximum?: number;
-    multipleOf?: number;
-    // Array validations
-    minItems?: number;
-    maxItems?: number;
-    uniqueItems?: boolean;
-};
+import type { JSONSchema } from "zod/v4/core";
 
 /**
  * Converts a JSON Schema object to a Zod schema
  */
-export function convertJsonSchemaToZod(schema: JSONSchema): z.ZodType {
+export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema): z.ZodType {
     // Create a helper function to add metadata like description
-    function addMetadata(zodSchema: z.ZodTypeAny, jsonSchema: JSONSchema): z.ZodTypeAny {
+    function addMetadata(zodSchema: z.ZodTypeAny, jsonSchema: JSONSchema.BaseSchema): z.ZodTypeAny {
         if (jsonSchema.description) {
             zodSchema = zodSchema.describe(jsonSchema.description);
         }
@@ -64,77 +32,81 @@ export function convertJsonSchemaToZod(schema: JSONSchema): z.ZodType {
     if (schema.type) {
         switch (schema.type) {
             case "string": {
+                const s = schema as JSONSchema.StringSchema;
+
                 // Handle enum first if it exists for string type
-                if (schema.enum) {
+                if (s.enum) {
                     // Empty enum case, default to string type
-                    if (schema.enum.length === 0) {
-                        return addMetadata(z.string(), schema);
+                    if (s.enum.length === 0) {
+                        return addMetadata(z.string(), s);
                     }
 
                     // Since we know this is a string type, we can safely cast enum values
-                    return addMetadata(z.enum(schema.enum as [string, ...string[]]), schema);
+                    return addMetadata(z.enum(s.enum as [string, ...string[]]), s);
                 }
 
                 let stringSchema = z.string();
 
                 // Apply string-specific constraints
-                if (schema.minLength !== undefined) {
-                    stringSchema = stringSchema.min(schema.minLength);
+                if (s.minLength !== undefined) {
+                    stringSchema = stringSchema.min(s.minLength);
                 }
-                if (schema.maxLength !== undefined) {
-                    stringSchema = stringSchema.max(schema.maxLength);
+                if (s.maxLength !== undefined) {
+                    stringSchema = stringSchema.max(s.maxLength);
                 }
-                if (schema.pattern !== undefined) {
-                    const regex = new RegExp(schema.pattern);
+                if (s.pattern !== undefined) {
+                    const regex = new RegExp(s.pattern);
                     stringSchema = stringSchema.regex(regex);
                 }
 
-                return addMetadata(stringSchema, schema);
+                return addMetadata(stringSchema, s);
             }
             case "number":
             case "integer": {
+                const s = schema as JSONSchema.NumberSchema | JSONSchema.IntegerSchema;
+
                 // Handle enum if it exists for number type
-                if (schema.enum) {
+                if (s.enum) {
                     // Empty enum case, default to number type
-                    if (schema.enum.length === 0) {
-                        return addMetadata(z.number(), schema);
+                    if (s.enum.length === 0) {
+                        return addMetadata(z.number(), s);
                     }
 
                     // For numbers we need a union of literals since z.enum only works with strings
-                    const options = schema.enum.map((val) => z.literal(val as number));
+                    const options = s.enum.map((val) => z.literal(val as number));
 
                     // Handle single option enum specially
                     if (options.length === 1) {
-                        return addMetadata(options[0], schema);
+                        return addMetadata(options[0], s);
                     }
 
                     // For multiple options, create a union
                     if (options.length >= 2) {
                         const unionSchema = z.union([options[0], options[1], ...options.slice(2)]);
-                        return addMetadata(unionSchema, schema);
+                        return addMetadata(unionSchema, s);
                     }
                 }
 
-                let numberSchema = schema.type === "integer" ? z.number().int() : z.number();
+                let numberSchema = s.type === "integer" ? z.number().int() : z.number();
 
                 // Apply number-specific constraints
-                if (schema.minimum !== undefined) {
-                    numberSchema = numberSchema.min(schema.minimum);
+                if (s.minimum !== undefined) {
+                    numberSchema = numberSchema.min(s.minimum);
                 }
-                if (schema.maximum !== undefined) {
-                    numberSchema = numberSchema.max(schema.maximum);
+                if (s.maximum !== undefined) {
+                    numberSchema = numberSchema.max(s.maximum);
                 }
-                if (schema.exclusiveMinimum !== undefined) {
-                    numberSchema = numberSchema.gt(schema.exclusiveMinimum);
+                if (s.exclusiveMinimum !== undefined) {
+                    numberSchema = numberSchema.gt(s.exclusiveMinimum);
                 }
-                if (schema.exclusiveMaximum !== undefined) {
-                    numberSchema = numberSchema.lt(schema.exclusiveMaximum);
+                if (s.exclusiveMaximum !== undefined) {
+                    numberSchema = numberSchema.lt(s.exclusiveMaximum);
                 }
-                if (schema.multipleOf !== undefined) {
-                    numberSchema = numberSchema.multipleOf(schema.multipleOf);
+                if (s.multipleOf !== undefined) {
+                    numberSchema = numberSchema.multipleOf(s.multipleOf);
                 }
 
-                return addMetadata(numberSchema, schema);
+                return addMetadata(numberSchema, s);
             }
             case "boolean":
                 // Handle enum for boolean type if present
@@ -202,21 +174,73 @@ export function convertJsonSchemaToZod(schema: JSONSchema): z.ZodType {
                 }
                 return addMetadata(z.object({}), schema);
             case "array": {
+                const s = schema as JSONSchema.ArraySchema;
+
                 let arraySchema;
-                if (schema.items) {
-                    arraySchema = z.array(convertJsonSchemaToZod(schema.items));
+                let isTuple = false;
+
+                // Check for prefixItems (Draft 2020-12 tuples)
+                if ((s as any).prefixItems && Array.isArray((s as any).prefixItems)) {
+                    isTuple = true;
+                    const prefixItems = (s as any).prefixItems;
+                    const prefixSchemas = prefixItems.map((itemSchema: any) => convertJsonSchemaToZod(itemSchema));
+
+                    // Create a custom array validator for prefixItems behavior
+                    arraySchema = z.array(z.any()).refine(
+                        (arr: any[]) => {
+                            // Validate each present item against its corresponding prefix schema
+                            for (let i = 0; i < Math.min(arr.length, prefixSchemas.length); i++) {
+                                try {
+                                    prefixSchemas[i].parse(arr[i]);
+                                } catch {
+                                    return false;
+                                }
+                            }
+
+                            // Handle additional items beyond prefixItems
+                            if (arr.length > prefixSchemas.length) {
+                                if ((s as any).items === false) {
+                                    // No additional items allowed
+                                    return false;
+                                } else if (s.items && typeof s.items === "object" && !Array.isArray(s.items)) {
+                                    // Additional items must match the items schema
+                                    const additionalItemSchema = convertJsonSchemaToZod(s.items);
+                                    for (let i = prefixSchemas.length; i < arr.length; i++) {
+                                        try {
+                                            additionalItemSchema.parse(arr[i]);
+                                        } catch {
+                                            return false;
+                                        }
+                                    }
+                                }
+                                // If items is not specified or true, allow any additional items
+                            }
+
+                            return true;
+                        },
+                        { message: "Array does not match prefixItems schema" },
+                    );
+                } else if (Array.isArray(s.items)) {
+                    // Handle tuple arrays - items is an array of schemas (older draft behavior)
+                    isTuple = true;
+                    const tupleItems = s.items.map((itemSchema) => convertJsonSchemaToZod(itemSchema));
+                    arraySchema = z.tuple(tupleItems as [z.ZodTypeAny, ...z.ZodTypeAny[]]);
+                } else if (s.items) {
+                    arraySchema = z.array(convertJsonSchemaToZod(s.items));
                 } else {
                     arraySchema = z.array(z.any());
                 }
 
-                // Apply array-specific constraints
-                if (schema.minItems !== undefined) {
-                    arraySchema = arraySchema.min(schema.minItems);
+                // Apply array-specific constraints (only for regular arrays, not tuples)
+                if (!isTuple) {
+                    if (s.minItems !== undefined) {
+                        arraySchema = (arraySchema as z.ZodArray<any>).min(s.minItems);
+                    }
+                    if (s.maxItems !== undefined) {
+                        arraySchema = (arraySchema as z.ZodArray<any>).max(s.maxItems);
+                    }
                 }
-                if (schema.maxItems !== undefined) {
-                    arraySchema = arraySchema.max(schema.maxItems);
-                }
-                if (schema.uniqueItems === true) {
+                if (s.uniqueItems === true) {
                     // To enforce uniqueness, we need a custom refine function
                     // that checks if all elements are unique
                     arraySchema = arraySchema.refine(
@@ -241,7 +265,7 @@ export function convertJsonSchemaToZod(schema: JSONSchema): z.ZodType {
                     );
                 }
 
-                return addMetadata(arraySchema, schema);
+                return addMetadata(arraySchema, s);
             }
         }
     }
@@ -286,7 +310,7 @@ export function convertJsonSchemaToZod(schema: JSONSchema): z.ZodType {
     if (schema.allOf) {
         return addMetadata(
             schema.allOf.reduce(
-                (acc: z.ZodTypeAny, s: JSONSchema) => z.intersection(acc, convertJsonSchemaToZod(s)),
+                (acc: z.ZodTypeAny, s: JSONSchema.BaseSchema) => z.intersection(acc, convertJsonSchemaToZod(s)),
                 z.object({}),
             ),
             schema,
@@ -307,7 +331,7 @@ export function convertJsonSchemaToZod(schema: JSONSchema): z.ZodType {
  * @param schema The JSON Schema object to convert
  * @returns A Zod raw shape for use with z.object()
  */
-export function jsonSchemaObjectToZodRawShape(schema: JSONSchema): z.ZodRawShape {
+export function jsonSchemaObjectToZodRawShape(schema: JSONSchema.Schema): z.ZodRawShape {
     const raw: Record<string, z.ZodType> = {};
     for (const [key, value] of Object.entries(schema.properties ?? {})) {
         if (value === undefined) continue;
