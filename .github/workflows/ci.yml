@@ -15,10 +15,12 @@ jobs:
                 node-version: [18.x, 20.x, 22.x, 24.x]
 
         steps:
-            - uses: actions/checkout@v3
+            - uses: actions/checkout@v4
+              with:
+                  submodules: recursive  # Required for JSON Schema Test Suite submodule
 
             - name: Use Node.js ${{ matrix.node-version }}
-              uses: actions/setup-node@v3
+              uses: actions/setup-node@v4
               with:
                   node-version: ${{ matrix.node-version }}
                   cache: "npm"
@@ -29,7 +31,7 @@ jobs:
             - name: Build
               run: npm run build
 
-            - name: Test
+            - name: Test (including JSON Schema Test Suite)
               run: npm test
 
             - name: Generate coverage badge
