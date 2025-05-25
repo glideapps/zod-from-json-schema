@@ -32,6 +32,48 @@ jobs:
             - name: Test
               run: npm test
 
+            - name: Generate coverage badge
+              if: matrix.node-version == '20.x' && (github.ref == 'refs/heads/main')
+              run: |
+                  # Extract coverage percentage from test output
+                  COVERAGE=$(npm test 2>&1 | grep 'All files' | grep -o '[0-9]*' | head -1)
+                  echo "Coverage: $COVERAGE%"
+
+                  # Create badges directory
+                  mkdir -p badges
+
+                  # Determine badge color based on coverage
+                  if [ "$COVERAGE" -ge 90 ]; then
+                    COLOR="brightgreen"
+                  elif [ "$COVERAGE" -ge 80 ]; then
+                    COLOR="green"
+                  elif [ "$COVERAGE" -ge 70 ]; then
+                    COLOR="yellow"
+                  elif [ "$COVERAGE" -ge 60 ]; then
+                    COLOR="orange"
+                  else
+                    COLOR="red"
+                  fi
+
+                  # Generate badge JSON for shields.io
+                  cat > badges/coverage.json << EOF
+                  {
+                    "schemaVersion": 1,
+                    "label": "coverage",
+                    "message": "${COVERAGE}%",
+                    "color": "$COLOR"
+                  }
+                  EOF
+
+            - name: Deploy badges to gh-pages
+              if: matrix.node-version == '20.x' && (github.ref == 'refs/heads/main')
+              uses: peaceiris/actions-gh-pages@v3
+              with:
+                  github_token: ${{ secrets.GITHUB_TOKEN }}
+                  publish_dir: ./badges
+                  destination_dir: badges
+                  keep_files: true
+
             - name: Verify dual module compatibility
               run: |
                   node -e "require('./dist/index.js')" # Test CJS
