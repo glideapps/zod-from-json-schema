@@ -385,9 +385,9 @@ describe("convertJsonSchemaToZod", () => {
       // Create an exact clone of the expected object
       const exactClone = JSON.parse(JSON.stringify({ key: "value" }));
 
-      // For objects, we can only verify the behavior with the same reference - since z.literal()
-      // does strict equality checks. This is a limitation of how Zod handles object literals.
-      expect(() => zodSchema.parse(exactClone)).toThrow();
+      // With deep equality implementation, exact clones should pass
+      expect(() => zodSchema.parse(exactClone)).not.toThrow();
+      expect(() => zodSchema.parse({ key: "value" })).not.toThrow();
       expect(() => zodSchema.parse({ key: "other" })).toThrow();
     });
 
@@ -405,9 +405,9 @@ describe("convertJsonSchemaToZod", () => {
       // Create an exact clone of the expected array
       const exactClone = JSON.parse(JSON.stringify([1, 2, 3]));
 
-      // For arrays, we can only verify the behavior with the same reference - since z.literal()
-      // does strict equality checks. This is a limitation of how Zod handles array literals.
-      expect(() => zodSchema.parse(exactClone)).toThrow();
+      // With deep equality implementation, exact clones should pass
+      expect(() => zodSchema.parse(exactClone)).not.toThrow();
+      expect(() => zodSchema.parse([1, 2, 3])).not.toThrow();
       expect(() => zodSchema.parse([1, 2])).toThrow();
     });
   });

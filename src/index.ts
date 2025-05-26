@@ -111,17 +111,26 @@ export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema): z.ZodType
 
     // Handle const values - these override everything else
     if (schema.const !== undefined) {
-        if (typeof schema.const === "string") {
+        // For primitive values, use z.literal for better error messages
+        if (typeof schema.const === "string" || 
+            typeof schema.const === "number" || 
+            typeof schema.const === "boolean") {
             return addMetadata(z.literal(schema.const), schema);
-        } else if (typeof schema.const === "number") {
-            return addMetadata(z.literal(schema.const), schema);
-        } else if (typeof schema.const === "boolean") {
-            return addMetadata(z.literal(schema.const), schema);
-        } else if (schema.const === null) {
+        }
+        
+        // Special case for null to maintain type serialization compatibility
+        if (schema.const === null) {
             return addMetadata(z.null(), schema);
         }
-        // For objects or arrays, handle as specific literals
-        return addMetadata(z.literal(schema.const), schema);
+        
+        // For objects, arrays, or other complex values, use deep equality comparison
+        return addMetadata(
+            z.any().refine(
+                (value: any) => deepEqual(value, schema.const, { strict: true }),
+                { message: `Value must equal the const value` }
+            ),
+            schema
+        );
     }
 
     // Type inference - be very conservative, only infer when absolutely necessary
