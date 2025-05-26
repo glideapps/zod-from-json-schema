@@ -1141,4 +1141,108 @@ describe("jsonSchemaObjectToZodRawShape", () => {
     // Test refinement with invalid age
     expect(() => customSchema.parse({ age: 16 })).toThrow();
   });
+
+  describe("Coverage edge cases", () => {
+    it("should cover object property validation error path", () => {
+      const jsonSchema = {
+        $schema: "https://json-schema.org/draft/2020-12/schema",
+        properties: {
+          name: { type: "string" }
+        }
+      };
+
+      const zodSchema = convertJsonSchemaToZod(jsonSchema);
+      
+      // Invalid property value should trigger error path (line 320-321)
+      expect(() => zodSchema.parse({ name: 123 })).toThrow();
+    });
+
+    it("should cover conditional array constraints error paths", () => {
+      const jsonSchema = {
+        $schema: "https://json-schema.org/draft/2020-12/schema",
+        // No explicit type - triggers conditional constraints
+        prefixItems: [{ type: "string" }],
+        minItems: 2,
+        maxItems: 3
+      };
+
+      const zodSchema = convertJsonSchemaToZod(jsonSchema);
+      
+      // Invalid prefixItems should trigger error path (line 277)
+      expect(() => zodSchema.parse([123])).toThrow();
+      
+      // minItems violation should trigger error path (line 288-289)
+      expect(() => zodSchema.parse(["test"])).toThrow();
+      
+      // maxItems violation should trigger error path (line 291-292)
+      expect(() => zodSchema.parse(["test", "item2", "item3", "extra"])).toThrow();
+    });
+
+    it("should cover additionalProperties=false error path", () => {
+      const jsonSchema = {
+        $schema: "https://json-schema.org/draft/2020-12/schema",
+        // No explicit type - this triggers conditional constraints path
+        properties: {
+          name: { type: "string" }
+        },
+        additionalProperties: false
+      };
+
+      const zodSchema = convertJsonSchemaToZod(jsonSchema);
+      
+      // Additional property should trigger error path (line 340-341)
+      expect(() => zodSchema.parse({ name: "test", extra: "not allowed" })).toThrow();
+    });
+
+    it("should cover tuple with additionalItems=false error path", () => {
+      const jsonSchema = {
+        $schema: "https://json-schema.org/draft/2020-12/schema",
+        type: "array",
+        items: [{ type: "string" }, { type: "number" }],
+        additionalItems: false
+      };
+
+      const zodSchema = convertJsonSchemaToZod(jsonSchema);
+      
+      // Valid tuple should trigger success path (line 480)
+      expect(() => zodSchema.parse(["test", 123])).not.toThrow();
+      
+      // Wrong tuple length should trigger error path (line 468-483)
+      expect(() => zodSchema.parse(["test", 123, "extra"])).toThrow();
+      
+      // Wrong tuple item type should trigger error path (line 468-483)
+      expect(() => zodSchema.parse(["test", "not-a-number"])).toThrow();
+    });
+
+    it("should cover uniqueItems validator non-array path", () => {
+      const jsonSchema = {
+        $schema: "https://json-schema.org/draft/2020-12/schema",
+        // No explicit type - triggers conditional constraints
+        uniqueItems: true
+      };
+
+      const zodSchema = convertJsonSchemaToZod(jsonSchema);
+      
+      // Non-array value should trigger early return in uniqueItems validator (lines 11-12)
+      expect(() => zodSchema.parse("not an array")).not.toThrow();
+      expect(() => zodSchema.parse(123)).not.toThrow();
+      expect(() => zodSchema.parse({})).not.toThrow();
+    });
+
+    it("should cover conditional tuple validation path", () => {
+      const jsonSchema = {
+        $schema: "https://json-schema.org/draft/2020-12/schema",
+        // No explicit type - triggers conditional constraints path
+        items: [{ type: "string" }, { type: "number" }],
+        additionalItems: false
+      };
+
+      const zodSchema = convertJsonSchemaToZod(jsonSchema);
+      
+      // This should trigger the conditional tuple validation logic (lines 247-261)
+      expect(() => zodSchema.parse(["test", 123])).not.toThrow();
+      expect(() => zodSchema.parse(["test", 123, "extra"])).toThrow(); // additionalItems: false
+      expect(() => zodSchema.parse(["test", "not-number"])).toThrow(); // wrong type
+    });
+  });
 });
