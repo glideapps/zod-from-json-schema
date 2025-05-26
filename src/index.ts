@@ -3,6 +3,47 @@ import type { JSONSchema } from "zod/v4/core";
 import deepEqual from "deep-equal";
 
 /**
+ * Creates a uniqueItems validation function - SINGLE SOURCE OF TRUTH
+ */
+function createUniqueItemsValidator() {
+    return (value: any) => {
+        if (!Array.isArray(value)) {
+            return true;
+        }
+        
+        const seen: any[] = [];
+        return value.every((item: any) => {
+            const isDuplicate = seen.some((seenItem: any) =>
+                deepEqual(item, seenItem, { strict: true })
+            );
+            if (isDuplicate) {
+                return false;
+            }
+            seen.push(item);
+            return true;
+        });
+    };
+}
+
+/**
+ * Applies array constraints (uniqueItems, minItems, maxItems, etc.) to any schema
+ * This is the SINGLE PLACE where array constraints are applied
+ */
+function applyArrayConstraints(baseSchema: z.ZodTypeAny, schema: JSONSchema.ArraySchema): z.ZodTypeAny {
+    let result = baseSchema;
+    
+    // Apply uniqueItems constraint
+    if (schema.uniqueItems === true) {
+        result = result.refine(
+            createUniqueItemsValidator(),
+            { message: "Array items must be unique" }
+        );
+    }
+    
+    return result;
+}
+
+/**
  * Converts a JSON Schema object to a Zod schema
  */
 export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema): z.ZodType {
@@ -199,25 +240,14 @@ export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema): z.ZodType
                         return false;
                     }
 
-                    // Apply uniqueItems constraint
-                    if ((s as any).uniqueItems === true) {
-                        const seen: any[] = [];
-                        for (const item of value) {
-                            const isDuplicate = seen.some((seenItem: any) =>
-                                deepEqual(item, seenItem, { strict: true }),
-                            );
-                            if (isDuplicate) {
-                                return false;
-                            }
-                            seen.push(item);
-                        }
-                    }
-
                     // All constraints passed
                     return true;
                 },
                 { message: "Array constraints validation failed" },
             );
+            
+            // Apply uniqueItems constraint using centralized function
+            baseSchema = applyArrayConstraints(baseSchema, s);
         }
 
         // Apply object-specific constraints conditionally
@@ -440,30 +470,8 @@ function createBaseTypeSchema(type: string, schema: JSONSchema.BaseSchema): z.Zo
                 }
             }
 
-            // Apply uniqueItems constraint for explicit array types
-            if (s.uniqueItems === true) {
-                arraySchema = arraySchema.refine(
-                    (value: any) => {
-                        // This should always be an array for explicit array schemas, but check to be safe
-                        if (!Array.isArray(value)) {
-                            return true;
-                        }
-
-                        const seen: any[] = [];
-                        return value.every((item: any) => {
-                            const isDuplicate = seen.some((seenItem: any) =>
-                                deepEqual(item, seenItem, { strict: true }),
-                            );
-                            if (isDuplicate) {
-                                return false;
-                            }
-                            seen.push(item);
-                            return true;
-                        });
-                    },
-                    { message: "Array items must be unique" },
-                );
-            }
+            // Apply array constraints using centralized function
+            arraySchema = applyArrayConstraints(arraySchema, s);
 
             return arraySchema;
         }
