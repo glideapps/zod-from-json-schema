@@ -21,6 +21,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Types/Interfaces**: Use PascalCase, export types used in public API
 - **Error handling**: Use Zod's built-in validation rather than throwing errors
 - **Documentation**: JSDoc comments for all exported functions and types
+- **Tests**: Test coverage should remain at 100%.
 
 ## Architecture
 - Maintain dual module support (CJS/ESM) for all exports
