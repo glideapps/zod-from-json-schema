@@ -26,6 +26,60 @@ function createUniqueItemsValidator() {
 }
 
 /**
+ * Validates a value against a Zod schema - SINGLE SOURCE OF TRUTH for validation
+ */
+function isValidWithSchema(schema: z.ZodTypeAny, value: any): boolean {
+    return schema.safeParse(value).success;
+}
+
+/**
+ * Validates additional items beyond a prefix/tuple - SINGLE SOURCE OF TRUTH
+ */
+function validateAdditionalItems(
+    arr: any[], 
+    startIndex: number, 
+    itemsSchema: any, 
+    additionalItemsAllowed: boolean = true
+): boolean {
+    if (arr.length <= startIndex) {
+        return true; // No additional items to validate
+    }
+    
+    if (itemsSchema === false || !additionalItemsAllowed) {
+        return false; // No additional items allowed
+    }
+    
+    if (itemsSchema && typeof itemsSchema === "object" && !Array.isArray(itemsSchema)) {
+        const additionalItemSchema = convertJsonSchemaToZod(itemsSchema);
+        for (let i = startIndex; i < arr.length; i++) {
+            if (!isValidWithSchema(additionalItemSchema, arr[i])) {
+                return false;
+            }
+        }
+    }
+    
+    return true; // Additional items allowed or no schema to validate against
+}
+
+/**
+ * Applies min/max constraints to schemas - SINGLE SOURCE OF TRUTH
+ */
+function applyMinMaxConstraints<T extends z.ZodString | z.ZodNumber | z.ZodArray<any>>(
+    schema: T, 
+    min?: number, 
+    max?: number
+): T {
+    let result = schema;
+    if (min !== undefined) {
+        result = result.min(min) as T;
+    }
+    if (max !== undefined) {
+        result = result.max(max) as T;
+    }
+    return result;
+}
+
+/**
  * Applies array constraints (uniqueItems, minItems, maxItems, etc.) to any schema
  * This is the SINGLE PLACE where array constraints are applied
  */
@@ -142,7 +196,7 @@ export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema): z.ZodType
         const notSchema = convertJsonSchemaToZod((schema as any).not);
         baseSchema = z
             .any()
-            .refine((value: any) => !notSchema.safeParse(value).success, {
+            .refine((value: any) => !isValidWithSchema(notSchema, value), {
                 message: "Value must not match the 'not' schema",
             });
     }
@@ -173,7 +227,7 @@ export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema): z.ZodType
                     if (s.items && !Array.isArray(s.items) && !(s as any).prefixItems) {
                         const itemSchema = convertJsonSchemaToZod(s.items);
                         for (const item of value) {
-                            if (!itemSchema.safeParse(item).success) {
+                            if (!isValidWithSchema(itemSchema, item)) {
                                 itemsValidationPassed = false;
                                 break;
                             }
@@ -189,7 +243,7 @@ export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema): z.ZodType
                         } else {
                             // Validate each position against its corresponding schema
                             for (let i = 0; i < tupleSchemas.length && i < value.length; i++) {
-                                if (!tupleSchemas[i].safeParse(value[i]).success) {
+                                if (!isValidWithSchema(tupleSchemas[i], value[i])) {
                                     itemsValidationPassed = false;
                                     break;
                                 }
@@ -209,26 +263,14 @@ export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema): z.ZodType
                         // Validate each item against its corresponding prefix schema
                         for (let i = 0; i < Math.min(value.length, prefixItems.length); i++) {
                             const prefixSchema = convertJsonSchemaToZod(prefixItems[i]);
-                            if (!prefixSchema.safeParse(value[i]).success) {
+                            if (!isValidWithSchema(prefixSchema, value[i])) {
                                 return false;
                             }
                         }
 
                         // Handle additional items beyond prefixItems
-                        if (value.length > prefixItems.length) {
-                            if ((s as any).items === false) {
-                                // No additional items allowed
-                                return false;
-                            } else if (s.items && typeof s.items === "object" && !Array.isArray(s.items)) {
-                                // Additional items must match the items schema
-                                const additionalItemSchema = convertJsonSchemaToZod(s.items);
-                                for (let i = prefixItems.length; i < value.length; i++) {
-                                    if (!additionalItemSchema.safeParse(value[i]).success) {
-                                        return false;
-                                    }
-                                }
-                            }
-                            // If items is not specified or true, allow any additional items
+                        if (!validateAdditionalItems(value, prefixItems.length, (s as any).items)) {
+                            return false;
                         }
                     }
 
@@ -265,7 +307,7 @@ export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema): z.ZodType
                         for (const [propName, propSchema] of Object.entries(objSchema.properties)) {
                             if (Object.prototype.hasOwnProperty.call(value, propName) && propSchema !== undefined) {
                                 const zodPropSchema = convertJsonSchemaToZod(propSchema);
-                                if (!zodPropSchema.safeParse(value[propName]).success) {
+                                if (!isValidWithSchema(zodPropSchema, value[propName])) {
                                     return false;
                                 }
                             }
@@ -313,12 +355,7 @@ function createBaseTypeSchema(type: string, schema: JSONSchema.BaseSchema): z.Zo
             let stringSchema = z.string();
 
             // Apply string-specific constraints
-            if (s.minLength !== undefined) {
-                stringSchema = stringSchema.min(s.minLength);
-            }
-            if (s.maxLength !== undefined) {
-                stringSchema = stringSchema.max(s.maxLength);
-            }
+            stringSchema = applyMinMaxConstraints(stringSchema, s.minLength, s.maxLength);
             if (s.pattern !== undefined) {
                 const regex = new RegExp(s.pattern);
                 stringSchema = stringSchema.regex(regex);
@@ -332,12 +369,7 @@ function createBaseTypeSchema(type: string, schema: JSONSchema.BaseSchema): z.Zo
             let numberSchema = type === "integer" ? z.number().int() : z.number();
 
             // Apply number-specific constraints
-            if (s.minimum !== undefined) {
-                numberSchema = numberSchema.min(s.minimum);
-            }
-            if (s.maximum !== undefined) {
-                numberSchema = numberSchema.max(s.maximum);
-            }
+            numberSchema = applyMinMaxConstraints(numberSchema, s.minimum, s.maximum);
             if (s.exclusiveMinimum !== undefined) {
                 numberSchema = numberSchema.gt(s.exclusiveMinimum);
             }
@@ -411,19 +443,8 @@ function createBaseTypeSchema(type: string, schema: JSONSchema.BaseSchema): z.Zo
                         }
 
                         // Handle additional items beyond prefixItems
-                        if (arr.length > prefixSchemas.length) {
-                            if ((s as any).items === false) {
-                                return false;
-                            } else if (s.items && typeof s.items === "object" && !Array.isArray(s.items)) {
-                                const additionalItemSchema = convertJsonSchemaToZod(s.items);
-                                for (let i = prefixSchemas.length; i < arr.length; i++) {
-                                    try {
-                                        additionalItemSchema.parse(arr[i]);
-                                    } catch {
-                                        return false;
-                                    }
-                                }
-                            }
+                        if (!validateAdditionalItems(arr, prefixSchemas.length, s.items)) {
+                            return false;
                         }
                         return true;
                     },
@@ -462,12 +483,7 @@ function createBaseTypeSchema(type: string, schema: JSONSchema.BaseSchema): z.Zo
 
             // Apply array-specific constraints (only for non-tuples)
             if (!isTuple) {
-                if (s.minItems !== undefined) {
-                    arraySchema = (arraySchema as z.ZodArray<any>).min(s.minItems);
-                }
-                if (s.maxItems !== undefined) {
-                    arraySchema = (arraySchema as z.ZodArray<any>).max(s.maxItems);
-                }
+                arraySchema = applyMinMaxConstraints(arraySchema as z.ZodArray<any>, s.minItems, s.maxItems);
             }
 
             // Apply array constraints using centralized function
