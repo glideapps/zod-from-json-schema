@@ -145,18 +145,36 @@ export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema): z.ZodType
         if (schema.enum.length === 0) {
             baseSchema = effectiveType ? createBaseTypeSchema(effectiveType, schema) : z.never();
         } else {
-            // Check if all enum values are strings
-            const allStrings = schema.enum.every((val) => typeof val === "string");
-            if (allStrings) {
-                baseSchema = z.enum(schema.enum as [string, ...string[]]);
-            } else {
-                // For mixed types or non-strings, use a union of literals
-                const options = schema.enum.map((val) => z.literal(val));
-                if (options.length === 1) {
-                    baseSchema = options[0];
+            // Check if all enum values are primitive (can use z.literal safely)
+            const allPrimitive = schema.enum.every((val) => 
+                typeof val === "string" || 
+                typeof val === "number" || 
+                typeof val === "boolean" || 
+                val === null
+            );
+            
+            if (allPrimitive) {
+                // Check if all are strings (can use z.enum)
+                const allStrings = schema.enum.every((val) => typeof val === "string");
+                if (allStrings) {
+                    baseSchema = z.enum(schema.enum as [string, ...string[]]);
                 } else {
-                    baseSchema = z.union([options[0], options[1], ...options.slice(2)]);
+                    // For mixed primitives, use union of literals
+                    const options = schema.enum.map((val) => z.literal(val));
+                    if (options.length === 1) {
+                        baseSchema = options[0];
+                    } else {
+                        baseSchema = z.union([options[0], options[1], ...options.slice(2)]);
+                    }
                 }
+            } else {
+                // For complex values (objects, arrays), use deep equality validation
+                baseSchema = z.any().refine(
+                    (value: any) => schema.enum!.some((enumValue: any) => 
+                        deepEqual(value, enumValue, { strict: true })
+                    ),
+                    { message: `Value must be one of the enum values` }
+                );
             }
         }
     }
@@ -191,7 +209,17 @@ export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema): z.ZodType
     }
     // Handle type-based schemas
     else if (effectiveType) {
-        baseSchema = createBaseTypeSchema(effectiveType, schema);
+        if (Array.isArray(effectiveType)) {
+            // Handle multiple types with union
+            if (effectiveType.length === 1) {
+                baseSchema = createBaseTypeSchema(effectiveType[0], schema);
+            } else {
+                const typeSchemas = effectiveType.map(type => createBaseTypeSchema(type, schema));
+                baseSchema = z.union([typeSchemas[0], typeSchemas[1], ...typeSchemas.slice(2)]);
+            }
+        } else {
+            baseSchema = createBaseTypeSchema(effectiveType, schema);
+        }
     }
     // Default fallback
     else {
@@ -200,14 +228,23 @@ export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema): z.ZodType
 
     // Apply constraints that can be applied to any schema type
 
-    // Apply 'not' constraint
+    // Apply 'not' constraint 
     if ((schema as any).not) {
         const notSchema = convertJsonSchemaToZod((schema as any).not);
-        baseSchema = z
-            .any()
-            .refine((value: any) => !isValidWithSchema(notSchema, value), {
-                message: "Value must not match the 'not' schema",
-            });
+        if (!baseSchema) {
+            // If no base schema, start with z.any() and apply not constraint
+            baseSchema = z
+                .any()
+                .refine((value: any) => !isValidWithSchema(notSchema, value), {
+                    message: "Value must not match the 'not' schema",
+                });
+        } else {
+            // If there's already a base schema, apply not constraint to it
+            baseSchema = baseSchema
+                .refine((value: any) => !isValidWithSchema(notSchema, value), {
+                    message: "Value must not match the 'not' schema",
+                });
+        }
     }
 
     // Apply conditional constraints for schemas without explicit type
