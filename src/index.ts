@@ -14,7 +14,7 @@ export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema): z.ZodType
         return zodSchema;
     }
 
-    // Handle const values - must be checked before other constraints
+    // Handle const values - these override everything else
     if (schema.const !== undefined) {
         if (typeof schema.const === "string") {
             return addMetadata(z.literal(schema.const), schema);
@@ -29,367 +29,447 @@ export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema): z.ZodType
         return addMetadata(z.literal(schema.const), schema);
     }
 
-    // Infer array type from array-specific properties
-    if (!schema.type && (schema.items || (schema as any).prefixItems || schema.minItems !== undefined || schema.maxItems !== undefined || (schema as any).uniqueItems !== undefined)) {
-        schema = { ...schema, type: "array" };
+    // Type inference - be very conservative, only infer when absolutely necessary
+    let effectiveType = schema.type;
+    // Don't infer types from constraint properties - let them be applied conditionally
+
+    // Determine base schema
+    let baseSchema: z.ZodTypeAny;
+
+    // Handle enum first, as it can override type-based schemas
+    if (schema.enum) {
+        if (schema.enum.length === 0) {
+            baseSchema = effectiveType ? createBaseTypeSchema(effectiveType, schema) : z.never();
+        } else {
+            // Check if all enum values are strings
+            const allStrings = schema.enum.every((val) => typeof val === "string");
+            if (allStrings) {
+                baseSchema = z.enum(schema.enum as [string, ...string[]]);
+            } else {
+                // For mixed types or non-strings, use a union of literals
+                const options = schema.enum.map((val) => z.literal(val));
+                if (options.length === 1) {
+                    baseSchema = options[0];
+                } else {
+                    baseSchema = z.union([options[0], options[1], ...options.slice(2)]);
+                }
+            }
+        }
+    }
+    // Handle schema combinations
+    else if (schema.anyOf && schema.anyOf.length >= 2) {
+        // For anyOf, each alternative should be combined with the base schema
+        if (effectiveType) {
+            const combinedSchemas = schema.anyOf.map((anyOfItem) =>
+                convertJsonSchemaToZod({ ...schema, anyOf: undefined, ...anyOfItem }),
+            );
+            baseSchema = z.union([combinedSchemas[0], combinedSchemas[1], ...combinedSchemas.slice(2)]);
+        } else {
+            const schemas = schema.anyOf.map(convertJsonSchemaToZod);
+            baseSchema = z.union([schemas[0], schemas[1], ...schemas.slice(2)]);
+        }
+    } else if (schema.allOf) {
+        baseSchema = schema.allOf.reduce(
+            (acc: z.ZodTypeAny, s: JSONSchema.BaseSchema) => z.intersection(acc, convertJsonSchemaToZod(s)),
+            z.object({}),
+        );
+    } else if (schema.oneOf && schema.oneOf.length >= 2) {
+        // For oneOf, each alternative should be combined with the base schema
+        if (effectiveType) {
+            const combinedSchemas = schema.oneOf.map((oneOfItem) =>
+                convertJsonSchemaToZod({ ...schema, oneOf: undefined, ...oneOfItem }),
+            );
+            baseSchema = z.union([combinedSchemas[0], combinedSchemas[1], ...combinedSchemas.slice(2)]);
+        } else {
+            const schemas = schema.oneOf.map(convertJsonSchemaToZod);
+            baseSchema = z.union([schemas[0], schemas[1], ...schemas.slice(2)]);
+        }
+    }
+    // Handle type-based schemas
+    else if (effectiveType) {
+        baseSchema = createBaseTypeSchema(effectiveType, schema);
+    }
+    // Default fallback
+    else {
+        baseSchema = z.any();
     }
 
-    // Handle primitive types
-    if (schema.type) {
-        switch (schema.type) {
-            case "string": {
-                const s = schema as JSONSchema.StringSchema;
+    // Apply constraints that can be applied to any schema type
 
-                // Handle enum first if it exists for string type
-                if (s.enum) {
-                    // Empty enum case, default to string type
-                    if (s.enum.length === 0) {
-                        return addMetadata(z.string(), s);
+    // Apply 'not' constraint
+    if ((schema as any).not) {
+        const notSchema = convertJsonSchemaToZod((schema as any).not);
+        baseSchema = z
+            .any()
+            .refine((value: any) => !notSchema.safeParse(value).success, {
+                message: "Value must not match the 'not' schema",
+            });
+    }
+
+    // Apply conditional constraints for schemas without explicit type
+    if (!effectiveType) {
+        // Apply array-specific constraints conditionally
+        const s = schema as JSONSchema.ArraySchema;
+        if (
+            s.items ||
+            (s as any).prefixItems ||
+            s.minItems !== undefined ||
+            s.maxItems !== undefined ||
+            (s as any).uniqueItems === true
+        ) {
+            baseSchema = baseSchema.refine(
+                (value: any) => {
+                    // Only apply array constraints to arrays
+                    if (!Array.isArray(value)) {
+                        return true; // Non-arrays are valid
                     }
 
-                    // Since we know this is a string type, we can safely cast enum values
-                    return addMetadata(z.enum(s.enum as [string, ...string[]]), s);
-                }
+                    // Handle different items scenarios explicitly
+                    let itemsValidationPassed = true;
 
-                let stringSchema = z.string();
-
-                // Apply string-specific constraints
-                if (s.minLength !== undefined) {
-                    stringSchema = stringSchema.min(s.minLength);
-                }
-                if (s.maxLength !== undefined) {
-                    stringSchema = stringSchema.max(s.maxLength);
-                }
-                if (s.pattern !== undefined) {
-                    const regex = new RegExp(s.pattern);
-                    stringSchema = stringSchema.regex(regex);
-                }
-
-                return addMetadata(stringSchema, s);
-            }
-            case "number":
-            case "integer": {
-                const s = schema as JSONSchema.NumberSchema | JSONSchema.IntegerSchema;
-
-                // Handle enum if it exists for number type
-                if (s.enum) {
-                    // Empty enum case, default to number type
-                    if (s.enum.length === 0) {
-                        return addMetadata(z.number(), s);
-                    }
-
-                    // For numbers we need a union of literals since z.enum only works with strings
-                    const options = s.enum.map((val) => z.literal(val as number));
-
-                    // Handle single option enum specially
-                    if (options.length === 1) {
-                        return addMetadata(options[0], s);
-                    }
-
-                    // For multiple options, create a union
-                    if (options.length >= 2) {
-                        const unionSchema = z.union([options[0], options[1], ...options.slice(2)]);
-                        return addMetadata(unionSchema, s);
-                    }
-                }
-
-                let numberSchema = s.type === "integer" ? z.number().int() : z.number();
-
-                // Apply number-specific constraints
-                if (s.minimum !== undefined) {
-                    numberSchema = numberSchema.min(s.minimum);
-                }
-                if (s.maximum !== undefined) {
-                    numberSchema = numberSchema.max(s.maximum);
-                }
-                if (s.exclusiveMinimum !== undefined) {
-                    numberSchema = numberSchema.gt(s.exclusiveMinimum);
-                }
-                if (s.exclusiveMaximum !== undefined) {
-                    numberSchema = numberSchema.lt(s.exclusiveMaximum);
-                }
-                if (s.multipleOf !== undefined) {
-                    numberSchema = numberSchema.multipleOf(s.multipleOf);
-                }
-
-                return addMetadata(numberSchema, s);
-            }
-            case "boolean":
-                // Handle enum for boolean type if present
-                if (schema.enum) {
-                    // Empty enum case, default to boolean type
-                    if (schema.enum.length === 0) {
-                        return addMetadata(z.boolean(), schema);
-                    }
-
-                    const options = schema.enum.map((val) => z.literal(val as boolean));
-
-                    // Handle single option enum specially
-                    if (options.length === 1) {
-                        return addMetadata(options[0], schema);
-                    }
-
-                    // For multiple options, create a union
-                    if (options.length >= 2) {
-                        const unionSchema = z.union([options[0], options[1], ...options.slice(2)]);
-                        return addMetadata(unionSchema, schema);
-                    }
-                }
-                return addMetadata(z.boolean(), schema);
-            case "null":
-                return addMetadata(z.null(), schema);
-            case "object":
-                if (schema.properties) {
-                    const shape: Record<string, z.ZodTypeAny> = {};
-
-                    // Process each property
-                    for (const [key, propSchema] of Object.entries(schema.properties)) {
-                        if (propSchema === undefined) continue;
-                        shape[key] = convertJsonSchemaToZod(propSchema);
-                    }
-
-                    // Handle required properties
-                    if (schema.required && Array.isArray(schema.required)) {
-                        // Mark all properties not in required as optional
-                        const required = new Set(schema.required);
-                        for (const key of Object.keys(shape)) {
-                            if (!required.has(key)) {
-                                shape[key] = shape[key].optional();
+                    // Case 1: items is a single schema (all items must match this schema)
+                    // Note: if prefixItems is present, items only applies to additional items beyond prefixItems
+                    if (s.items && !Array.isArray(s.items) && !(s as any).prefixItems) {
+                        const itemSchema = convertJsonSchemaToZod(s.items);
+                        for (const item of value) {
+                            if (!itemSchema.safeParse(item).success) {
+                                itemsValidationPassed = false;
+                                break;
                             }
                         }
-                    } else {
-                        // In JSON Schema, properties are optional by default
-                        // if no required array is specified
-                        for (const key of Object.keys(shape)) {
+                    }
+                    // Case 2: items is an array (tuple validation)
+                    else if (Array.isArray(s.items)) {
+                        const tupleSchemas = s.items.map((itemSchema) => convertJsonSchemaToZod(itemSchema));
+
+                        // Check length constraint for additionalItems: false
+                        if (s.additionalItems === false && value.length !== tupleSchemas.length) {
+                            itemsValidationPassed = false;
+                        } else {
+                            // Validate each position against its corresponding schema
+                            for (let i = 0; i < tupleSchemas.length && i < value.length; i++) {
+                                if (!tupleSchemas[i].safeParse(value[i]).success) {
+                                    itemsValidationPassed = false;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    // If items validation failed, return false immediately
+                    if (!itemsValidationPassed) {
+                        return false;
+                    }
+
+                    // Apply prefixItems constraint
+                    if ((s as any).prefixItems && Array.isArray((s as any).prefixItems)) {
+                        const prefixItems = (s as any).prefixItems;
+
+                        // Validate each item against its corresponding prefix schema
+                        for (let i = 0; i < Math.min(value.length, prefixItems.length); i++) {
+                            const prefixSchema = convertJsonSchemaToZod(prefixItems[i]);
+                            if (!prefixSchema.safeParse(value[i]).success) {
+                                return false;
+                            }
+                        }
+
+                        // Handle additional items beyond prefixItems
+                        if (value.length > prefixItems.length) {
+                            if ((s as any).items === false) {
+                                // No additional items allowed
+                                return false;
+                            } else if (s.items && typeof s.items === "object" && !Array.isArray(s.items)) {
+                                // Additional items must match the items schema
+                                const additionalItemSchema = convertJsonSchemaToZod(s.items);
+                                for (let i = prefixItems.length; i < value.length; i++) {
+                                    if (!additionalItemSchema.safeParse(value[i]).success) {
+                                        return false;
+                                    }
+                                }
+                            }
+                            // If items is not specified or true, allow any additional items
+                        }
+                    }
+
+                    // Apply length constraints
+                    if (s.minItems !== undefined && value.length < s.minItems) {
+                        return false;
+                    }
+                    if (s.maxItems !== undefined && value.length > s.maxItems) {
+                        return false;
+                    }
+
+                    // Apply uniqueItems constraint
+                    if ((s as any).uniqueItems === true) {
+                        const seen: any[] = [];
+                        for (const item of value) {
+                            const isDuplicate = seen.some((seenItem: any) =>
+                                deepEqual(item, seenItem, { strict: true }),
+                            );
+                            if (isDuplicate) {
+                                return false;
+                            }
+                            seen.push(item);
+                        }
+                    }
+
+                    // All constraints passed
+                    return true;
+                },
+                { message: "Array constraints validation failed" },
+            );
+        }
+
+        // Apply object-specific constraints conditionally
+        const objSchema = schema as JSONSchema.ObjectSchema;
+        if (objSchema.properties || objSchema.required || objSchema.additionalProperties !== undefined) {
+            baseSchema = baseSchema.refine(
+                (value: any) => {
+                    // Only apply object constraints to objects
+                    if (typeof value !== "object" || value === null || Array.isArray(value)) {
+                        return true; // Non-objects are valid
+                    }
+
+                    // Apply properties constraint (only validate own properties that exist)
+                    if (objSchema.properties) {
+                        for (const [propName, propSchema] of Object.entries(objSchema.properties)) {
+                            if (Object.prototype.hasOwnProperty.call(value, propName) && propSchema !== undefined) {
+                                const zodPropSchema = convertJsonSchemaToZod(propSchema);
+                                if (!zodPropSchema.safeParse(value[propName]).success) {
+                                    return false;
+                                }
+                            }
+                        }
+                    }
+
+                    // Apply required constraint
+                    if (objSchema.required && Array.isArray(objSchema.required)) {
+                        for (const requiredProp of objSchema.required) {
+                            if (!Object.prototype.hasOwnProperty.call(value, requiredProp)) {
+                                return false;
+                            }
+                        }
+                    }
+
+                    // Apply additionalProperties constraint
+                    if (objSchema.additionalProperties === false && objSchema.properties) {
+                        const allowedProps = new Set(Object.keys(objSchema.properties));
+                        for (const prop in value) {
+                            if (!allowedProps.has(prop)) {
+                                return false;
+                            }
+                        }
+                    }
+
+                    return true;
+                },
+                { message: "Object constraints validation failed" },
+            );
+        }
+    }
+
+    // Note: uniqueItems for explicit array types is handled in createBaseTypeSchema
+
+    return addMetadata(baseSchema, schema);
+}
+
+/**
+ * Creates a base type schema for the given type
+ */
+function createBaseTypeSchema(type: string, schema: JSONSchema.BaseSchema): z.ZodTypeAny {
+    switch (type) {
+        case "string": {
+            const s = schema as JSONSchema.StringSchema;
+            let stringSchema = z.string();
+
+            // Apply string-specific constraints
+            if (s.minLength !== undefined) {
+                stringSchema = stringSchema.min(s.minLength);
+            }
+            if (s.maxLength !== undefined) {
+                stringSchema = stringSchema.max(s.maxLength);
+            }
+            if (s.pattern !== undefined) {
+                const regex = new RegExp(s.pattern);
+                stringSchema = stringSchema.regex(regex);
+            }
+
+            return stringSchema;
+        }
+        case "number":
+        case "integer": {
+            const s = schema as JSONSchema.NumberSchema | JSONSchema.IntegerSchema;
+            let numberSchema = type === "integer" ? z.number().int() : z.number();
+
+            // Apply number-specific constraints
+            if (s.minimum !== undefined) {
+                numberSchema = numberSchema.min(s.minimum);
+            }
+            if (s.maximum !== undefined) {
+                numberSchema = numberSchema.max(s.maximum);
+            }
+            if (s.exclusiveMinimum !== undefined) {
+                numberSchema = numberSchema.gt(s.exclusiveMinimum);
+            }
+            if (s.exclusiveMaximum !== undefined) {
+                numberSchema = numberSchema.lt(s.exclusiveMaximum);
+            }
+            if (s.multipleOf !== undefined) {
+                numberSchema = numberSchema.multipleOf(s.multipleOf);
+            }
+
+            return numberSchema;
+        }
+        case "boolean":
+            return z.boolean();
+        case "null":
+            return z.null();
+        case "object": {
+            if (schema.properties) {
+                const shape: Record<string, z.ZodTypeAny> = {};
+
+                // Process each property
+                for (const [key, propSchema] of Object.entries(schema.properties)) {
+                    if (propSchema === undefined) continue;
+                    shape[key] = convertJsonSchemaToZod(propSchema);
+                }
+
+                // Handle required properties
+                if (schema.required && Array.isArray(schema.required)) {
+                    const required = new Set(schema.required);
+                    for (const key of Object.keys(shape)) {
+                        if (!required.has(key)) {
                             shape[key] = shape[key].optional();
                         }
                     }
-
-                    // Create the schema with or without passthrough based on additionalProperties
-                    let zodSchema: z.ZodTypeAny;
-
-                    // By default, JSON Schema allows additional properties, so use passthrough
-                    // unless additionalProperties is explicitly set to false
-                    if (schema.additionalProperties !== false) {
-                        zodSchema = z.object(shape).passthrough();
-                    } else {
-                        zodSchema = z.object(shape);
+                } else {
+                    // In JSON Schema, properties are optional by default
+                    for (const key of Object.keys(shape)) {
+                        shape[key] = shape[key].optional();
                     }
-
-                    return addMetadata(zodSchema, schema);
                 }
-                return addMetadata(z.object({}), schema);
-            case "array": {
-                const s = schema as JSONSchema.ArraySchema;
 
-                let arraySchema;
-                let isTuple = false;
+                // Handle additionalProperties
+                if (schema.additionalProperties !== false) {
+                    return z.object(shape).passthrough();
+                } else {
+                    return z.object(shape);
+                }
+            }
+            return z.object({});
+        }
+        case "array": {
+            const s = schema as JSONSchema.ArraySchema;
+            let arraySchema: z.ZodTypeAny;
+            let isTuple = false;
 
-                // Check for prefixItems (Draft 2020-12 tuples)
-                if ((s as any).prefixItems && Array.isArray((s as any).prefixItems)) {
-                    isTuple = true;
-                    const prefixItems = (s as any).prefixItems;
-                    const prefixSchemas = prefixItems.map((itemSchema: any) => convertJsonSchemaToZod(itemSchema));
+            // Check for prefixItems (Draft 2020-12 tuples)
+            if ((s as any).prefixItems && Array.isArray((s as any).prefixItems)) {
+                isTuple = true;
+                const prefixItems = (s as any).prefixItems;
+                const prefixSchemas = prefixItems.map((itemSchema: any) => convertJsonSchemaToZod(itemSchema));
 
-                    // Create a custom array validator for prefixItems behavior
-                    arraySchema = z.array(z.any()).refine(
-                        (arr: any[]) => {
-                            // Validate each present item against its corresponding prefix schema
-                            for (let i = 0; i < Math.min(arr.length, prefixSchemas.length); i++) {
-                                try {
-                                    prefixSchemas[i].parse(arr[i]);
-                                } catch {
-                                    return false;
-                                }
+                arraySchema = z.array(z.any()).refine(
+                    (arr: any[]) => {
+                        // Validate each present item against its corresponding prefix schema
+                        for (let i = 0; i < Math.min(arr.length, prefixSchemas.length); i++) {
+                            try {
+                                prefixSchemas[i].parse(arr[i]);
+                            } catch {
+                                return false;
                             }
+                        }
 
-                            // Handle additional items beyond prefixItems
-                            if (arr.length > prefixSchemas.length) {
-                                if ((s as any).items === false) {
-                                    // No additional items allowed
-                                    return false;
-                                } else if (s.items && typeof s.items === "object" && !Array.isArray(s.items)) {
-                                    // Additional items must match the items schema
-                                    const additionalItemSchema = convertJsonSchemaToZod(s.items);
-                                    for (let i = prefixSchemas.length; i < arr.length; i++) {
-                                        try {
-                                            additionalItemSchema.parse(arr[i]);
-                                        } catch {
-                                            return false;
-                                        }
-                                    }
-                                }
-                                // If items is not specified or true, allow any additional items
-                            }
-
-                            return true;
-                        },
-                        { message: "Array does not match prefixItems schema" },
-                    );
-                } else if (Array.isArray(s.items)) {
-                    // Handle tuple arrays - items is an array of schemas (older draft behavior)
-                    isTuple = true;
-                    const tupleItems = s.items.map((itemSchema) => convertJsonSchemaToZod(itemSchema));
-                    
-                    if (s.additionalItems === false) {
-                        // When additionalItems is false, we need strict tuple validation
-                        arraySchema = z.array(z.any()).refine(
-                            (arr: any[]) => {
-                                // Must have exactly the number of items specified in the tuple
-                                if (arr.length !== tupleItems.length) {
-                                    return false;
-                                }
-                                
-                                // Validate each item against its corresponding schema
-                                for (let i = 0; i < tupleItems.length; i++) {
+                        // Handle additional items beyond prefixItems
+                        if (arr.length > prefixSchemas.length) {
+                            if ((s as any).items === false) {
+                                return false;
+                            } else if (s.items && typeof s.items === "object" && !Array.isArray(s.items)) {
+                                const additionalItemSchema = convertJsonSchemaToZod(s.items);
+                                for (let i = prefixSchemas.length; i < arr.length; i++) {
                                     try {
-                                        tupleItems[i].parse(arr[i]);
+                                        additionalItemSchema.parse(arr[i]);
                                     } catch {
                                         return false;
                                     }
                                 }
-                                return true;
-                            },
-                            { message: "Array does not match tuple schema with additionalItems=false" }
-                        );
-                    } else {
-                        // Use regular tuple which allows additional items by default
-                        arraySchema = z.tuple(tupleItems as [z.ZodTypeAny, ...z.ZodTypeAny[]]);
-                    }
-                } else if (s.items) {
-                    arraySchema = z.array(convertJsonSchemaToZod(s.items));
-                } else {
-                    arraySchema = z.array(z.any());
-                }
+                            }
+                        }
+                        return true;
+                    },
+                    { message: "Array does not match prefixItems schema" },
+                );
+            } else if (Array.isArray(s.items)) {
+                // Handle tuple arrays - items is an array of schemas
+                isTuple = true;
+                const tupleItems = s.items.map((itemSchema) => convertJsonSchemaToZod(itemSchema));
 
-                // Apply array-specific constraints (only for regular arrays, not tuples)
-                if (!isTuple) {
-                    if (s.minItems !== undefined) {
-                        arraySchema = (arraySchema as z.ZodArray<any>).min(s.minItems);
-                    }
-                    if (s.maxItems !== undefined) {
-                        arraySchema = (arraySchema as z.ZodArray<any>).max(s.maxItems);
-                    }
-                }
-                if (s.uniqueItems === true) {
-                    // To enforce uniqueness, we need a custom refine function
-                    // that checks if all elements are unique
-                    arraySchema = arraySchema.refine(
-                        (items: any[]) => {
-                            const seen: any[] = [];
-                            return items.every((item: any) => {
-                                // Use deep-equal with strict mode to check if this item already exists in seen array
-                                const isDuplicate = seen.some((seenItem: any) => deepEqual(item, seenItem, { strict: true }));
-                                if (isDuplicate) {
+                if (s.additionalItems === false) {
+                    arraySchema = z.array(z.any()).refine(
+                        (arr: any[]) => {
+                            if (arr.length !== tupleItems.length) {
+                                return false;
+                            }
+                            for (let i = 0; i < tupleItems.length; i++) {
+                                try {
+                                    tupleItems[i].parse(arr[i]);
+                                } catch {
                                     return false;
                                 }
-                                seen.push(item);
-                                return true;
-                            });
+                            }
+                            return true;
                         },
-                        { message: "Array items must be unique" },
+                        { message: "Array does not match tuple schema with additionalItems=false" },
                     );
+                } else {
+                    arraySchema = z.tuple(tupleItems as [z.ZodTypeAny, ...z.ZodTypeAny[]]);
                 }
-
-                return addMetadata(arraySchema, s);
-            }
-        }
-    }
-
-    // Handle enum (when type is not specified)
-    if (schema.enum) {
-        // Empty enum case, default to never type for empty enum without type
-        // This matches JSON Schema's behavior where an empty enum without type should match nothing
-        if (schema.enum.length === 0) {
-            return addMetadata(z.never(), schema);
-        }
-
-        // Check if all enum values are strings
-        const allStrings = schema.enum.every((val) => typeof val === "string");
-
-        if (allStrings) {
-            // If all values are strings, use z.enum which is more efficient
-            return addMetadata(z.enum(schema.enum as [string, ...string[]]), schema);
-        } else {
-            // For mixed types or non-strings, use a union of literals
-            const options = schema.enum.map((val) => z.literal(val));
-
-            // Handle single option enum specially
-            if (options.length === 1) {
-                return addMetadata(options[0], schema);
+            } else if (s.items) {
+                arraySchema = z.array(convertJsonSchemaToZod(s.items));
+            } else {
+                arraySchema = z.array(z.any());
             }
 
-            // For multiple options, create a union
-            if (options.length >= 2) {
-                const unionSchema = z.union([options[0], options[1], ...options.slice(2)]);
-                return addMetadata(unionSchema, schema);
+            // Apply array-specific constraints (only for non-tuples)
+            if (!isTuple) {
+                if (s.minItems !== undefined) {
+                    arraySchema = (arraySchema as z.ZodArray<any>).min(s.minItems);
+                }
+                if (s.maxItems !== undefined) {
+                    arraySchema = (arraySchema as z.ZodArray<any>).max(s.maxItems);
+                }
             }
-        }
-    }
 
-    // Handle combinations
-    if (schema.anyOf && schema.anyOf.length >= 2) {
-        const schemas = schema.anyOf.map(convertJsonSchemaToZod);
-        return addMetadata(z.union([schemas[0], schemas[1], ...schemas.slice(2)]), schema);
-    }
-
-    if (schema.allOf) {
-        return addMetadata(
-            schema.allOf.reduce(
-                (acc: z.ZodTypeAny, s: JSONSchema.BaseSchema) => z.intersection(acc, convertJsonSchemaToZod(s)),
-                z.object({}),
-            ),
-            schema,
-        );
-    }
-
-    if (schema.oneOf && schema.oneOf.length >= 2) {
-        const schemas = schema.oneOf.map(convertJsonSchemaToZod);
-        return addMetadata(z.union([schemas[0], schemas[1], ...schemas.slice(2)]), schema);
-    }
-
-    // Handle not keyword
-    if ((schema as any).not) {
-        const notSchema = convertJsonSchemaToZod((schema as any).not);
-        return addMetadata(
-            z.any().refine(
-                (value: any) => !notSchema.safeParse(value).success,
-                { message: "Value must not match the 'not' schema" }
-            ),
-            schema
-        );
-    }
-
-    // Handle uniqueItems constraint (applies to any schema that might be an array)
-    // Only apply this general handler if we haven't already handled arrays specifically
-    if ((schema as any).uniqueItems === true && schema.type !== "array") {
-        return addMetadata(
-            z.any().refine(
-                (value: any) => {
-                    // Only apply uniqueItems validation to arrays
-                    if (!Array.isArray(value)) {
-                        return true; // Non-arrays are valid
-                    }
-                    
-                    const seen: any[] = [];
-                    return value.every((item: any) => {
-                        // Use deep-equal with strict mode to check if this item already exists in seen array
-                        const isDuplicate = seen.some((seenItem: any) => deepEqual(item, seenItem, { strict: true }));
-                        if (isDuplicate) {
-                            return false;
+            // Apply uniqueItems constraint for explicit array types
+            if (s.uniqueItems === true) {
+                arraySchema = arraySchema.refine(
+                    (value: any) => {
+                        // This should always be an array for explicit array schemas, but check to be safe
+                        if (!Array.isArray(value)) {
+                            return true;
                         }
-                        seen.push(item);
-                        return true;
-                    });
-                },
-                { message: "Array items must be unique" }
-            ),
-            schema
-        );
-    }
 
-    // Default fallback
-    return addMetadata(z.any(), schema);
+                        const seen: any[] = [];
+                        return value.every((item: any) => {
+                            const isDuplicate = seen.some((seenItem: any) =>
+                                deepEqual(item, seenItem, { strict: true }),
+                            );
+                            if (isDuplicate) {
+                                return false;
+                            }
+                            seen.push(item);
+                            return true;
+                        });
+                    },
+                    { message: "Array items must be unique" },
+                );
+            }
+
+            return arraySchema;
+        }
+        default:
+            return z.any();
+    }
 }
 
 /**
