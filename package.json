@@ -20,8 +20,7 @@
         "build": "npm run clean && tsc -d --emitDeclarationOnly --outDir dist && node build.js",
         "test": "vitest run --coverage",
         "prepublishOnly": "npm run build",
-        "clean": "rm -rf dist",
-        "prepare": "npm run build"
+        "clean": "rm -rf dist"
     },
     "author": "Mark Probst <mark.probst@gmail.com>",
     "license": "MIT",
