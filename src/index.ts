@@ -322,6 +322,18 @@ export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema): z.ZodType
         return addMetadata(z.union([schemas[0], schemas[1], ...schemas.slice(2)]), schema);
     }
 
+    // Handle not keyword
+    if ((schema as any).not) {
+        const notSchema = convertJsonSchemaToZod((schema as any).not);
+        return addMetadata(
+            z.any().refine(
+                (value: any) => !notSchema.safeParse(value).success,
+                { message: "Value must not match the 'not' schema" }
+            ),
+            schema
+        );
+    }
+
     // Default fallback
     return addMetadata(z.any(), schema);
 }
