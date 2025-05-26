@@ -1,5 +1,6 @@
 import { z } from "zod/v4";
 import type { JSONSchema } from "zod/v4/core";
+import deepEqual from "deep-equal";
 
 /**
  * Converts a JSON Schema object to a Zod schema
@@ -26,6 +27,11 @@ export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema): z.ZodType
         }
         // For objects or arrays, handle as specific literals
         return addMetadata(z.literal(schema.const), schema);
+    }
+
+    // Infer array type from array-specific properties
+    if (!schema.type && (schema.items || (schema as any).prefixItems || schema.minItems !== undefined || schema.maxItems !== undefined || (schema as any).uniqueItems !== undefined)) {
+        schema = { ...schema, type: "array" };
     }
 
     // Handle primitive types
@@ -224,7 +230,32 @@ export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema): z.ZodType
                     // Handle tuple arrays - items is an array of schemas (older draft behavior)
                     isTuple = true;
                     const tupleItems = s.items.map((itemSchema) => convertJsonSchemaToZod(itemSchema));
-                    arraySchema = z.tuple(tupleItems as [z.ZodTypeAny, ...z.ZodTypeAny[]]);
+                    
+                    if (s.additionalItems === false) {
+                        // When additionalItems is false, we need strict tuple validation
+                        arraySchema = z.array(z.any()).refine(
+                            (arr: any[]) => {
+                                // Must have exactly the number of items specified in the tuple
+                                if (arr.length !== tupleItems.length) {
+                                    return false;
+                                }
+                                
+                                // Validate each item against its corresponding schema
+                                for (let i = 0; i < tupleItems.length; i++) {
+                                    try {
+                                        tupleItems[i].parse(arr[i]);
+                                    } catch {
+                                        return false;
+                                    }
+                                }
+                                return true;
+                            },
+                            { message: "Array does not match tuple schema with additionalItems=false" }
+                        );
+                    } else {
+                        // Use regular tuple which allows additional items by default
+                        arraySchema = z.tuple(tupleItems as [z.ZodTypeAny, ...z.ZodTypeAny[]]);
+                    }
                 } else if (s.items) {
                     arraySchema = z.array(convertJsonSchemaToZod(s.items));
                 } else {
@@ -245,19 +276,14 @@ export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema): z.ZodType
                     // that checks if all elements are unique
                     arraySchema = arraySchema.refine(
                         (items: any[]) => {
-                            const seen = new Set();
+                            const seen: any[] = [];
                             return items.every((item: any) => {
-                                // For primitive values, we can use a Set directly
-                                if (typeof item === "string" || typeof item === "number" || typeof item === "boolean") {
-                                    if (seen.has(item)) return false;
-                                    seen.add(item);
-                                    return true;
+                                // Use deep-equal with strict mode to check if this item already exists in seen array
+                                const isDuplicate = seen.some((seenItem: any) => deepEqual(item, seenItem, { strict: true }));
+                                if (isDuplicate) {
+                                    return false;
                                 }
-                                // For objects, we'd need more complex comparison
-                                // For simplicity, we stringfy objects for comparison
-                                const serialized = JSON.stringify(item);
-                                if (seen.has(serialized)) return false;
-                                seen.add(serialized);
+                                seen.push(item);
                                 return true;
                             });
                         },
@@ -329,6 +355,34 @@ export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema): z.ZodType
             z.any().refine(
                 (value: any) => !notSchema.safeParse(value).success,
                 { message: "Value must not match the 'not' schema" }
+            ),
+            schema
+        );
+    }
+
+    // Handle uniqueItems constraint (applies to any schema that might be an array)
+    // Only apply this general handler if we haven't already handled arrays specifically
+    if ((schema as any).uniqueItems === true && schema.type !== "array") {
+        return addMetadata(
+            z.any().refine(
+                (value: any) => {
+                    // Only apply uniqueItems validation to arrays
+                    if (!Array.isArray(value)) {
+                        return true; // Non-arrays are valid
+                    }
+                    
+                    const seen: any[] = [];
+                    return value.every((item: any) => {
+                        // Use deep-equal with strict mode to check if this item already exists in seen array
+                        const isDuplicate = seen.some((seenItem: any) => deepEqual(item, seenItem, { strict: true }));
+                        if (isDuplicate) {
+                            return false;
+                        }
+                        seen.push(item);
+                        return true;
+                    });
+                },
+                { message: "Array items must be unique" }
             ),
             schema
         );
