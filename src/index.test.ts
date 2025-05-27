@@ -1244,5 +1244,250 @@ describe("jsonSchemaObjectToZodRawShape", () => {
       expect(() => zodSchema.parse(["test", 123, "extra"])).toThrow(); // additionalItems: false
       expect(() => zodSchema.parse(["test", "not-number"])).toThrow(); // wrong type
     });
+
+    it("should cover number constraint validation error paths", () => {
+      const jsonSchema = {
+        $schema: "https://json-schema.org/draft/2020-12/schema",
+        // No explicit type - triggers conditional constraints
+        minimum: 10,
+        exclusiveMinimum: 5,
+        exclusiveMaximum: 20
+      };
+
+      const zodSchema = convertJsonSchemaToZod(jsonSchema);
+      
+      // Test minimum constraint failure (line 443)
+      expect(() => zodSchema.parse(5)).toThrow();
+      
+      // Test exclusiveMinimum constraint failure (lines 452-453)
+      expect(() => zodSchema.parse(5)).toThrow();
+      
+      // Test exclusiveMaximum constraint failure (lines 457-458)
+      expect(() => zodSchema.parse(20)).toThrow();
+    });
+
+    it("should cover unknown type default case", () => {
+      // This test covers the default case in createBaseTypeSchema (line 630)
+      const jsonSchema = {
+        $schema: "https://json-schema.org/draft/2020-12/schema",
+        type: "unknown-type" as any // Force an unknown type
+      };
+
+      const zodSchema = convertJsonSchemaToZod(jsonSchema);
+      
+      // Should return z.any() for unknown types
+      expect(() => zodSchema.parse("anything")).not.toThrow();
+      expect(() => zodSchema.parse(123)).not.toThrow();
+      expect(() => zodSchema.parse({ object: true })).not.toThrow();
+    });
+
+    it("should cover default fallback z.any() case", () => {
+      // This test covers lines 264-265: default fallback when no baseSchema is set
+      const jsonSchema = {
+        $schema: "https://json-schema.org/draft/2020-12/schema",
+        // Empty schema with no type, enum, or combination schemas
+        title: "Empty schema"
+      };
+
+      const zodSchema = convertJsonSchemaToZod(jsonSchema);
+      
+      // Should return z.any() as fallback
+      expect(() => zodSchema.parse("anything")).not.toThrow();
+      expect(() => zodSchema.parse(123)).not.toThrow();
+      expect(() => zodSchema.parse({ object: true })).not.toThrow();
+    });
+
+    it("should cover not constraint without base schema", () => {
+      // This test covers lines 274-278: not constraint when no base schema exists
+      const jsonSchema = {
+        $schema: "https://json-schema.org/draft/2020-12/schema",
+        not: {
+          type: "string"
+        }
+        // No type, enum, or other base schema - triggers not constraint without baseSchema
+      };
+
+      const zodSchema = convertJsonSchemaToZod(jsonSchema);
+      
+      // Should accept non-strings
+      expect(() => zodSchema.parse(123)).not.toThrow();
+      expect(() => zodSchema.parse(true)).not.toThrow();
+      expect(() => zodSchema.parse({})).not.toThrow();
+      
+      // Should reject strings
+      expect(() => zodSchema.parse("test")).toThrow();
+    });
+
+    it("should cover exclusiveMinimum constraint exactly at boundary", () => {
+      // This test covers lines 452-453: exclusiveMinimum edge case
+      const jsonSchema = {
+        $schema: "https://json-schema.org/draft/2020-12/schema",
+        // No explicit type - triggers conditional constraints
+        exclusiveMinimum: 10
+      };
+
+      const zodSchema = convertJsonSchemaToZod(jsonSchema);
+      
+      // Test exactly at exclusiveMinimum boundary (should fail)
+      expect(() => zodSchema.parse(10)).toThrow();
+      
+      // Test values greater than exclusiveMinimum (should pass)
+      expect(() => zodSchema.parse(11)).not.toThrow();
+    });
+
+    it("should cover type-based schema handling with single type", () => {
+      // This test covers lines 252-253: single type in array path
+      const jsonSchema = {
+        $schema: "https://json-schema.org/draft/2020-12/schema",
+        type: ["string"] as any // Single type in array
+      };
+
+      const zodSchema = convertJsonSchemaToZod(jsonSchema);
+      
+      // Should handle single type correctly
+      expect(() => zodSchema.parse("test")).not.toThrow();
+      expect(() => zodSchema.parse(123)).toThrow();
+    });
+
+    it("should cover type-based schema handling with multiple types", () => {
+      // This test covers lines 254-256: multiple types union path
+      const jsonSchema = {
+        $schema: "https://json-schema.org/draft/2020-12/schema",
+        type: ["string", "number"] as any // Multiple types
+      };
+
+      const zodSchema = convertJsonSchemaToZod(jsonSchema);
+      
+      // Should handle union of types correctly
+      expect(() => zodSchema.parse("test")).not.toThrow();
+      expect(() => zodSchema.parse(123)).not.toThrow();
+      expect(() => zodSchema.parse(true)).toThrow();
+    });
+
+    it("should cover type-based schema handling with single non-array type", () => {
+      // This test covers lines 258-260: single type (not in array) path
+      const jsonSchema = {
+        $schema: "https://json-schema.org/draft/2020-12/schema",
+        type: "string" // Single type, not in array
+      };
+
+      const zodSchema = convertJsonSchemaToZod(jsonSchema);
+      
+      // Should handle single type correctly
+      expect(() => zodSchema.parse("test")).not.toThrow();
+      expect(() => zodSchema.parse(123)).toThrow();
+    });
+
+    it("should cover empty schema fallback to z.any()", () => {
+      // This test covers lines 264-265: absolutely minimal schema
+      const jsonSchema = {} as any;
+
+      const zodSchema = convertJsonSchemaToZod(jsonSchema);
+      
+      // Should be z.any() - accepts everything
+      expect(() => zodSchema.parse("test")).not.toThrow();
+      expect(() => zodSchema.parse(123)).not.toThrow();
+      expect(() => zodSchema.parse({})).not.toThrow();
+      expect(() => zodSchema.parse(null)).not.toThrow();
+    });
+
+    it("should cover allOf without base schema (line 216)", () => {
+      // Schema with ONLY allOf, no type/enum/const - triggers !baseSchema branch
+      const jsonSchema = {
+        allOf: [
+          { minimum: 10 }
+        ]
+        // No $schema, type, enum, const - ensures baseSchema starts undefined
+      };
+
+      const zodSchema = convertJsonSchemaToZod(jsonSchema);
+      
+      expect(() => zodSchema.parse(15)).not.toThrow();
+      expect(() => zodSchema.parse(5)).toThrow();
+    });
+
+    it("should cover allOf multiple items without base schema (line 222)", () => {
+      // Schema with ONLY allOf (multiple), no type/enum/const - triggers !baseSchema branch
+      const jsonSchema = {
+        allOf: [
+          { minimum: 10 },
+          { maximum: 20 }
+        ]
+        // No $schema, type, enum, const - ensures baseSchema starts undefined
+      };
+
+      const zodSchema = convertJsonSchemaToZod(jsonSchema);
+      
+      expect(() => zodSchema.parse(15)).not.toThrow();
+      expect(() => zodSchema.parse(25)).toThrow();
+    });
+
+    it("should cover anyOf without base schema (line 234)", () => {
+      // Schema with ONLY anyOf, no type/enum/const - triggers !baseSchema branch
+      const jsonSchema = {
+        $schema: "https://json-schema.org/draft/2020-12/schema",
+        anyOf: [
+          { minimum: 10 },
+          { maximum: 5 }
+        ]
+      };
+
+      const zodSchema = convertJsonSchemaToZod(jsonSchema);
+      
+      expect(() => zodSchema.parse(15)).not.toThrow(); // matches first
+      expect(() => zodSchema.parse(3)).not.toThrow();  // matches second
+      expect(() => zodSchema.parse(7)).toThrow();       // matches neither
+    });
+
+    it("should cover oneOf without base schema (line 246)", () => {
+      // Schema with ONLY oneOf, no type/enum/const - triggers !baseSchema branch
+      const jsonSchema = {
+        $schema: "https://json-schema.org/draft/2020-12/schema",
+        oneOf: [
+          { minimum: 10 },
+          { maximum: 5 }
+        ]
+      };
+
+      const zodSchema = convertJsonSchemaToZod(jsonSchema);
+      
+      expect(() => zodSchema.parse(15)).not.toThrow(); // matches first only
+      expect(() => zodSchema.parse(3)).not.toThrow();  // matches second only
+      expect(() => zodSchema.parse(7)).toThrow();       // matches neither
+    });
+
+    it("should cover allOf with existing base schema (truthy branches)", () => {
+      // Schema with type AND allOf - ensures baseSchema exists when allOf is processed
+      const jsonSchema = {
+        type: "number",
+        allOf: [
+          { minimum: 10 }
+        ]
+      };
+
+      const zodSchema = convertJsonSchemaToZod(jsonSchema);
+      
+      expect(() => zodSchema.parse(15)).not.toThrow();
+      expect(() => zodSchema.parse(5)).toThrow();
+      expect(() => zodSchema.parse("string")).toThrow(); // type mismatch
+    });
+
+    it("should cover allOf multiple with existing base schema (truthy branches)", () => {
+      // Schema with type AND allOf multiple - ensures baseSchema exists when allOf is processed
+      const jsonSchema = {
+        type: "number",
+        allOf: [
+          { minimum: 10 },
+          { maximum: 20 }
+        ]
+      };
+
+      const zodSchema = convertJsonSchemaToZod(jsonSchema);
+      
+      expect(() => zodSchema.parse(15)).not.toThrow();
+      expect(() => zodSchema.parse(25)).toThrow(); // maximum violation
+      expect(() => zodSchema.parse(5)).toThrow();  // minimum violation
+      expect(() => zodSchema.parse("string")).toThrow(); // type mismatch
+    });
   });
 });

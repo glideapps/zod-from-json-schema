@@ -100,7 +100,16 @@ function applyArrayConstraints(baseSchema: z.ZodTypeAny, schema: JSONSchema.Arra
 /**
  * Converts a JSON Schema object to a Zod schema
  */
-export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema): z.ZodType {
+export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema | boolean): z.ZodType {
+    // Handle boolean schemas first
+    if (typeof schema === 'boolean') {
+        if (schema === true) {
+            return z.any(); // Accept anything
+        } else {
+            return z.never(); // Reject everything
+        }
+    }
+
     // Create a helper function to add metadata like description
     function addMetadata(zodSchema: z.ZodTypeAny, jsonSchema: JSONSchema.BaseSchema): z.ZodTypeAny {
         if (jsonSchema.description) {
@@ -138,7 +147,7 @@ export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema): z.ZodType
     // Don't infer types from constraint properties - let them be applied conditionally
 
     // Determine base schema
-    let baseSchema: z.ZodTypeAny;
+    let baseSchema: z.ZodTypeAny | undefined;
 
     // Handle enum first, as it can override type-based schemas
     if (schema.enum) {
@@ -178,35 +187,6 @@ export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema): z.ZodType
             }
         }
     }
-    // Handle schema combinations
-    else if (schema.anyOf && schema.anyOf.length >= 2) {
-        // For anyOf, each alternative should be combined with the base schema
-        if (effectiveType) {
-            const combinedSchemas = schema.anyOf.map((anyOfItem) =>
-                convertJsonSchemaToZod({ ...schema, anyOf: undefined, ...anyOfItem }),
-            );
-            baseSchema = z.union([combinedSchemas[0], combinedSchemas[1], ...combinedSchemas.slice(2)]);
-        } else {
-            const schemas = schema.anyOf.map(convertJsonSchemaToZod);
-            baseSchema = z.union([schemas[0], schemas[1], ...schemas.slice(2)]);
-        }
-    } else if (schema.allOf) {
-        baseSchema = schema.allOf.reduce(
-            (acc: z.ZodTypeAny, s: JSONSchema.BaseSchema) => z.intersection(acc, convertJsonSchemaToZod(s)),
-            z.object({}),
-        );
-    } else if (schema.oneOf && schema.oneOf.length >= 2) {
-        // For oneOf, each alternative should be combined with the base schema
-        if (effectiveType) {
-            const combinedSchemas = schema.oneOf.map((oneOfItem) =>
-                convertJsonSchemaToZod({ ...schema, oneOf: undefined, ...oneOfItem }),
-            );
-            baseSchema = z.union([combinedSchemas[0], combinedSchemas[1], ...combinedSchemas.slice(2)]);
-        } else {
-            const schemas = schema.oneOf.map(convertJsonSchemaToZod);
-            baseSchema = z.union([schemas[0], schemas[1], ...schemas.slice(2)]);
-        }
-    }
     // Handle type-based schemas
     else if (effectiveType) {
         if (Array.isArray(effectiveType)) {
@@ -223,6 +203,60 @@ export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema): z.ZodType
     }
     // Default fallback
     else {
+        // Don't set baseSchema here - let combination schemas handle it
+        // baseSchema remains undefined
+    }
+
+    // Apply schema combinations (these can be combined with base schema and each other)
+    
+    // Apply allOf if present
+    if (schema.allOf && schema.allOf.length > 0) {
+        if (schema.allOf.length === 1) {
+            const allOfSchema = convertJsonSchemaToZod(schema.allOf[0]);
+            if (baseSchema) {
+                baseSchema = z.intersection(baseSchema, allOfSchema);
+            } else {
+                baseSchema = allOfSchema;
+            }
+        } else {
+            const allOfSchema = schema.allOf.slice(1).reduce(
+                (acc: z.ZodTypeAny, s: JSONSchema.BaseSchema) => z.intersection(acc, convertJsonSchemaToZod(s)),
+                convertJsonSchemaToZod(schema.allOf[0]),
+            );
+            if (baseSchema) {
+                baseSchema = z.intersection(baseSchema, allOfSchema);
+            } else {
+                baseSchema = allOfSchema;
+            }
+        }
+    }
+
+    // Apply anyOf if present  
+    if (schema.anyOf && schema.anyOf.length >= 1) {
+        const anyOfSchema = schema.anyOf.length === 1 
+            ? convertJsonSchemaToZod(schema.anyOf[0])
+            : z.union([
+                convertJsonSchemaToZod(schema.anyOf[0]), 
+                convertJsonSchemaToZod(schema.anyOf[1]), 
+                ...schema.anyOf.slice(2).map(convertJsonSchemaToZod)
+            ]);
+        baseSchema = baseSchema ? z.intersection(baseSchema, anyOfSchema) : anyOfSchema;
+    }
+
+    // Apply oneOf if present
+    if (schema.oneOf && schema.oneOf.length >= 1) {
+        const oneOfSchema = schema.oneOf.length === 1
+            ? convertJsonSchemaToZod(schema.oneOf[0])
+            : z.union([
+                convertJsonSchemaToZod(schema.oneOf[0]),
+                convertJsonSchemaToZod(schema.oneOf[1]),
+                ...schema.oneOf.slice(2).map(convertJsonSchemaToZod)
+            ]);
+        baseSchema = baseSchema ? z.intersection(baseSchema, oneOfSchema) : oneOfSchema;
+    }
+
+    // Final fallback if no schema was set
+    if (!baseSchema) {
         baseSchema = z.any();
     }
 
@@ -231,20 +265,11 @@ export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema): z.ZodType
     // Apply 'not' constraint 
     if ((schema as any).not) {
         const notSchema = convertJsonSchemaToZod((schema as any).not);
-        if (!baseSchema) {
-            // If no base schema, start with z.any() and apply not constraint
-            baseSchema = z
-                .any()
-                .refine((value: any) => !isValidWithSchema(notSchema, value), {
-                    message: "Value must not match the 'not' schema",
-                });
-        } else {
-            // If there's already a base schema, apply not constraint to it
-            baseSchema = baseSchema
-                .refine((value: any) => !isValidWithSchema(notSchema, value), {
-                    message: "Value must not match the 'not' schema",
-                });
-        }
+        // If there's already a base schema, apply not constraint to it
+        baseSchema = baseSchema
+            .refine((value: any) => !isValidWithSchema(notSchema, value), {
+                message: "Value must not match the 'not' schema",
+            });
     }
 
     // Apply conditional constraints for schemas without explicit type
@@ -382,6 +407,57 @@ export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema): z.ZodType
                     return true;
                 },
                 { message: "Object constraints validation failed" },
+            );
+        }
+
+        // Apply number-specific constraints conditionally
+        const numSchema = schema as JSONSchema.NumberSchema;
+        if (numSchema.minimum !== undefined || 
+            numSchema.maximum !== undefined || 
+            numSchema.exclusiveMinimum !== undefined || 
+            numSchema.exclusiveMaximum !== undefined || 
+            numSchema.multipleOf !== undefined) {
+            baseSchema = baseSchema.refine(
+                (value: any) => {
+                    // Only apply number constraints to numbers
+                    if (typeof value !== "number") {
+                        return true; // Non-numbers are valid
+                    }
+
+                    // Apply minimum constraint
+                    if (numSchema.minimum !== undefined && value < numSchema.minimum) {
+                        return false;
+                    }
+                    
+                    // Apply maximum constraint
+                    if (numSchema.maximum !== undefined && value > numSchema.maximum) {
+                        return false;
+                    }
+                    
+                    // Apply exclusiveMinimum constraint
+                    if (numSchema.exclusiveMinimum !== undefined && value <= numSchema.exclusiveMinimum) {
+                        return false;
+                    }
+                    
+                    // Apply exclusiveMaximum constraint
+                    if (numSchema.exclusiveMaximum !== undefined && value >= numSchema.exclusiveMaximum) {
+                        return false;
+                    }
+                    
+                    // Apply multipleOf constraint
+                    if (numSchema.multipleOf !== undefined) {
+                        // Use proper floating point comparison for multipleOf
+                        const quotient = value / numSchema.multipleOf;
+                        const rounded = Math.round(quotient);
+                        const epsilon = 1e-10;
+                        if (Math.abs(quotient - rounded) > epsilon) {
+                            return false;
+                        }
+                    }
+
+                    return true;
+                },
+                { message: "Number constraints validation failed" },
             );
         }
     }
