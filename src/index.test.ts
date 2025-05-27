@@ -1391,6 +1391,96 @@ describe("jsonSchemaObjectToZodRawShape", () => {
       expect(() => zodSchema.parse(null)).not.toThrow();
     });
 
+    it("should cover anyOf with pattern constraint", () => {
+      // This covers lines 281-283: pattern handling in anyOf string inference
+      const jsonSchema = {
+        anyOf: [
+          { pattern: "^test" },
+          { const: "other" }
+        ]
+      };
+
+      const zodSchema = convertJsonSchemaToZod(jsonSchema);
+      
+      // Should pass: matches pattern
+      expect(() => zodSchema.parse("testing")).not.toThrow();
+      
+      // Should pass: matches const
+      expect(() => zodSchema.parse("other")).not.toThrow();
+      
+      // Should fail: doesn't match pattern or const
+      expect(() => zodSchema.parse("invalid")).toThrow();
+    });
+
+    it("should cover anyOf string constraint intersection path", () => {
+      // This covers line 284: intersection branch where baseSchema exists
+      // The child schema has both enum (creates baseSchema) AND string constraints
+      const jsonSchema = {
+        anyOf: [
+          { 
+            enum: ["testing", "example"],  // This creates a baseSchema without returning
+            pattern: "^test",              // This triggers string constraint logic with existing baseSchema
+            minLength: 3,                  // Additional string constraint to ensure full coverage
+            maxLength: 10                  // Another string constraint
+          }
+        ]
+      };
+
+      const zodSchema = convertJsonSchemaToZod(jsonSchema);
+      
+      // Should pass: "testing" is in enum AND matches all string constraints
+      expect(() => zodSchema.parse("testing")).not.toThrow();
+      
+      // Should fail: "example" is in enum but doesn't match pattern
+      expect(() => zodSchema.parse("example")).toThrow();
+      
+      // Should fail: not in enum
+      expect(() => zodSchema.parse("test")).toThrow();
+    });
+
+    it("should cover anyOf string constraint without pattern", () => {
+      // This covers the case where pattern is undefined (line 280 if branch not taken)
+      const jsonSchema = {
+        anyOf: [
+          { 
+            enum: ["testing", "example"],  // This creates a baseSchema
+            minLength: 3,                  // String constraint but NO pattern
+            maxLength: 10
+          }
+        ]
+      };
+
+      const zodSchema = convertJsonSchemaToZod(jsonSchema);
+      
+      // Should pass: "testing" is in enum AND meets length constraints
+      expect(() => zodSchema.parse("testing")).not.toThrow();
+      
+      // Should pass: "example" is in enum AND meets length constraints  
+      expect(() => zodSchema.parse("example")).not.toThrow();
+      
+      // Should fail: not in enum
+      expect(() => zodSchema.parse("test")).toThrow();
+    });
+
+    it("should cover anyOf string constraint no-baseSchema path", () => {
+      // This covers line 284: the false branch (no baseSchema, just stringTypeSchema)
+      const jsonSchema = {
+        anyOf: [
+          { 
+            pattern: "^test"  // Only string constraints, no enum/const, so no baseSchema
+          }
+        ]
+      };
+
+      const zodSchema = convertJsonSchemaToZod(jsonSchema);
+      
+      // Should pass: matches pattern
+      expect(() => zodSchema.parse("testing")).not.toThrow();
+      
+      // Should fail: doesn't match pattern
+      expect(() => zodSchema.parse("invalid")).toThrow();
+    });
+
     it("should cover allOf without base schema (line 216)", () => {
       // Schema with ONLY allOf, no type/enum/const - triggers !baseSchema branch
       const jsonSchema = {
@@ -1470,6 +1560,69 @@ describe("jsonSchemaObjectToZodRawShape", () => {
       expect(() => zodSchema.parse(15)).not.toThrow();
       expect(() => zodSchema.parse(5)).toThrow();
       expect(() => zodSchema.parse("string")).toThrow(); // type mismatch
+    });
+
+    it("should cover anyOf intersection and non-intersection paths", () => {
+      // Test anyOf with baseSchema (intersection case - line 237 truthy branch)
+      const schemaWithBase = {
+        type: "string", 
+        anyOf: [
+          { minLength: 3 }
+        ]
+      };
+      const zodSchemaWithBase = convertJsonSchemaToZod(schemaWithBase);
+      expect(() => zodSchemaWithBase.parse("test")).not.toThrow();
+      expect(() => zodSchemaWithBase.parse("ab")).toThrow();
+
+      // Test anyOf without baseSchema (non-intersection case - line 237 falsy branch)
+      const schemaWithoutBase = {
+        anyOf: [
+          { minLength: 3 }
+        ]
+      };
+      const zodSchemaWithoutBase = convertJsonSchemaToZod(schemaWithoutBase);
+      expect(() => zodSchemaWithoutBase.parse("test")).not.toThrow();
+      expect(() => zodSchemaWithoutBase.parse("ab")).toThrow();
+    });
+
+    it("should cover oneOf intersection and non-intersection paths", () => {
+      // Test oneOf with baseSchema (intersection case - line 250 truthy branch)
+      const schemaWithBase = {
+        type: "string",
+        oneOf: [
+          { pattern: "^test" }
+        ]
+      };
+      const zodSchemaWithBase = convertJsonSchemaToZod(schemaWithBase);
+      expect(() => zodSchemaWithBase.parse("testing")).not.toThrow();
+      expect(() => zodSchemaWithBase.parse("invalid")).not.toThrow(); // string & any = string
+
+      // Test oneOf without baseSchema (non-intersection case - line 250 falsy branch) 
+      const schemaWithoutBase = {
+        oneOf: [
+          { minLength: 3 }
+        ]
+      };
+      const zodSchemaWithoutBase = convertJsonSchemaToZod(schemaWithoutBase);
+      expect(() => zodSchemaWithoutBase.parse("test")).not.toThrow();
+      expect(() => zodSchemaWithoutBase.parse("ab")).not.toThrow(); // oneOf without base type = z.any()
+    });
+
+    it("should cover anyOf string constraint without baseSchema (line 284 falsy branch)", () => {
+      // Test anyOf with ONLY string constraints and no other schema that would create baseSchema
+      const jsonSchema = {
+        anyOf: [
+          { 
+            minLength: 2,  // Only string constraints, no enum/type/etc
+            maxLength: 10,
+            pattern: "^hello"
+          }
+        ]
+      };
+      const zodSchema = convertJsonSchemaToZod(jsonSchema);
+      expect(() => zodSchema.parse("hello")).not.toThrow();
+      expect(() => zodSchema.parse("hi")).toThrow(); // too short
+      expect(() => zodSchema.parse("goodbye")).toThrow(); // wrong pattern
     });
 
     it("should cover allOf multiple with existing base schema (truthy branches)", () => {

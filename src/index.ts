@@ -10,12 +10,10 @@ function createUniqueItemsValidator() {
         if (!Array.isArray(value)) {
             return true;
         }
-        
+
         const seen: any[] = [];
         return value.every((item: any) => {
-            const isDuplicate = seen.some((seenItem: any) =>
-                deepEqual(item, seenItem, { strict: true })
-            );
+            const isDuplicate = seen.some((seenItem: any) => deepEqual(item, seenItem, { strict: true }));
             if (isDuplicate) {
                 return false;
             }
@@ -36,19 +34,19 @@ function isValidWithSchema(schema: z.ZodTypeAny, value: any): boolean {
  * Validates additional items beyond a prefix/tuple - SINGLE SOURCE OF TRUTH
  */
 function validateAdditionalItems(
-    arr: any[], 
-    startIndex: number, 
-    itemsSchema: any, 
-    additionalItemsAllowed: boolean = true
+    arr: any[],
+    startIndex: number,
+    itemsSchema: any,
+    additionalItemsAllowed: boolean = true,
 ): boolean {
     if (arr.length <= startIndex) {
         return true; // No additional items to validate
     }
-    
+
     if (itemsSchema === false || !additionalItemsAllowed) {
         return false; // No additional items allowed
     }
-    
+
     if (itemsSchema && typeof itemsSchema === "object" && !Array.isArray(itemsSchema)) {
         const additionalItemSchema = convertJsonSchemaToZod(itemsSchema);
         for (let i = startIndex; i < arr.length; i++) {
@@ -57,7 +55,7 @@ function validateAdditionalItems(
             }
         }
     }
-    
+
     return true; // Additional items allowed or no schema to validate against
 }
 
@@ -65,9 +63,9 @@ function validateAdditionalItems(
  * Applies min/max constraints to schemas - SINGLE SOURCE OF TRUTH
  */
 function applyMinMaxConstraints<T extends z.ZodString | z.ZodNumber | z.ZodArray<any>>(
-    schema: T, 
-    min?: number, 
-    max?: number
+    schema: T,
+    min?: number,
+    max?: number,
 ): T {
     let result = schema;
     if (min !== undefined) {
@@ -85,24 +83,21 @@ function applyMinMaxConstraints<T extends z.ZodString | z.ZodNumber | z.ZodArray
  */
 function applyArrayConstraints(baseSchema: z.ZodTypeAny, schema: JSONSchema.ArraySchema): z.ZodTypeAny {
     let result = baseSchema;
-    
+
     // Apply uniqueItems constraint
     if (schema.uniqueItems === true) {
-        result = result.refine(
-            createUniqueItemsValidator(),
-            { message: "Array items must be unique" }
-        );
+        result = result.refine(createUniqueItemsValidator(), { message: "Array items must be unique" });
     }
-    
+
     return result;
 }
 
 /**
  * Converts a JSON Schema object to a Zod schema
  */
-export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema | boolean): z.ZodType {
+export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema | boolean, isPartOfAnyOf?: boolean): z.ZodType {
     // Handle boolean schemas first
-    if (typeof schema === 'boolean') {
+    if (typeof schema === "boolean") {
         if (schema === true) {
             return z.any(); // Accept anything
         } else {
@@ -121,30 +116,26 @@ export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema | boolean):
     // Handle const values - these override everything else
     if (schema.const !== undefined) {
         // For primitive values, use z.literal for better error messages
-        if (typeof schema.const === "string" || 
-            typeof schema.const === "number" || 
-            typeof schema.const === "boolean") {
+        if (typeof schema.const === "string" || typeof schema.const === "number" || typeof schema.const === "boolean") {
             return addMetadata(z.literal(schema.const), schema);
         }
-        
+
         // Special case for null to maintain type serialization compatibility
         if (schema.const === null) {
             return addMetadata(z.null(), schema);
         }
-        
+
         // For objects, arrays, or other complex values, use deep equality comparison
         return addMetadata(
-            z.any().refine(
-                (value: any) => deepEqual(value, schema.const, { strict: true }),
-                { message: `Value must equal the const value` }
-            ),
-            schema
+            z.any().refine((value: any) => deepEqual(value, schema.const, { strict: true }), {
+                message: `Value must equal the const value`,
+            }),
+            schema,
         );
     }
 
-    // Type inference - be very conservative, only infer when absolutely necessary
+    // Use explicit type only
     let effectiveType = schema.type;
-    // Don't infer types from constraint properties - let them be applied conditionally
 
     // Determine base schema
     let baseSchema: z.ZodTypeAny | undefined;
@@ -155,13 +146,10 @@ export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema | boolean):
             baseSchema = effectiveType ? createBaseTypeSchema(effectiveType, schema) : z.never();
         } else {
             // Check if all enum values are primitive (can use z.literal safely)
-            const allPrimitive = schema.enum.every((val) => 
-                typeof val === "string" || 
-                typeof val === "number" || 
-                typeof val === "boolean" || 
-                val === null
+            const allPrimitive = schema.enum.every(
+                (val) => typeof val === "string" || typeof val === "number" || typeof val === "boolean" || val === null,
             );
-            
+
             if (allPrimitive) {
                 // Check if all are strings (can use z.enum)
                 const allStrings = schema.enum.every((val) => typeof val === "string");
@@ -178,12 +166,13 @@ export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema | boolean):
                 }
             } else {
                 // For complex values (objects, arrays), use deep equality validation
-                baseSchema = z.any().refine(
-                    (value: any) => schema.enum!.some((enumValue: any) => 
-                        deepEqual(value, enumValue, { strict: true })
-                    ),
-                    { message: `Value must be one of the enum values` }
-                );
+                baseSchema = z
+                    .any()
+                    .refine(
+                        (value: any) =>
+                            schema.enum!.some((enumValue: any) => deepEqual(value, enumValue, { strict: true })),
+                        { message: `Value must be one of the enum values` },
+                    );
             }
         }
     }
@@ -194,7 +183,7 @@ export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema | boolean):
             if (effectiveType.length === 1) {
                 baseSchema = createBaseTypeSchema(effectiveType[0], schema);
             } else {
-                const typeSchemas = effectiveType.map(type => createBaseTypeSchema(type, schema));
+                const typeSchemas = effectiveType.map((type) => createBaseTypeSchema(type, schema));
                 baseSchema = z.union([typeSchemas[0], typeSchemas[1], ...typeSchemas.slice(2)]);
             }
         } else {
@@ -208,7 +197,7 @@ export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema | boolean):
     }
 
     // Apply schema combinations (these can be combined with base schema and each other)
-    
+
     // Apply allOf if present
     if (schema.allOf && schema.allOf.length > 0) {
         if (schema.allOf.length === 1) {
@@ -219,10 +208,12 @@ export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema | boolean):
                 baseSchema = allOfSchema;
             }
         } else {
-            const allOfSchema = schema.allOf.slice(1).reduce(
-                (acc: z.ZodTypeAny, s: JSONSchema.BaseSchema) => z.intersection(acc, convertJsonSchemaToZod(s)),
-                convertJsonSchemaToZod(schema.allOf[0]),
-            );
+            const allOfSchema = schema.allOf
+                .slice(1)
+                .reduce(
+                    (acc: z.ZodTypeAny, s: JSONSchema.BaseSchema) => z.intersection(acc, convertJsonSchemaToZod(s)),
+                    convertJsonSchemaToZod(schema.allOf[0]),
+                );
             if (baseSchema) {
                 baseSchema = z.intersection(baseSchema, allOfSchema);
             } else {
@@ -231,27 +222,29 @@ export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema | boolean):
         }
     }
 
-    // Apply anyOf if present  
+    // Apply anyOf if present
     if (schema.anyOf && schema.anyOf.length >= 1) {
-        const anyOfSchema = schema.anyOf.length === 1 
-            ? convertJsonSchemaToZod(schema.anyOf[0])
-            : z.union([
-                convertJsonSchemaToZod(schema.anyOf[0]), 
-                convertJsonSchemaToZod(schema.anyOf[1]), 
-                ...schema.anyOf.slice(2).map(convertJsonSchemaToZod)
-            ]);
+        const anyOfSchema =
+            schema.anyOf.length === 1
+                ? convertJsonSchemaToZod(schema.anyOf[0], true)
+                : z.union([
+                      convertJsonSchemaToZod(schema.anyOf[0], true),
+                      convertJsonSchemaToZod(schema.anyOf[1], true),
+                      ...schema.anyOf.slice(2).map((s) => convertJsonSchemaToZod(s, true)),
+                  ]);
         baseSchema = baseSchema ? z.intersection(baseSchema, anyOfSchema) : anyOfSchema;
     }
 
     // Apply oneOf if present
     if (schema.oneOf && schema.oneOf.length >= 1) {
-        const oneOfSchema = schema.oneOf.length === 1
-            ? convertJsonSchemaToZod(schema.oneOf[0])
-            : z.union([
-                convertJsonSchemaToZod(schema.oneOf[0]),
-                convertJsonSchemaToZod(schema.oneOf[1]),
-                ...schema.oneOf.slice(2).map(convertJsonSchemaToZod)
-            ]);
+        const oneOfSchema =
+            schema.oneOf.length === 1
+                ? convertJsonSchemaToZod(schema.oneOf[0])
+                : z.union([
+                      convertJsonSchemaToZod(schema.oneOf[0]),
+                      convertJsonSchemaToZod(schema.oneOf[1]),
+                      ...schema.oneOf.slice(2).map((s) => convertJsonSchemaToZod(s)),
+                  ]);
         baseSchema = baseSchema ? z.intersection(baseSchema, oneOfSchema) : oneOfSchema;
     }
 
@@ -262,203 +255,221 @@ export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema | boolean):
 
     // Apply constraints that can be applied to any schema type
 
-    // Apply 'not' constraint 
+    // Apply 'not' constraint
     if ((schema as any).not) {
         const notSchema = convertJsonSchemaToZod((schema as any).not);
         // If there's already a base schema, apply not constraint to it
-        baseSchema = baseSchema
-            .refine((value: any) => !isValidWithSchema(notSchema, value), {
-                message: "Value must not match the 'not' schema",
-            });
+        baseSchema = baseSchema.refine((value: any) => !isValidWithSchema(notSchema, value), {
+            message: "Value must not match the 'not' schema",
+        });
     }
 
     // Apply conditional constraints for schemas without explicit type
     if (!effectiveType) {
-        // Apply array-specific constraints conditionally
-        const s = schema as JSONSchema.ArraySchema;
+        // Special case: if this schema is part of anyOf and has string constraints,
+        // infer it as string type to fix anyOf behavior
         if (
-            s.items ||
-            (s as any).prefixItems ||
-            s.minItems !== undefined ||
-            s.maxItems !== undefined ||
-            (s as any).uniqueItems === true
+            isPartOfAnyOf &&
+            (schema.maxLength !== undefined || schema.minLength !== undefined || schema.pattern !== undefined)
         ) {
-            baseSchema = baseSchema.refine(
-                (value: any) => {
-                    // Only apply array constraints to arrays
-                    if (!Array.isArray(value)) {
-                        return true; // Non-arrays are valid
-                    }
-
-                    // Handle different items scenarios explicitly
-                    let itemsValidationPassed = true;
-
-                    // Case 1: items is a single schema (all items must match this schema)
-                    // Note: if prefixItems is present, items only applies to additional items beyond prefixItems
-                    if (s.items && !Array.isArray(s.items) && !(s as any).prefixItems) {
-                        const itemSchema = convertJsonSchemaToZod(s.items);
-                        for (const item of value) {
-                            if (!isValidWithSchema(itemSchema, item)) {
-                                itemsValidationPassed = false;
-                                break;
-                            }
+            const stringSchema = schema as JSONSchema.StringSchema;
+            let stringTypeSchema = z.string();
+            stringTypeSchema = applyMinMaxConstraints(stringTypeSchema, stringSchema.minLength, stringSchema.maxLength);
+            if (stringSchema.pattern !== undefined) {
+                const regex = new RegExp(stringSchema.pattern);
+                stringTypeSchema = stringTypeSchema.regex(regex);
+            }
+            baseSchema = z.intersection(baseSchema, stringTypeSchema);
+        }
+        // Apply array-specific constraints conditionally
+        else {
+            const s = schema as JSONSchema.ArraySchema;
+            if (
+                s.items ||
+                (s as any).prefixItems ||
+                s.minItems !== undefined ||
+                s.maxItems !== undefined ||
+                (s as any).uniqueItems === true
+            ) {
+                baseSchema = baseSchema.refine(
+                    (value: any) => {
+                        // Only apply array constraints to arrays
+                        if (!Array.isArray(value)) {
+                            return true; // Non-arrays are valid
                         }
-                    }
-                    // Case 2: items is an array (tuple validation)
-                    else if (Array.isArray(s.items)) {
-                        const tupleSchemas = s.items.map((itemSchema) => convertJsonSchemaToZod(itemSchema));
 
-                        // Check length constraint for additionalItems: false
-                        if (s.additionalItems === false && value.length !== tupleSchemas.length) {
-                            itemsValidationPassed = false;
-                        } else {
-                            // Validate each position against its corresponding schema
-                            for (let i = 0; i < tupleSchemas.length && i < value.length; i++) {
-                                if (!isValidWithSchema(tupleSchemas[i], value[i])) {
+                        // Handle different items scenarios explicitly
+                        let itemsValidationPassed = true;
+
+                        // Case 1: items is a single schema (all items must match this schema)
+                        // Note: if prefixItems is present, items only applies to additional items beyond prefixItems
+                        if (s.items && !Array.isArray(s.items) && !(s as any).prefixItems) {
+                            const itemSchema = convertJsonSchemaToZod(s.items);
+                            for (const item of value) {
+                                if (!isValidWithSchema(itemSchema, item)) {
                                     itemsValidationPassed = false;
                                     break;
                                 }
                             }
                         }
-                    }
+                        // Case 2: items is an array (tuple validation)
+                        else if (Array.isArray(s.items)) {
+                            const tupleSchemas = s.items.map((itemSchema) => convertJsonSchemaToZod(itemSchema));
 
-                    // If items validation failed, return false immediately
-                    if (!itemsValidationPassed) {
-                        return false;
-                    }
+                            // Check length constraint for additionalItems: false
+                            if (s.additionalItems === false && value.length !== tupleSchemas.length) {
+                                itemsValidationPassed = false;
+                            } else {
+                                // Validate each position against its corresponding schema
+                                for (let i = 0; i < tupleSchemas.length && i < value.length; i++) {
+                                    if (!isValidWithSchema(tupleSchemas[i], value[i])) {
+                                        itemsValidationPassed = false;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
 
-                    // Apply prefixItems constraint
-                    if ((s as any).prefixItems && Array.isArray((s as any).prefixItems)) {
-                        const prefixItems = (s as any).prefixItems;
+                        // If items validation failed, return false immediately
+                        if (!itemsValidationPassed) {
+                            return false;
+                        }
 
-                        // Validate each item against its corresponding prefix schema
-                        for (let i = 0; i < Math.min(value.length, prefixItems.length); i++) {
-                            const prefixSchema = convertJsonSchemaToZod(prefixItems[i]);
-                            if (!isValidWithSchema(prefixSchema, value[i])) {
+                        // Apply prefixItems constraint
+                        if ((s as any).prefixItems && Array.isArray((s as any).prefixItems)) {
+                            const prefixItems = (s as any).prefixItems;
+
+                            // Validate each item against its corresponding prefix schema
+                            for (let i = 0; i < Math.min(value.length, prefixItems.length); i++) {
+                                const prefixSchema = convertJsonSchemaToZod(prefixItems[i]);
+                                if (!isValidWithSchema(prefixSchema, value[i])) {
+                                    return false;
+                                }
+                            }
+
+                            // Handle additional items beyond prefixItems
+                            if (!validateAdditionalItems(value, prefixItems.length, (s as any).items)) {
                                 return false;
                             }
                         }
 
-                        // Handle additional items beyond prefixItems
-                        if (!validateAdditionalItems(value, prefixItems.length, (s as any).items)) {
+                        // Apply length constraints
+                        if (s.minItems !== undefined && value.length < s.minItems) {
                             return false;
                         }
-                    }
+                        if (s.maxItems !== undefined && value.length > s.maxItems) {
+                            return false;
+                        }
 
-                    // Apply length constraints
-                    if (s.minItems !== undefined && value.length < s.minItems) {
-                        return false;
-                    }
-                    if (s.maxItems !== undefined && value.length > s.maxItems) {
-                        return false;
-                    }
+                        // All constraints passed
+                        return true;
+                    },
+                    { message: "Array constraints validation failed" },
+                );
 
-                    // All constraints passed
-                    return true;
-                },
-                { message: "Array constraints validation failed" },
-            );
-            
-            // Apply uniqueItems constraint using centralized function
-            baseSchema = applyArrayConstraints(baseSchema, s);
-        }
+                // Apply uniqueItems constraint using centralized function
+                baseSchema = applyArrayConstraints(baseSchema, s);
+            }
 
-        // Apply object-specific constraints conditionally
-        const objSchema = schema as JSONSchema.ObjectSchema;
-        if (objSchema.properties || objSchema.required || objSchema.additionalProperties !== undefined) {
-            baseSchema = baseSchema.refine(
-                (value: any) => {
-                    // Only apply object constraints to objects
-                    if (typeof value !== "object" || value === null || Array.isArray(value)) {
-                        return true; // Non-objects are valid
-                    }
+            // Apply object-specific constraints conditionally
+            const objSchema = schema as JSONSchema.ObjectSchema;
+            if (objSchema.properties || objSchema.required || objSchema.additionalProperties !== undefined) {
+                baseSchema = baseSchema.refine(
+                    (value: any) => {
+                        // Only apply object constraints to objects
+                        if (typeof value !== "object" || value === null || Array.isArray(value)) {
+                            return true; // Non-objects are valid
+                        }
 
-                    // Apply properties constraint (only validate own properties that exist)
-                    if (objSchema.properties) {
-                        for (const [propName, propSchema] of Object.entries(objSchema.properties)) {
-                            if (Object.prototype.hasOwnProperty.call(value, propName) && propSchema !== undefined) {
-                                const zodPropSchema = convertJsonSchemaToZod(propSchema);
-                                if (!isValidWithSchema(zodPropSchema, value[propName])) {
+                        // Apply properties constraint (only validate own properties that exist)
+                        if (objSchema.properties) {
+                            for (const [propName, propSchema] of Object.entries(objSchema.properties)) {
+                                if (Object.prototype.hasOwnProperty.call(value, propName) && propSchema !== undefined) {
+                                    const zodPropSchema = convertJsonSchemaToZod(propSchema);
+                                    if (!isValidWithSchema(zodPropSchema, value[propName])) {
+                                        return false;
+                                    }
+                                }
+                            }
+                        }
+
+                        // Apply required constraint
+                        if (objSchema.required && Array.isArray(objSchema.required)) {
+                            for (const requiredProp of objSchema.required) {
+                                if (!Object.prototype.hasOwnProperty.call(value, requiredProp)) {
                                     return false;
                                 }
                             }
                         }
-                    }
 
-                    // Apply required constraint
-                    if (objSchema.required && Array.isArray(objSchema.required)) {
-                        for (const requiredProp of objSchema.required) {
-                            if (!Object.prototype.hasOwnProperty.call(value, requiredProp)) {
-                                return false;
+                        // Apply additionalProperties constraint
+                        if (objSchema.additionalProperties === false && objSchema.properties) {
+                            const allowedProps = new Set(Object.keys(objSchema.properties));
+                            for (const prop in value) {
+                                if (!allowedProps.has(prop)) {
+                                    return false;
+                                }
                             }
                         }
-                    }
 
-                    // Apply additionalProperties constraint
-                    if (objSchema.additionalProperties === false && objSchema.properties) {
-                        const allowedProps = new Set(Object.keys(objSchema.properties));
-                        for (const prop in value) {
-                            if (!allowedProps.has(prop)) {
-                                return false;
-                            }
+                        return true;
+                    },
+                    { message: "Object constraints validation failed" },
+                );
+            }
+
+            // Apply number-specific constraints conditionally
+            const numSchema = schema as JSONSchema.NumberSchema;
+            if (
+                numSchema.minimum !== undefined ||
+                numSchema.maximum !== undefined ||
+                numSchema.exclusiveMinimum !== undefined ||
+                numSchema.exclusiveMaximum !== undefined ||
+                numSchema.multipleOf !== undefined
+            ) {
+                baseSchema = baseSchema.refine(
+                    (value: any) => {
+                        // Only apply number constraints to numbers
+                        if (typeof value !== "number") {
+                            return true; // Non-numbers are valid
                         }
-                    }
 
-                    return true;
-                },
-                { message: "Object constraints validation failed" },
-            );
-        }
-
-        // Apply number-specific constraints conditionally
-        const numSchema = schema as JSONSchema.NumberSchema;
-        if (numSchema.minimum !== undefined || 
-            numSchema.maximum !== undefined || 
-            numSchema.exclusiveMinimum !== undefined || 
-            numSchema.exclusiveMaximum !== undefined || 
-            numSchema.multipleOf !== undefined) {
-            baseSchema = baseSchema.refine(
-                (value: any) => {
-                    // Only apply number constraints to numbers
-                    if (typeof value !== "number") {
-                        return true; // Non-numbers are valid
-                    }
-
-                    // Apply minimum constraint
-                    if (numSchema.minimum !== undefined && value < numSchema.minimum) {
-                        return false;
-                    }
-                    
-                    // Apply maximum constraint
-                    if (numSchema.maximum !== undefined && value > numSchema.maximum) {
-                        return false;
-                    }
-                    
-                    // Apply exclusiveMinimum constraint
-                    if (numSchema.exclusiveMinimum !== undefined && value <= numSchema.exclusiveMinimum) {
-                        return false;
-                    }
-                    
-                    // Apply exclusiveMaximum constraint
-                    if (numSchema.exclusiveMaximum !== undefined && value >= numSchema.exclusiveMaximum) {
-                        return false;
-                    }
-                    
-                    // Apply multipleOf constraint
-                    if (numSchema.multipleOf !== undefined) {
-                        // Use proper floating point comparison for multipleOf
-                        const quotient = value / numSchema.multipleOf;
-                        const rounded = Math.round(quotient);
-                        const epsilon = 1e-10;
-                        if (Math.abs(quotient - rounded) > epsilon) {
+                        // Apply minimum constraint
+                        if (numSchema.minimum !== undefined && value < numSchema.minimum) {
                             return false;
                         }
-                    }
 
-                    return true;
-                },
-                { message: "Number constraints validation failed" },
-            );
+                        // Apply maximum constraint
+                        if (numSchema.maximum !== undefined && value > numSchema.maximum) {
+                            return false;
+                        }
+
+                        // Apply exclusiveMinimum constraint
+                        if (numSchema.exclusiveMinimum !== undefined && value <= numSchema.exclusiveMinimum) {
+                            return false;
+                        }
+
+                        // Apply exclusiveMaximum constraint
+                        if (numSchema.exclusiveMaximum !== undefined && value >= numSchema.exclusiveMaximum) {
+                            return false;
+                        }
+
+                        // Apply multipleOf constraint
+                        if (numSchema.multipleOf !== undefined) {
+                            // Use proper floating point comparison for multipleOf
+                            const quotient = value / numSchema.multipleOf;
+                            const rounded = Math.round(quotient);
+                            const epsilon = 1e-10;
+                            if (Math.abs(quotient - rounded) > epsilon) {
+                                return false;
+                            }
+                        }
+
+                        return true;
+                    },
+                    { message: "Number constraints validation failed" },
+                );
+            }
         }
     }
 

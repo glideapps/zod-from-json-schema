@@ -21,12 +21,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Types/Interfaces**: Use PascalCase, export types used in public API
 - **Error handling**: Use Zod's built-in validation rather than throwing errors
 - **Documentation**: JSDoc comments for all exported functions and types
-- **Tests**: Test coverage should remain at 100%.
 
 ## Architecture
 - Maintain dual module support (CJS/ESM) for all exports
 - Keep conversion logic modular with single-responsibility functions
-- Write tests for each feature and edge cases, achieving 100% coverage
+- Write tests for each feature and edge cases, achieving 100% line and branch coverage
+- Never go back on supported features!  If something works, it has to keep working.
 - Target ES2018 for maximum compatibility (Node 10+)
 - Use esbuild for bundling with optimized output
 - Follow semantic versioning for releases
