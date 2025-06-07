@@ -13,7 +13,7 @@ export class ObjectPropertiesHandler implements RefinementHandler {
         }
 
         // Check if the schema is a single object type (not a union)
-        if (zodSchema instanceof z.ZodObject) {
+        if (zodSchema instanceof z.ZodObject || zodSchema instanceof z.ZodRecord) {
             // Build proper shape with converted property schemas
             const shape: Record<string, z.ZodTypeAny> = {};
             

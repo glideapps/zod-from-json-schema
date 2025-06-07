@@ -10,8 +10,9 @@ export class ArrayItemsHandler implements RefinementHandler {
         
         // Check if the schema is a single array type (not a union)
         if (zodSchema instanceof z.ZodArray) {
-            // Handle simple items schema
-            if (arraySchema.items && !Array.isArray(arraySchema.items) && arraySchema.items !== false) {
+            // Handle simple items schema ONLY if there's no prefixItems or tuple items
+            if (arraySchema.items && !Array.isArray(arraySchema.items) && arraySchema.items !== false 
+                && !(arraySchema as any).prefixItems) {
                 const itemSchema = convertJsonSchemaToZod(arraySchema.items);
                 let newArray = z.array(itemSchema);
                 
@@ -66,35 +67,42 @@ export class ArrayItemsHandler implements RefinementHandler {
                 // Tuple validation
                 const tupleItems = arraySchema.items.map(itemSchema => convertJsonSchemaToZod(itemSchema));
 
-                if (arraySchema.additionalItems === false) {
-                    // For tuple with no additional items, use strict length validation
-                    if (zodSchema instanceof z.ZodArray && tupleItems.length > 0) {
-                        // Create a proper tuple
-                        const tuple = z.tuple(tupleItems as [z.ZodTypeAny, ...z.ZodTypeAny[]]);
-                        // Add refinement to ensure exact length
-                        return tuple.refine(
-                            (arr) => arr.length === tupleItems.length,
-                            { message: `Array must have exactly ${tupleItems.length} items` }
-                        );
-                    } else if (tupleItems.length === 0) {
-                        // Empty tuple - must be empty array
-                        return z.array(z.any()).length(0);
-                    }
-                }
-
                 return zodSchema.refine(
                     (value: any) => {
                         if (!Array.isArray(value)) return true; // Non-arrays pass through
                         
-                        if (arraySchema.additionalItems === false && value.length !== tupleItems.length) {
-                            return false;
-                        }
-                        
-                        for (let i = 0; i < tupleItems.length && i < value.length; i++) {
+                        // Check tuple items
+                        for (let i = 0; i < tupleItems.length; i++) {
+                            // If array is shorter than tuple definition, it's invalid
+                            if (i >= value.length) {
+                                return false;
+                            }
+                            // Validate the item at this position
                             if (!isValidWithSchema(tupleItems[i], value[i])) {
                                 return false;
                             }
                         }
+                        
+                        // Handle additional items beyond the tuple definition
+                        if (value.length > tupleItems.length) {
+                            // When items is an array (tuple), the default for additionalItems is false
+                            // Only allow additional items if additionalItems is explicitly true or a schema
+                            if (arraySchema.additionalItems === undefined || arraySchema.additionalItems === false) {
+                                return false;
+                            } else if (arraySchema.additionalItems === true) {
+                                // Any additional items are allowed
+                                return true;
+                            } else if (typeof arraySchema.additionalItems === "object") {
+                                // additionalItems is a schema - validate extra items against it
+                                const additionalItemSchema = convertJsonSchemaToZod(arraySchema.additionalItems);
+                                for (let i = tupleItems.length; i < value.length; i++) {
+                                    if (!isValidWithSchema(additionalItemSchema, value[i])) {
+                                        return false;
+                                    }
+                                }
+                            }
+                        }
+                        
                         return true;
                     },
                     { message: "Array does not match tuple schema" }
