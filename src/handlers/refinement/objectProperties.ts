@@ -7,7 +7,8 @@ export class ObjectPropertiesHandler implements RefinementHandler {
     apply(zodSchema: z.ZodTypeAny, schema: JSONSchema.BaseSchema): z.ZodTypeAny {
         const objectSchema = schema as JSONSchema.ObjectSchema;
         
-        if (!objectSchema.properties && !objectSchema.required) {
+        // Skip if no object-specific constraints
+        if (!objectSchema.properties && !objectSchema.required && objectSchema.additionalProperties !== false) {
             return zodSchema;
         }
 

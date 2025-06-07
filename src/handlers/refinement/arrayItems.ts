@@ -15,13 +15,12 @@ export class ArrayItemsHandler implements RefinementHandler {
                 const itemSchema = convertJsonSchemaToZod(arraySchema.items);
                 let newArray = z.array(itemSchema);
                 
-                // Preserve min/max constraints from the original schema
-                const originalSchema = zodSchema as z.ZodArray<any>;
-                if ((originalSchema as any)._def.minLength !== null && (originalSchema as any)._def.minLength !== undefined) {
-                    newArray = newArray.min((originalSchema as any)._def.minLength.value);
+                // Apply min/max constraints from the JSON schema
+                if (arraySchema.minItems !== undefined) {
+                    newArray = newArray.min(arraySchema.minItems);
                 }
-                if ((originalSchema as any)._def.maxLength !== null && (originalSchema as any)._def.maxLength !== undefined) {
-                    newArray = newArray.max((originalSchema as any)._def.maxLength.value);
+                if (arraySchema.maxItems !== undefined) {
+                    newArray = newArray.max(arraySchema.maxItems);
                 }
                 
                 return newArray;
@@ -68,9 +67,18 @@ export class ArrayItemsHandler implements RefinementHandler {
                 const tupleItems = arraySchema.items.map(itemSchema => convertJsonSchemaToZod(itemSchema));
 
                 if (arraySchema.additionalItems === false) {
-                    // For tuple with no additional items, we can use Zod's tuple if schema is simple array
-                    if (zodSchema instanceof z.ZodArray) {
-                        return z.tuple(tupleItems as [z.ZodTypeAny, ...z.ZodTypeAny[]]).length(tupleItems.length);
+                    // For tuple with no additional items, use strict length validation
+                    if (zodSchema instanceof z.ZodArray && tupleItems.length > 0) {
+                        // Create a proper tuple
+                        const tuple = z.tuple(tupleItems as [z.ZodTypeAny, ...z.ZodTypeAny[]]);
+                        // Add refinement to ensure exact length
+                        return tuple.refine(
+                            (arr) => arr.length === tupleItems.length,
+                            { message: `Array must have exactly ${tupleItems.length} items` }
+                        );
+                    } else if (tupleItems.length === 0) {
+                        // Empty tuple - must be empty array
+                        return z.array(z.any()).length(0);
                     }
                 }
 

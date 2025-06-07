@@ -28,13 +28,22 @@ export class ItemsHandler implements PrimitiveHandler {
     apply(types: TypeSchemas, schema: JSONSchema.BaseSchema): void {
         const arraySchema = schema as JSONSchema.ArraySchema;
         
-        // For now, we'll skip complex array validation in primitive handlers
-        // These will be handled by refinement handlers
-        if (arraySchema.items !== undefined || (arraySchema as any).prefixItems) {
-            // Just ensure array type is set if not already false
-            if (types.array === undefined) {
-                types.array = z.array(z.any());
-            }
+        // Skip if array is already disallowed
+        if (types.array === false) return;
+        
+        // Handle tuple arrays (items as array)
+        if (Array.isArray(arraySchema.items)) {
+            // We need to create a base array schema that will be refined later
+            // For now just ensure we have an array type
+            types.array = types.array || z.array(z.any());
+        } 
+        // Handle regular items schema
+        else if (arraySchema.items !== undefined) {
+            types.array = types.array || z.array(z.any());
+        }
+        // Handle prefixItems
+        else if ((arraySchema as any).prefixItems) {
+            types.array = types.array || z.array(z.any());
         }
     }
 }

@@ -20,6 +20,7 @@ import { OneOfHandler } from "../handlers/refinement/oneOf";
 import { ArrayItemsHandler } from "../handlers/refinement/arrayItems";
 import { ObjectPropertiesHandler } from "../handlers/refinement/objectProperties";
 import { EmptyEnumHandler } from "../handlers/refinement/emptyEnum";
+import { EnumNullHandler } from "../handlers/refinement/enumNull";
 import { MetadataHandler } from "../handlers/refinement/metadata";
 
 // Initialize handlers
@@ -53,6 +54,7 @@ const primitiveHandlers: PrimitiveHandler[] = [
 const refinementHandlers: RefinementHandler[] = [
     // Handle empty enum early
     new EmptyEnumHandler(),
+    new EnumNullHandler(),
     
     // Logical combinations
     new AllOfHandler(),
