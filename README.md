@@ -15,7 +15,7 @@ npm install zod-from-json-schema
 ## Zod 3 vs 4
 
 - If you need Zod 4, use the latest version of this package.
-- If you need Zod 3, use the latest version that's less than 0.4.0 (at the of writing that's 0.0.5)
+- If you need Zod 3, use the latest version that's less than 0.4.0 (at the of writing that's 0.0.5).  It supports a smaller subsets of JSON Schema.
 
 ## Usage
 
@@ -26,9 +26,9 @@ This package supports both ESM and CommonJS formats.
 ```typescript
 import { convertJsonSchemaToZod } from 'zod-from-json-schema';
 
-// Define a JSON Schema
+// Define a JSON Schema with advanced features
 const jsonSchema = {
-  $schema: "http://json-schema.org/draft-07/schema#",
+  $schema: "https://json-schema.org/draft/2020-12/schema",
   type: "object",
   properties: {
     name: { type: "string", minLength: 2, maxLength: 50 },
@@ -38,11 +38,24 @@ const jsonSchema = {
       type: "array",
       items: { type: "string" },
       uniqueItems: true,
-      minItems: 1
-    }
+      minItems: 1,
+      maxItems: 10,
+      contains: { enum: ["user", "admin", "guest"] }
+    },
+    coordinates: {
+      type: "array",
+      prefixItems: [
+        { type: "number", minimum: -90, maximum: 90 },   // latitude
+        { type: "number", minimum: -180, maximum: 180 }  // longitude
+      ],
+      items: false  // No additional items allowed
+    },
+    score: { type: "number", multipleOf: 0.5, minimum: 0, maximum: 100 }
   },
   required: ["name", "email"],
-  additionalProperties: false
+  additionalProperties: false,
+  minProperties: 2,
+  maxProperties: 10
 };
 
 // Convert JSON Schema to Zod schema
@@ -54,7 +67,9 @@ try {
     name: "John Doe",
     email: "john@example.com",
     age: 30,
-    tags: ["user", "premium"]
+    tags: ["user", "premium", "admin"],  // Contains required "admin" role
+    coordinates: [37.7749, -122.4194],   // San Francisco lat/lng
+    score: 87.5  // Multiple of 0.5
   });
   console.log("Valid data:", validData);
 } catch (error) {
@@ -69,14 +84,21 @@ const { convertJsonSchemaToZod } = require('zod-from-json-schema');
 
 // Define a JSON Schema
 const jsonSchema = {
-  $schema: "http://json-schema.org/draft-07/schema#",
+  $schema: "https://json-schema.org/draft/2020-12/schema",
   type: "object",
   properties: {
     name: { type: "string", minLength: 2, maxLength: 50 },
-    age: { type: "integer", minimum: 0, maximum: 120 }
+    age: { type: "integer", minimum: 0, maximum: 120 },
+    hobbies: {
+      type: "array",
+      items: { type: "string" },
+      minItems: 1,
+      maxItems: 5
+    }
   },
   required: ["name"],
-  additionalProperties: false
+  additionalProperties: false,
+  minProperties: 1
 };
 
 // Convert JSON Schema to Zod schema
@@ -86,7 +108,8 @@ const zodSchema = convertJsonSchemaToZod(jsonSchema);
 try {
   const validData = zodSchema.parse({
     name: "John Doe",
-    age: 30
+    age: 30,
+    hobbies: ["reading", "coding", "gaming"]
   });
   console.log("Valid data:", validData);
 } catch (error) {
@@ -143,49 +166,103 @@ const customSchema = z.object({
 
 ## Supported JSON Schema Features
 
-This library supports the following JSON Schema features:
+This library provides comprehensive support for JSON Schema Draft 2020-12 features with **100% code coverage** and extensive test validation against the official JSON Schema Test Suite.
 
 ### Basic Types
-- `string`
-- `number`
-- `integer`
-- `boolean`
-- `null`
-- `object` (with properties and required fields)
-- `array`
+- `string` - Basic string validation
+- `number` - Numeric values (including integers)
+- `integer` - Integer-only numeric values
+- `boolean` - Boolean true/false values
+- `null` - Null values
+- `object` - Object validation with property definitions
+- `array` - Array validation with item constraints
 
 ### String Validations
-- `minLength`
-- `maxLength`
-- `pattern` (regular expressions)
+- `minLength` - Minimum string length (Unicode grapheme-aware)
+- `maxLength` - Maximum string length (Unicode grapheme-aware)
+- `pattern` - Regular expression pattern matching
+
+**Unicode Support**: String length validation correctly counts Unicode grapheme clusters (user-perceived characters) rather than UTF-16 code units, ensuring proper validation of emoji and international text.
 
 ### Number Validations
-- `minimum`
-- `maximum`
-- `exclusiveMinimum`
-- `exclusiveMaximum`
-- `multipleOf`
+- `minimum` - Minimum numeric value
+- `maximum` - Maximum numeric value
+- `exclusiveMinimum` - Exclusive minimum (greater than)
+- `exclusiveMaximum` - Exclusive maximum (less than)
+- `multipleOf` - Multiple validation with floating-point precision handling
 
 ### Array Validations
-- `items`
-- `prefixItems`
-- `minItems`
-- `maxItems`
-- `uniqueItems`
+- `items` - Item schema validation (supports schemas, boolean values, and arrays)
+- `prefixItems` - Tuple-style positional item validation (Draft 2020-12)
+- `minItems` - Minimum array length
+- `maxItems` - Maximum array length
+- `uniqueItems` - Ensures all array items are unique
+- `contains` - Validates that array contains items matching a schema
+- `minContains` - Minimum number of items matching the contains schema
+- `maxContains` - Maximum number of items matching the contains schema
+
+**Advanced Array Features**:
+- Boolean `items` schemas (`items: false` = empty arrays only, `items: true` = any items allowed)
+- Complex tuple validation with `prefixItems` and additional items control
+- Sophisticated contains validation with count constraints
 
 ### Object Validations
-- `required` (required properties)
-- `additionalProperties` (controls passthrough behavior)
+- `properties` - Property schema definitions
+- `required` - Required property validation (supports special JavaScript property names)
+- `additionalProperties` - Controls whether additional properties are allowed
+- `minProperties` - Minimum number of object properties
+- `maxProperties` - Maximum number of object properties
+
+**Special Property Support**: Correctly handles JavaScript reserved property names like `constructor`, `toString`, and `__proto__`.
 
 ### Schema Composition
-- `const` (literal values)
-- `enum` (enumerated values)
-- `anyOf` (union)
-- `allOf` (intersection)
-- `oneOf` (union)
+- `const` - Literal value constraints
+- `enum` - Enumerated value validation
+- `anyOf` - Union type validation (basic cases)
+- `allOf` - Intersection validation (basic cases)
+- `oneOf` - Exclusive union validation (exactly one schema must match)
+- `not` - Negation validation
 
-### Additional
-- `description` (carried over to Zod schemas)
+### Additional Features
+- `title` - Schema titles (carried over to Zod schemas)
+- `description` - Schema descriptions (carried over to Zod schemas)
+- Boolean schemas (`true` = allow anything, `false` = allow nothing)
+- Implicit type detection from constraints
+- Comprehensive error messages
+
+## Currently Unsupported Features
+
+The following JSON Schema features are **not yet implemented**:
+
+### References and Definitions
+- `$ref` - JSON Pointer references (basic Zod v4 support exists but complex cases fail)
+- `$defs` / `definitions` - Schema definitions for reuse
+- Remote references (`$id` resolution)
+- `$dynamicRef` / `$dynamicAnchor` - Dynamic references
+
+### Advanced Object Validation
+- `patternProperties` - Property validation based on regex patterns
+- `additionalProperties` - Fine-grained control over additional properties (basic support exists)
+- `dependentSchemas` - Schema dependencies based on property presence
+- `dependentRequired` - Required properties based on other property presence
+- `propertyNames` - Validation of property names themselves
+- `unevaluatedProperties` - Properties not covered by schema evaluation
+
+### Advanced Array Validation
+- `unevaluatedItems` - Items not covered by schema evaluation
+- Complex `prefixItems` scenarios with additional item control
+
+### Conditional Schemas
+- `if` / `then` / `else` - Conditional schema application
+
+### Meta-Schema Features
+- Custom vocabularies and meta-schema validation
+- Annotation collection and processing
+
+## Standards Compliance
+
+- **JSON Schema Draft 2020-12** - Partial support for core features of the latest JSON Schema standard
+- **Official Test Suite** - Passes the majority of tests from the official JSON Schema Test Suite ([246 tests currently skipped](./failing-tests-skip-list.json) for unsupported features)
 
 ## License
 
