@@ -12,24 +12,24 @@ export class EnumNullHandler implements RefinementHandler {
         if (!schema.enum || !schema.enum.includes(null)) {
             return zodSchema;
         }
-        
+
         // If this is a union that includes z.null(), we need to replace it with z.literal(null)
         if (zodSchema instanceof z.ZodUnion) {
-            const options = (zodSchema as any)._def.options as z.ZodTypeAny[];
-            const newOptions = options.map(opt => {
+            const options = (zodSchema as any).def.options as z.ZodTypeAny[];
+            const newOptions = options.map((opt) => {
                 if (opt instanceof z.ZodNull) {
                     return z.literal(null);
                 }
                 return opt;
             });
-            
+
             if (newOptions.length === 2) {
                 return z.union([newOptions[0], newOptions[1]]);
             } else {
                 return z.union([newOptions[0], newOptions[1], ...newOptions.slice(2)]);
             }
         }
-        
+
         return zodSchema;
     }
 }
