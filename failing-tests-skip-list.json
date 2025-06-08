@@ -105,6 +105,7 @@
     "maxItems|maxItems validation|too long is invalid",
     "maxLength|maxLength validation with a decimal|too long is invalid",
     "maxLength|maxLength validation|too long is invalid",
+    "maxLength|maxLength validation|two graphemes is long enough",
     "maxProperties|maxProperties = 0 means the object is empty|one property is invalid",
     "maxProperties|maxProperties validation with a decimal|too long is invalid",
     "maxProperties|maxProperties validation|too long is invalid",
