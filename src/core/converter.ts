@@ -6,7 +6,7 @@ import { PrimitiveHandler, RefinementHandler, TypeSchemas } from "./types";
 import { TypeHandler } from "../handlers/primitive/type";
 import { ConstHandler } from "../handlers/primitive/const";
 import { EnumHandler } from "../handlers/primitive/enum";
-import { MinLengthHandler, MaxLengthHandler, PatternHandler } from "../handlers/primitive/string";
+import { ImplicitStringHandler, MinLengthHandler, MaxLengthHandler, PatternHandler } from "../handlers/primitive/string";
 import { MinimumHandler, MaximumHandler, ExclusiveMinimumHandler, ExclusiveMaximumHandler, MultipleOfHandler } from "../handlers/primitive/number";
 import { MinItemsHandler, MaxItemsHandler, ItemsHandler } from "../handlers/primitive/array";
 import { TupleHandler } from "../handlers/primitive/tuple";
@@ -25,7 +25,6 @@ import { EnumNullHandler } from "../handlers/refinement/enumNull";
 import { EnumComplexHandler } from "../handlers/refinement/enumComplex";
 import { ConstComplexHandler } from "../handlers/refinement/constComplex";
 import { MetadataHandler } from "../handlers/refinement/metadata";
-import { StringConstraintsHandler } from "../handlers/refinement/stringConstraints";
 import { ProtoRequiredHandler } from "../handlers/refinement/protoRequired";
 
 // Initialize handlers
@@ -34,6 +33,9 @@ const primitiveHandlers: PrimitiveHandler[] = [
     new ConstHandler(),
     new EnumHandler(),
     new TypeHandler(),
+    
+    // Implicit type detection - must run before other string handlers
+    new ImplicitStringHandler(),
     
     // String constraints
     new MinLengthHandler(),
@@ -73,7 +75,6 @@ const refinementHandlers: RefinementHandler[] = [
     // Type-specific refinements
     new PrefixItemsHandler(),
     new ObjectPropertiesHandler(),
-    new StringConstraintsHandler(),
     
     // Other refinements
     new NotHandler(),
