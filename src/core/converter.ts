@@ -22,6 +22,8 @@ import { ObjectPropertiesHandler } from "../handlers/refinement/objectProperties
 import { EmptyEnumHandler } from "../handlers/refinement/emptyEnum";
 import { EnumNullHandler } from "../handlers/refinement/enumNull";
 import { MetadataHandler } from "../handlers/refinement/metadata";
+import { StringConstraintsHandler } from "../handlers/refinement/stringConstraints";
+import { ProtoRequiredHandler } from "../handlers/refinement/protoRequired";
 
 // Initialize handlers
 const primitiveHandlers: PrimitiveHandler[] = [
@@ -52,7 +54,8 @@ const primitiveHandlers: PrimitiveHandler[] = [
 ];
 
 const refinementHandlers: RefinementHandler[] = [
-    // Handle empty enum early
+    // Handle special cases first
+    new ProtoRequiredHandler(),
     new EmptyEnumHandler(),
     new EnumNullHandler(),
     
@@ -64,6 +67,7 @@ const refinementHandlers: RefinementHandler[] = [
     // Type-specific refinements
     new ArrayItemsHandler(),
     new ObjectPropertiesHandler(),
+    new StringConstraintsHandler(),
     
     // Other refinements
     new NotHandler(),
