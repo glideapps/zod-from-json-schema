@@ -20,8 +20,6 @@ import { AnyOfHandler } from "../handlers/refinement/anyOf";
 import { OneOfHandler } from "../handlers/refinement/oneOf";
 import { PrefixItemsHandler } from "../handlers/refinement/arrayItems";
 import { ObjectPropertiesHandler } from "../handlers/refinement/objectProperties";
-import { EmptyEnumHandler } from "../handlers/refinement/emptyEnum";
-import { EnumNullHandler } from "../handlers/refinement/enumNull";
 import { EnumComplexHandler } from "../handlers/refinement/enumComplex";
 import { ConstComplexHandler } from "../handlers/refinement/constComplex";
 import { MetadataHandler } from "../handlers/refinement/metadata";
@@ -62,8 +60,6 @@ const primitiveHandlers: PrimitiveHandler[] = [
 const refinementHandlers: RefinementHandler[] = [
     // Handle special cases first
     new ProtoRequiredHandler(),
-    new EmptyEnumHandler(),
-    new EnumNullHandler(),
     new EnumComplexHandler(),
     new ConstComplexHandler(),
     

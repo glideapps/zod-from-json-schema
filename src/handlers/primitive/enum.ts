@@ -4,7 +4,22 @@ import { PrimitiveHandler, TypeSchemas } from "../../core/types";
 
 export class EnumHandler implements PrimitiveHandler {
     apply(types: TypeSchemas, schema: JSONSchema.BaseSchema): void {
-        if (!schema.enum || schema.enum.length === 0) return;
+        if (!schema.enum) return;
+        
+        // Handle empty enum special case
+        if (schema.enum.length === 0) {
+            if (!schema.type) {
+                // Empty enum without type rejects everything
+                types.string = false;
+                types.number = false;
+                types.boolean = false;
+                types.null = false;
+                types.array = false;
+                types.object = false;
+            }
+            // Empty enum with type allows that type (enum:[] is interpreted as no enum constraint)
+            return;
+        }
 
         // Group enum values by type
         const valuesByType = {
@@ -20,7 +35,7 @@ export class EnumHandler implements PrimitiveHandler {
         types.string = this.createTypeSchema(valuesByType.string, "string");
         types.number = this.createTypeSchema(valuesByType.number, "number");
         types.boolean = this.createTypeSchema(valuesByType.boolean, "boolean");
-        types.null = valuesByType.null.length > 0 ? z.null() : false;
+        types.null = valuesByType.null.length > 0 ? z.literal(null) : false;
         
         // Arrays and objects are handled by refinement handlers
         types.array = valuesByType.array.length > 0 ? undefined : false;
