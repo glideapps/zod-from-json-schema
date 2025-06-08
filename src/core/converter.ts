@@ -23,6 +23,8 @@ import { TupleItemsHandler } from "../handlers/refinement/tupleItems";
 import { ObjectPropertiesHandler } from "../handlers/refinement/objectProperties";
 import { EmptyEnumHandler } from "../handlers/refinement/emptyEnum";
 import { EnumNullHandler } from "../handlers/refinement/enumNull";
+import { EnumComplexHandler } from "../handlers/refinement/enumComplex";
+import { ConstComplexHandler } from "../handlers/refinement/constComplex";
 import { MetadataHandler } from "../handlers/refinement/metadata";
 import { StringConstraintsHandler } from "../handlers/refinement/stringConstraints";
 import { ProtoRequiredHandler } from "../handlers/refinement/protoRequired";
@@ -61,6 +63,8 @@ const refinementHandlers: RefinementHandler[] = [
     new ProtoRequiredHandler(),
     new EmptyEnumHandler(),
     new EnumNullHandler(),
+    new EnumComplexHandler(),
+    new ConstComplexHandler(),
     
     // Logical combinations
     new AllOfHandler(),

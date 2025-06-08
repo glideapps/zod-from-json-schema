@@ -10,34 +10,27 @@ export class ProtoRequiredHandler implements RefinementHandler {
     apply(zodSchema: z.ZodTypeAny, schema: JSONSchema.BaseSchema): z.ZodTypeAny {
         const objectSchema = schema as JSONSchema.ObjectSchema;
         
-        // Only handle if __proto__ is in required
-        if (!objectSchema.required?.includes("__proto__")) {
+        // Only handle schemas with __proto__ in required and no explicit type
+        if (!objectSchema.required?.includes("__proto__") || schema.type !== undefined) {
             return zodSchema;
         }
         
-        // Only apply to schemas without explicit type (will be unions)
-        if (schema.type !== undefined) {
-            return zodSchema;
-        }
-        
-        // Replace the schema with z.any() plus validation
+        // Use z.any() to preserve __proto__ property
         return z.any().refine(
-            (value: any) => {
-                // Non-objects should pass (unless type is explicitly object)
-                if (typeof value !== "object" || value === null || Array.isArray(value)) {
-                    return true;
-                }
-                
-                // Check all required properties including __proto__
-                for (const requiredProp of objectSchema.required || []) {
-                    if (!Object.prototype.hasOwnProperty.call(value, requiredProp)) {
-                        return false;
-                    }
-                }
-                
-                return true;
-            },
+            (value: any) => this.validateRequired(value, objectSchema.required!),
             { message: "Missing required properties" }
+        );
+    }
+
+    private validateRequired(value: any, required: string[]): boolean {
+        // Non-objects pass through
+        if (typeof value !== "object" || value === null || Array.isArray(value)) {
+            return true;
+        }
+        
+        // Check all required properties exist
+        return required.every(prop => 
+            Object.prototype.hasOwnProperty.call(value, prop)
         );
     }
 }
