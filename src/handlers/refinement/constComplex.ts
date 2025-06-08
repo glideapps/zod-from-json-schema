@@ -1,7 +1,7 @@
 import { z } from "zod/v4";
 import type { JSONSchema } from "zod/v4/core";
 import { RefinementHandler } from "../../core/types";
-import deepEqual from "deep-equal";
+import { deepEqual } from "../../core/utils";
 
 export class ConstComplexHandler implements RefinementHandler {
     apply(zodSchema: z.ZodTypeAny, schema: JSONSchema.BaseSchema): z.ZodTypeAny {
@@ -16,7 +16,7 @@ export class ConstComplexHandler implements RefinementHandler {
 
         // Add refinement to check for exact match
         return zodSchema.refine(
-            (value: any) => deepEqual(value, constValue, { strict: true }),
+            (value: any) => deepEqual(value, constValue),
             { message: "Value must equal the const value" }
         );
     }

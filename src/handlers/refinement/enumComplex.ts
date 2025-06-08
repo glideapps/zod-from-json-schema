@@ -1,7 +1,7 @@
 import { z } from "zod/v4";
 import type { JSONSchema } from "zod/v4/core";
 import { RefinementHandler } from "../../core/types";
-import deepEqual from "deep-equal";
+import { deepEqual } from "../../core/utils";
 
 export class EnumComplexHandler implements RefinementHandler {
     apply(zodSchema: z.ZodTypeAny, schema: JSONSchema.BaseSchema): z.ZodTypeAny {
@@ -22,7 +22,7 @@ export class EnumComplexHandler implements RefinementHandler {
                 
                 // Check if the value matches any of the complex enum values
                 return complexValues.some(enumValue => 
-                    deepEqual(value, enumValue, { strict: true })
+                    deepEqual(value, enumValue)
                 );
             },
             { message: "Value must match one of the enum values" }
