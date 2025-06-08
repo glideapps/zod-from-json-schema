@@ -19,7 +19,6 @@ import { AllOfHandler } from "../handlers/refinement/allOf";
 import { AnyOfHandler } from "../handlers/refinement/anyOf";
 import { OneOfHandler } from "../handlers/refinement/oneOf";
 import { ArrayItemsHandler } from "../handlers/refinement/arrayItems";
-import { TupleItemsHandler } from "../handlers/refinement/tupleItems";
 import { ObjectPropertiesHandler } from "../handlers/refinement/objectProperties";
 import { EmptyEnumHandler } from "../handlers/refinement/emptyEnum";
 import { EnumNullHandler } from "../handlers/refinement/enumNull";
@@ -72,7 +71,6 @@ const refinementHandlers: RefinementHandler[] = [
     new OneOfHandler(),
     
     // Type-specific refinements
-    new TupleItemsHandler(), // Must run before ArrayItemsHandler
     new ArrayItemsHandler(),
     new ObjectPropertiesHandler(),
     new StringConstraintsHandler(),

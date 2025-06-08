@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { convertJsonSchemaToZod } from "./index";
 import { ArrayItemsHandler } from "./handlers/refinement/arrayItems";
-import { TupleItemsHandler } from "./handlers/refinement/tupleItems";
+// TupleItemsHandler removed - tuple handling now done in primitive phase
 import { z } from "zod/v4";
 
 describe("Union Tuple Replacement Coverage", () => {
@@ -54,23 +54,16 @@ describe("Union Tuple Replacement Coverage", () => {
             expect(() => zodSchema.parse("string")).toThrow(); // not in union
         });
 
-        it("should handle direct application to non-tuple schemas", () => {
-            const handler = new TupleItemsHandler();
+        it("should handle tuple conversion through converter", () => {
+            // Test tuple handling through the converter now that it's in primitive phase
+            const schema = {
+                type: "array",
+                items: [{ type: "string" }, { type: "number" }]
+            };
             
-            // Test with various non-tuple schemas
-            const schemas = [
-                z.string(),
-                z.number(),
-                z.boolean(),
-                z.null(),
-                z.object({ a: z.string() }),
-                z.literal("test")
-            ];
-            
-            schemas.forEach(schema => {
-                const result = handler.apply(schema, { type: "string" });
-                expect(result).toBe(schema); // Should return unchanged
-            });
+            const zodSchema = convertJsonSchemaToZod(schema);
+            expect(zodSchema.safeParse(["hello", 42]).success).toBe(true);
+            expect(zodSchema.safeParse(["wrong", "types"]).success).toBe(false);
         });
 
         it("should handle tuple in complex nested union", () => {

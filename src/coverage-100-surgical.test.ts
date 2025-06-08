@@ -5,7 +5,7 @@ import { EnumHandler } from "./handlers/primitive/enum";
 import { TupleHandler } from "./handlers/primitive/tuple";
 import { EnumComplexHandler } from "./handlers/refinement/enumComplex";
 import { ArrayItemsHandler } from "./handlers/refinement/arrayItems";
-import { TupleItemsHandler } from "./handlers/refinement/tupleItems";
+// TupleItemsHandler removed - tuple handling now done in primitive phase
 import { z } from "zod/v4";
 import type { TypeSchemas } from "./core/types";
 
@@ -109,41 +109,36 @@ describe("100% Coverage - Surgical Tests", () => {
         });
     });
 
-    describe("TupleItems.ts lines 46-50,55 - union replacement", () => {
-        it("should replace tuple in union - exact targeting", () => {
-            const handler = new TupleItemsHandler();
-            
-            // Create a union with a tuple placeholder
-            const tupleSchema = z.tuple([z.string(), z.number()]);
-            const union = z.union([tupleSchema, z.boolean()]);
-            
-            // Apply handler - should hit lines 46-50
-            const result = handler.apply(union, {
+    describe("Tuple handling now in primitive phase", () => {
+        it("should handle tuples correctly through converter", () => {
+            // Tuples are now handled directly in the primitive phase
+            const schema = {
                 type: "array",
                 items: [{ type: "string" }, { type: "number" }]
-            });
+            };
             
-            // Test the replaced tuple
-            expect(result.safeParse(["hello", 42]).success).toBe(true);
-            expect(result.safeParse(true).success).toBe(true);
-            expect(result.safeParse(["wrong", "types"]).success).toBe(false);
+            const zodSchema = convertJsonSchemaToZod(schema);
+            
+            // Test the tuple works correctly
+            expect(zodSchema.safeParse(["hello", 42]).success).toBe(true);
+            expect(zodSchema.safeParse(["wrong", "types"]).success).toBe(false);
         });
 
-        it("should return unchanged for non-applicable schemas - line 55", () => {
-            const handler = new TupleItemsHandler();
+        it("should handle tuple in union", () => {
+            const schema = {
+                anyOf: [
+                    {
+                        type: "array",
+                        items: [{ type: "string" }, { type: "number" }]
+                    },
+                    { type: "boolean" }
+                ]
+            };
             
-            // Test with non-tuple, non-union schemas
-            const schemas = [
-                z.string(),
-                z.number(),
-                z.boolean(),
-                z.object({ a: z.string() })
-            ];
-            
-            schemas.forEach(schema => {
-                const result = handler.apply(schema, { type: "string" });
-                expect(result).toBe(schema); // Should return exactly the same instance
-            });
+            const zodSchema = convertJsonSchemaToZod(schema);
+            expect(zodSchema.safeParse(["hello", 42]).success).toBe(true);
+            expect(zodSchema.safeParse(true).success).toBe(true);
+            expect(zodSchema.safeParse(["wrong", "types"]).success).toBe(false);
         });
     });
 
