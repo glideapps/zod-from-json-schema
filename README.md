@@ -262,12 +262,7 @@ The following JSON Schema features are **not yet implemented**:
 ## Standards Compliance
 
 - **JSON Schema Draft 2020-12** - Partial support for core features of the latest JSON Schema standard
-- **Official Test Suite** - Passes 1160+ tests from the official JSON Schema Test Suite (258 tests currently skipped for unsupported features)
-- **100% Code Coverage** - Complete test coverage for implemented features ensures reliability
-- **Edge Case Handling** - Robust handling of supported validation scenarios including:
-  - Unicode text validation with proper grapheme cluster counting
-  - Basic object/array validation (complex `$ref` scenarios not supported)
-  - JavaScript-specific property name handling (`constructor`, `toString`, etc.)
+- **Official Test Suite** - Passes the majority of tests from the official JSON Schema Test Suite ([253 tests currently skipped](./failing-tests-skip-list.json) for unsupported features)
 
 ## License
 
