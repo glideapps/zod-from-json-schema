@@ -262,7 +262,7 @@ The following JSON Schema features are **not yet implemented**:
 ## Standards Compliance
 
 - **JSON Schema Draft 2020-12** - Partial support for core features of the latest JSON Schema standard
-- **Official Test Suite** - Passes the majority of tests from the official JSON Schema Test Suite ([253 tests currently skipped](./failing-tests-skip-list.json) for unsupported features)
+- **Official Test Suite** - Passes the majority of tests from the official JSON Schema Test Suite ([246 tests currently skipped](./failing-tests-skip-list.json) for unsupported features)
 
 ## License
 
