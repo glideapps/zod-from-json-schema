@@ -31,7 +31,10 @@ export class TypeHandler implements PrimitiveHandler {
 
         // For integer type, ensure number schema with int constraint
         if (typeSet.has("integer") && types.number !== false) {
-            types.number = (types.number || z.number()).int();
+            const currentNumber = types.number || z.number();
+            if (currentNumber instanceof z.ZodNumber) {
+                types.number = currentNumber.int();
+            }
         }
     }
 }

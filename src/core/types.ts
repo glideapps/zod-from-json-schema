@@ -2,11 +2,12 @@ import { z } from "zod/v4";
 import type { JSONSchema } from "zod/v4/core";
 
 export interface TypeSchemas {
-    string?: z.ZodString | false;
-    number?: z.ZodNumber | false;
-    boolean?: z.ZodBoolean | false;
+    string?: z.ZodTypeAny | false;
+    number?: z.ZodTypeAny | false;
+    boolean?: z.ZodTypeAny | false;
     null?: z.ZodNull | false;
     array?: z.ZodArray<any> | false;
+    tuple?: z.ZodTuple<any> | false;
     object?: z.ZodObject<any> | false;
 }
 

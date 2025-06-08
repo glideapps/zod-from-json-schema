@@ -8,7 +8,10 @@ export class MinimumHandler implements PrimitiveHandler {
         if (numberSchema.minimum === undefined) return;
 
         if (types.number !== false) {
-            types.number = (types.number || z.number()).min(numberSchema.minimum);
+            const currentNumber = types.number || z.number();
+            if (currentNumber instanceof z.ZodNumber) {
+                types.number = currentNumber.min(numberSchema.minimum);
+            }
         }
     }
 }
@@ -19,7 +22,10 @@ export class MaximumHandler implements PrimitiveHandler {
         if (numberSchema.maximum === undefined) return;
 
         if (types.number !== false) {
-            types.number = (types.number || z.number()).max(numberSchema.maximum);
+            const currentNumber = types.number || z.number();
+            if (currentNumber instanceof z.ZodNumber) {
+                types.number = currentNumber.max(numberSchema.maximum);
+            }
         }
     }
 }
@@ -30,7 +36,10 @@ export class ExclusiveMinimumHandler implements PrimitiveHandler {
         if (numberSchema.exclusiveMinimum === undefined) return;
 
         if (types.number !== false) {
-            types.number = (types.number || z.number()).gt(numberSchema.exclusiveMinimum);
+            const currentNumber = types.number || z.number();
+            if (currentNumber instanceof z.ZodNumber) {
+                types.number = currentNumber.gt(numberSchema.exclusiveMinimum);
+            }
         }
     }
 }
@@ -41,7 +50,10 @@ export class ExclusiveMaximumHandler implements PrimitiveHandler {
         if (numberSchema.exclusiveMaximum === undefined) return;
 
         if (types.number !== false) {
-            types.number = (types.number || z.number()).lt(numberSchema.exclusiveMaximum);
+            const currentNumber = types.number || z.number();
+            if (currentNumber instanceof z.ZodNumber) {
+                types.number = currentNumber.lt(numberSchema.exclusiveMaximum);
+            }
         }
     }
 }
@@ -52,7 +64,10 @@ export class MultipleOfHandler implements PrimitiveHandler {
         if (numberSchema.multipleOf === undefined) return;
 
         if (types.number !== false) {
-            types.number = (types.number || z.number()).multipleOf(numberSchema.multipleOf);
+            const currentNumber = types.number || z.number();
+            if (currentNumber instanceof z.ZodNumber) {
+                types.number = currentNumber.multipleOf(numberSchema.multipleOf);
+            }
         }
     }
 }

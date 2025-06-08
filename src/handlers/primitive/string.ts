@@ -8,7 +8,10 @@ export class MinLengthHandler implements PrimitiveHandler {
         if (stringSchema.minLength === undefined) return;
 
         if (types.string !== false) {
-            types.string = (types.string || z.string()).min(stringSchema.minLength);
+            const currentString = types.string || z.string();
+            if (currentString instanceof z.ZodString) {
+                types.string = currentString.min(stringSchema.minLength);
+            }
         }
     }
 }
@@ -19,7 +22,10 @@ export class MaxLengthHandler implements PrimitiveHandler {
         if (stringSchema.maxLength === undefined) return;
 
         if (types.string !== false) {
-            types.string = (types.string || z.string()).max(stringSchema.maxLength);
+            const currentString = types.string || z.string();
+            if (currentString instanceof z.ZodString) {
+                types.string = currentString.max(stringSchema.maxLength);
+            }
         }
     }
 }
@@ -30,8 +36,11 @@ export class PatternHandler implements PrimitiveHandler {
         if (!stringSchema.pattern) return;
 
         if (types.string !== false) {
-            const regex = new RegExp(stringSchema.pattern);
-            types.string = (types.string || z.string()).regex(regex);
+            const currentString = types.string || z.string();
+            if (currentString instanceof z.ZodString) {
+                const regex = new RegExp(stringSchema.pattern);
+                types.string = currentString.regex(regex);
+            }
         }
     }
 }

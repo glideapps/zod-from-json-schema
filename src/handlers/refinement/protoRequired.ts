@@ -29,7 +29,7 @@ export class ProtoRequiredHandler implements RefinementHandler {
                 }
                 
                 // Check all required properties including __proto__
-                for (const requiredProp of objectSchema.required) {
+                for (const requiredProp of objectSchema.required || []) {
                     if (!Object.prototype.hasOwnProperty.call(value, requiredProp)) {
                         return false;
                     }

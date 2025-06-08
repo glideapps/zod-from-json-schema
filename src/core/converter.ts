@@ -9,6 +9,7 @@ import { EnumHandler } from "../handlers/primitive/enum";
 import { MinLengthHandler, MaxLengthHandler, PatternHandler } from "../handlers/primitive/string";
 import { MinimumHandler, MaximumHandler, ExclusiveMinimumHandler, ExclusiveMaximumHandler, MultipleOfHandler } from "../handlers/primitive/number";
 import { MinItemsHandler, MaxItemsHandler, ItemsHandler } from "../handlers/primitive/array";
+import { TupleHandler } from "../handlers/primitive/tuple";
 import { PropertiesHandler } from "../handlers/primitive/object";
 
 // Import refinement handlers
@@ -18,6 +19,7 @@ import { AllOfHandler } from "../handlers/refinement/allOf";
 import { AnyOfHandler } from "../handlers/refinement/anyOf";
 import { OneOfHandler } from "../handlers/refinement/oneOf";
 import { ArrayItemsHandler } from "../handlers/refinement/arrayItems";
+import { TupleItemsHandler } from "../handlers/refinement/tupleItems";
 import { ObjectPropertiesHandler } from "../handlers/refinement/objectProperties";
 import { EmptyEnumHandler } from "../handlers/refinement/emptyEnum";
 import { EnumNullHandler } from "../handlers/refinement/enumNull";
@@ -44,7 +46,8 @@ const primitiveHandlers: PrimitiveHandler[] = [
     new ExclusiveMaximumHandler(),
     new MultipleOfHandler(),
     
-    // Array constraints
+    // Array constraints - TupleHandler must run before ItemsHandler
+    new TupleHandler(),
     new MinItemsHandler(),
     new MaxItemsHandler(),
     new ItemsHandler(),
@@ -65,6 +68,7 @@ const refinementHandlers: RefinementHandler[] = [
     new OneOfHandler(),
     
     // Type-specific refinements
+    new TupleItemsHandler(), // Must run before ArrayItemsHandler
     new ArrayItemsHandler(),
     new ObjectPropertiesHandler(),
     new StringConstraintsHandler(),
@@ -110,6 +114,9 @@ export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema | boolean):
     }
     if (types.array !== false) {
         allowedSchemas.push(types.array || z.array(z.any()));
+    }
+    if (types.tuple !== false && types.tuple !== undefined) {
+        allowedSchemas.push(types.tuple);
     }
     if (types.object !== false) {
         allowedSchemas.push(types.object || z.object({}).passthrough());
