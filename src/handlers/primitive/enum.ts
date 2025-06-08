@@ -5,7 +5,7 @@ import { PrimitiveHandler, TypeSchemas } from "../../core/types";
 export class EnumHandler implements PrimitiveHandler {
     apply(types: TypeSchemas, schema: JSONSchema.BaseSchema): void {
         if (!schema.enum) return;
-        
+
         // Handle empty enum special case
         if (schema.enum.length === 0) {
             if (!schema.type) {
@@ -23,20 +23,20 @@ export class EnumHandler implements PrimitiveHandler {
 
         // Group enum values by type
         const valuesByType = {
-            string: schema.enum.filter(v => typeof v === "string"),
-            number: schema.enum.filter(v => typeof v === "number"),
-            boolean: schema.enum.filter(v => typeof v === "boolean"),
-            null: schema.enum.filter(v => v === null),
-            array: schema.enum.filter(v => Array.isArray(v)),
-            object: schema.enum.filter(v => typeof v === "object" && v !== null && !Array.isArray(v))
+            string: schema.enum.filter((v) => typeof v === "string"),
+            number: schema.enum.filter((v) => typeof v === "number"),
+            boolean: schema.enum.filter((v) => typeof v === "boolean"),
+            null: schema.enum.filter((v) => v === null),
+            array: schema.enum.filter((v) => Array.isArray(v)),
+            object: schema.enum.filter((v) => typeof v === "object" && v !== null && !Array.isArray(v)),
         };
 
         // Set each type based on whether it has values in the enum
         types.string = this.createTypeSchema(valuesByType.string, "string");
         types.number = this.createTypeSchema(valuesByType.number, "number");
         types.boolean = this.createTypeSchema(valuesByType.boolean, "boolean");
-        types.null = valuesByType.null.length > 0 ? z.literal(null) : false;
-        
+        types.null = valuesByType.null.length > 0 ? z.null() : false;
+
         // Arrays and objects are handled by refinement handlers
         types.array = valuesByType.array.length > 0 ? undefined : false;
         types.object = valuesByType.object.length > 0 ? undefined : false;
@@ -44,7 +44,7 @@ export class EnumHandler implements PrimitiveHandler {
 
     private createTypeSchema(values: any[], type: "string" | "number" | "boolean"): z.ZodTypeAny | false {
         if (values.length === 0) return false;
-        
+
         if (values.length === 1) {
             return z.literal(values[0]);
         }
@@ -55,7 +55,7 @@ export class EnumHandler implements PrimitiveHandler {
 
         if (type === "number") {
             const [first, second, ...rest] = values;
-            return z.union([z.literal(first), z.literal(second), ...rest.map(v => z.literal(v))]);
+            return z.union([z.literal(first), z.literal(second), ...rest.map((v) => z.literal(v))]);
         }
 
         if (type === "boolean") {

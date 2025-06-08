@@ -7,7 +7,7 @@ export interface TypeSchemas {
     boolean?: z.ZodTypeAny | false;
     null?: z.ZodNull | false;
     array?: z.ZodArray<any> | false;
-    tuple?: z.ZodTuple<any> | false;
+    tuple?: z.ZodTuple | false;
     object?: z.ZodObject<any> | false;
 }
 
