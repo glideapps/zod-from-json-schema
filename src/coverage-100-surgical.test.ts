@@ -4,7 +4,7 @@ import { ItemsHandler } from "./handlers/primitive/array";
 import { EnumHandler } from "./handlers/primitive/enum";
 import { TupleHandler } from "./handlers/primitive/tuple";
 import { EnumComplexHandler } from "./handlers/refinement/enumComplex";
-import { ArrayItemsHandler } from "./handlers/refinement/arrayItems";
+import { PrefixItemsHandler } from "./handlers/refinement/arrayItems";
 // TupleItemsHandler removed - tuple handling now done in primitive phase
 import { z } from "zod/v4";
 import type { TypeSchemas } from "./core/types";
@@ -89,23 +89,22 @@ describe("100% Coverage - Surgical Tests", () => {
         });
     });
 
-    describe("ArrayItems.ts lines 71-73 - redundant array creation", () => {
-        it("should create new array when zodSchema is already ZodArray", () => {
-            const handler = new ArrayItemsHandler();
-            
-            // Create an existing array schema
-            const existingArray = z.array(z.string());
-            
-            // Apply with different items schema - should hit lines 71-73
-            const result = handler.apply(existingArray, {
+    describe("Array items now handled in primitive phase", () => {
+        it("should handle array items through converter", () => {
+            // Array items are now handled directly in primitive phase
+            const schema = {
                 type: "array",
+                minItems: 1,
                 items: { type: "number", minimum: 0 }
-            });
+            };
             
-            // Should return a new array with number items
-            expect(result.safeParse([1, 2, 3]).success).toBe(true);
-            expect(result.safeParse([-1]).success).toBe(false);
-            expect(result.safeParse(["string"]).success).toBe(false);
+            const zodSchema = convertJsonSchemaToZod(schema);
+            
+            // Should work with typed array items
+            expect(zodSchema.safeParse([1, 2, 3]).success).toBe(true);
+            expect(zodSchema.safeParse([-1]).success).toBe(false);
+            expect(zodSchema.safeParse(["string"]).success).toBe(false);
+            expect(zodSchema.safeParse([]).success).toBe(false); // minItems
         });
     });
 

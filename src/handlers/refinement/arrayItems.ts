@@ -4,36 +4,11 @@ import { RefinementHandler } from "../../core/types";
 import { convertJsonSchemaToZod } from "../../core/converter";
 import { isValidWithSchema } from "../../core/utils";
 
-export class ArrayItemsHandler implements RefinementHandler {
+export class PrefixItemsHandler implements RefinementHandler {
     apply(zodSchema: z.ZodTypeAny, schema: JSONSchema.BaseSchema): z.ZodTypeAny {
         const arraySchema = schema as JSONSchema.ArraySchema;
 
-        // Check if the schema is a single array type (not a union)
-        if (zodSchema instanceof z.ZodArray) {
-            // Handle simple items schema ONLY if there's no prefixItems or tuple items
-            if (
-                arraySchema.items &&
-                !Array.isArray(arraySchema.items) &&
-                typeof arraySchema.items !== "boolean" &&
-                !(arraySchema as any).prefixItems
-            ) {
-                const itemSchema = convertJsonSchemaToZod(arraySchema.items);
-                let newArray = z.array(itemSchema);
-
-                // Apply min/max constraints from the JSON schema
-                if (arraySchema.minItems !== undefined) {
-                    newArray = newArray.min(arraySchema.minItems);
-                }
-                if (arraySchema.maxItems !== undefined) {
-                    newArray = newArray.max(arraySchema.maxItems);
-                }
-
-                return newArray;
-            }
-        }
-
-        // For complex array schemas or unions, use refinement
-        // Check for prefixItems (Draft 2020-12 tuples)
+        // Only handle prefixItems (Draft 2020-12 tuples with additional items)
         if ((arraySchema as any).prefixItems && Array.isArray((arraySchema as any).prefixItems)) {
             const prefixItems = (arraySchema as any).prefixItems;
             const prefixSchemas = prefixItems.map((itemSchema: any) => convertJsonSchemaToZod(itemSchema));

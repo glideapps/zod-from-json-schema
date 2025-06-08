@@ -354,5 +354,6 @@
     "unevaluatedProperties|unevaluatedProperties with nested properties|with additional properties",
     "unevaluatedProperties|unevaluatedProperties with not|with unevaluated properties",
     "unevaluatedProperties|unevaluatedProperties with oneOf|with unevaluated properties",
+    "unevaluatedItems|unevaluatedItems with nested items|with only (valid) additional items",
     "vocabulary|schema that uses custom metaschema with with no validation vocabulary|applicator vocabulary still works"
 ]

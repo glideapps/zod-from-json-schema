@@ -1,6 +1,7 @@
 import { z } from "zod/v4";
 import type { JSONSchema } from "zod/v4/core";
 import { PrimitiveHandler, TypeSchemas } from "../../core/types";
+import { convertJsonSchemaToZod } from "../../core/converter";
 
 export class MinItemsHandler implements PrimitiveHandler {
     apply(types: TypeSchemas, schema: JSONSchema.BaseSchema): void {
@@ -31,18 +32,42 @@ export class ItemsHandler implements PrimitiveHandler {
         // Skip if array is already disallowed
         if (types.array === false) return;
         
-        // Handle tuple arrays (items as array)
+        // Handle tuple arrays (items as array) - now handled by TupleHandler
         if (Array.isArray(arraySchema.items)) {
-            // We need to create a base array schema that will be refined later
-            // For now just ensure we have an array type
+            // TupleHandler will handle this, just create a base array
             types.array = types.array || z.array(z.any());
         } 
-        // Handle regular items schema
-        else if (arraySchema.items !== undefined) {
-            types.array = types.array || z.array(z.any());
+        // Handle simple items schema (non-boolean, non-array, no prefixItems)
+        else if (arraySchema.items && 
+                 typeof arraySchema.items !== "boolean" && 
+                 !(arraySchema as any).prefixItems) {
+            
+            // Convert the item schema and create the typed array
+            const itemSchema = convertJsonSchemaToZod(arraySchema.items);
+            let newArray = z.array(itemSchema);
+            
+            // Apply existing min/max constraints if we already had an array
+            if (types.array && types.array instanceof z.ZodArray) {
+                const existingDef = (types.array as any)._def;
+                // Check for existing constraints in the checks array
+                if (existingDef.checks) {
+                    existingDef.checks.forEach((check: any) => {
+                        if (check._zod && check._zod.def) {
+                            const def = check._zod.def;
+                            if (def.check === 'min_length' && def.minimum !== undefined) {
+                                newArray = newArray.min(def.minimum);
+                            } else if (def.check === 'max_length' && def.maximum !== undefined) {
+                                newArray = newArray.max(def.maximum);
+                            }
+                        }
+                    });
+                }
+            }
+            
+            types.array = newArray;
         }
-        // Handle prefixItems
-        else if ((arraySchema as any).prefixItems) {
+        // Handle other cases (boolean items, prefixItems)
+        else if (arraySchema.items !== undefined || (arraySchema as any).prefixItems) {
             types.array = types.array || z.array(z.any());
         }
     }

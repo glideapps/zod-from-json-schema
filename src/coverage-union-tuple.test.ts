@@ -1,26 +1,21 @@
 import { describe, it, expect } from "vitest";
 import { convertJsonSchemaToZod } from "./index";
-import { ArrayItemsHandler } from "./handlers/refinement/arrayItems";
+import { PrefixItemsHandler } from "./handlers/refinement/arrayItems";
 // TupleItemsHandler removed - tuple handling now done in primitive phase
 import { z } from "zod/v4";
 
 describe("Union Tuple Replacement Coverage", () => {
-    describe("ArrayItems edge case", () => {
-        it("should handle array items when zodSchema is already ZodArray", () => {
-            const handler = new ArrayItemsHandler();
-            
-            // Create a ZodArray directly
-            const existingArray = z.array(z.string());
-            
-            // Apply handler with items schema
-            const result = handler.apply(existingArray, {
+    describe("Array items handled in primitive phase", () => {
+        it("should handle array items through converter", () => {
+            // Array items are now handled in primitive phase  
+            const schema = {
                 type: "array",
                 items: { type: "number", minimum: 0 }
-            });
+            };
             
-            // Should create a new array with the item schema
-            expect(result.parse([1, 2, 3])).toEqual([1, 2, 3]);
-            expect(() => result.parse([-1])).toThrow();
+            const zodSchema = convertJsonSchemaToZod(schema);
+            expect(zodSchema.parse([1, 2, 3])).toEqual([1, 2, 3]);
+            expect(() => zodSchema.parse([-1])).toThrow();
         });
     });
 
