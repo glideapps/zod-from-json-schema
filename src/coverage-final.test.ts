@@ -43,20 +43,12 @@ describe("Final Coverage - Uncovered Lines", () => {
             
             handler.apply(types, { maxLength: 10 });
             
-            // Should create a new string with maxLength constraint
-            expect(types.string).toBeInstanceOf(z.ZodString);
-            expect((types.string as any)._def.checks).toEqual(
-                expect.arrayContaining([
-                    expect.objectContaining({
-                        _zod: expect.objectContaining({
-                            def: expect.objectContaining({
-                                check: 'max_length',
-                                maximum: 10
-                            })
-                        })
-                    })
-                ])
-            );
+            // Should create a string with custom refinement for Unicode-aware maxLength
+            expect(types.string).toBeDefined();
+            // Test the validation behavior instead of internal structure
+            expect(types.string!.safeParse("hello").success).toBe(true);     // 5 chars, valid
+            expect(types.string!.safeParse("this is too long").success).toBe(false); // too long
+            expect(types.string!.safeParse("💩💩💩💩💩").success).toBe(true);  // 5 graphemes, valid
         });
     });
 

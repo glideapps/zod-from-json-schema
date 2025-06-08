@@ -66,7 +66,26 @@ export class MultipleOfHandler implements PrimitiveHandler {
         if (types.number !== false) {
             const currentNumber = types.number || z.number();
             if (currentNumber instanceof z.ZodNumber) {
-                types.number = currentNumber.multipleOf(numberSchema.multipleOf);
+                // Use custom validation for better floating-point precision handling
+                types.number = currentNumber.refine(
+                    (value: number) => {
+                        if (numberSchema.multipleOf === 0) return false;
+                        
+                        // Handle very small divisors with precision tolerance
+                        const quotient = value / numberSchema.multipleOf!;
+                        const rounded = Math.round(quotient);
+                        
+                        // Check if the quotient is close enough to an integer
+                        // Use a tolerance based on the smaller of the two numbers
+                        const tolerance = Math.min(
+                            Math.abs(value) * Number.EPSILON * 10,
+                            Math.abs(numberSchema.multipleOf!) * Number.EPSILON * 10
+                        );
+                        
+                        return Math.abs(quotient - rounded) <= tolerance / Math.abs(numberSchema.multipleOf!);
+                    },
+                    { message: `Must be a multiple of ${numberSchema.multipleOf}` }
+                );
             }
         }
     }

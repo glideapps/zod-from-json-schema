@@ -10,7 +10,7 @@ import { ImplicitStringHandler, MinLengthHandler, MaxLengthHandler, PatternHandl
 import { MinimumHandler, MaximumHandler, ExclusiveMinimumHandler, ExclusiveMaximumHandler, MultipleOfHandler } from "../handlers/primitive/number";
 import { ImplicitArrayHandler, MinItemsHandler, MaxItemsHandler, ItemsHandler } from "../handlers/primitive/array";
 import { TupleHandler } from "../handlers/primitive/tuple";
-import { PropertiesHandler } from "../handlers/primitive/object";
+import { PropertiesHandler, ImplicitObjectHandler, MaxPropertiesHandler, MinPropertiesHandler } from "../handlers/primitive/object";
 
 // Import refinement handlers
 import { NotHandler } from "../handlers/refinement/not";
@@ -36,6 +36,7 @@ const primitiveHandlers: PrimitiveHandler[] = [
     // Implicit type detection - must run before other constraints
     new ImplicitStringHandler(),
     new ImplicitArrayHandler(),
+    new ImplicitObjectHandler(),
     
     // String constraints
     new MinLengthHandler(),
@@ -56,6 +57,8 @@ const primitiveHandlers: PrimitiveHandler[] = [
     new ItemsHandler(),
     
     // Object constraints
+    new MaxPropertiesHandler(),
+    new MinPropertiesHandler(),
     new PropertiesHandler(),
 ];
 

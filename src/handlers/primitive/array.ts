@@ -86,8 +86,21 @@ export class ItemsHandler implements PrimitiveHandler {
             
             types.array = newArray;
         }
-        // Handle other cases (boolean items, prefixItems)
-        else if (arraySchema.items !== undefined || (arraySchema as any).prefixItems) {
+        // Handle boolean items
+        else if (typeof arraySchema.items === "boolean" && arraySchema.items === false) {
+            // items: false means only empty arrays are allowed (unless overridden by prefixItems)
+            if (!(arraySchema as any).prefixItems) {
+                types.array = z.array(z.any()).max(0); // Only empty arrays
+            } else {
+                types.array = types.array || z.array(z.any());
+            }
+        }
+        else if (typeof arraySchema.items === "boolean" && arraySchema.items === true) {
+            // items: true means any items are allowed
+            types.array = types.array || z.array(z.any());
+        }
+        // Handle prefixItems without items
+        else if ((arraySchema as any).prefixItems) {
             types.array = types.array || z.array(z.any());
         }
     }

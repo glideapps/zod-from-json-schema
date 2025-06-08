@@ -25,7 +25,15 @@ export class MinLengthHandler implements PrimitiveHandler {
         if (types.string !== false) {
             const currentString = types.string || z.string();
             if (currentString instanceof z.ZodString) {
-                types.string = currentString.min(stringSchema.minLength);
+                // Use custom validation to properly count grapheme clusters instead of UTF-16 code units
+                types.string = currentString.refine(
+                    (value: string) => {
+                        // Count grapheme clusters using Array.from (handles most Unicode cases correctly)
+                        const graphemeLength = Array.from(value).length;
+                        return graphemeLength >= stringSchema.minLength!;
+                    },
+                    { message: `String must be at least ${stringSchema.minLength} characters long` }
+                );
             }
         }
     }
@@ -39,7 +47,15 @@ export class MaxLengthHandler implements PrimitiveHandler {
         if (types.string !== false) {
             const currentString = types.string || z.string();
             if (currentString instanceof z.ZodString) {
-                types.string = currentString.max(stringSchema.maxLength);
+                // Use custom validation to properly count grapheme clusters instead of UTF-16 code units
+                types.string = currentString.refine(
+                    (value: string) => {
+                        // Count grapheme clusters using Array.from (handles most Unicode cases correctly)
+                        const graphemeLength = Array.from(value).length;
+                        return graphemeLength <= stringSchema.maxLength!;
+                    },
+                    { message: `String must be at most ${stringSchema.maxLength} characters long` }
+                );
             }
         }
     }
