@@ -59,10 +59,17 @@ export class ObjectPropertiesHandler implements RefinementHandler {
                 // Apply properties constraint
                 if (objectSchema.properties) {
                     for (const [propName, propSchema] of Object.entries(objectSchema.properties)) {
-                        if (Object.prototype.hasOwnProperty.call(value, propName) && propSchema !== undefined) {
-                            const zodPropSchema = convertJsonSchemaToZod(propSchema);
-                            if (!zodPropSchema.safeParse(value[propName]).success) {
-                                return false;
+                        if (propSchema !== undefined) {
+                            // Use a more robust way to check if property exists
+                            // This handles JavaScript special property names correctly
+                            const propExists = Object.getOwnPropertyDescriptor(value, propName) !== undefined;
+                            
+                            if (propExists) {
+                                const zodPropSchema = convertJsonSchemaToZod(propSchema);
+                                const propResult = zodPropSchema.safeParse(value[propName]);
+                                if (!propResult.success) {
+                                    return false;
+                                }
                             }
                         }
                     }
@@ -71,7 +78,9 @@ export class ObjectPropertiesHandler implements RefinementHandler {
                 // Apply required constraint
                 if (objectSchema.required && Array.isArray(objectSchema.required)) {
                     for (const requiredProp of objectSchema.required) {
-                        if (!Object.prototype.hasOwnProperty.call(value, requiredProp)) {
+                        // Use robust property detection for required props too
+                        const propExists = Object.getOwnPropertyDescriptor(value, requiredProp) !== undefined;
+                        if (!propExists) {
                             return false;
                         }
                     }
