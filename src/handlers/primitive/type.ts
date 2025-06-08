@@ -27,6 +27,9 @@ export class TypeHandler implements PrimitiveHandler {
         }
         if (!typeSet.has("object")) {
             types.object = false;
+        } else if (typeSet.has("object") && typeSet.size === 1) {
+            // Explicitly set object schema for type: "object"
+            types.object = z.object({}).passthrough();
         }
 
         // For integer type, ensure number schema with int constraint

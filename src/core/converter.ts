@@ -8,7 +8,7 @@ import { ConstHandler } from "../handlers/primitive/const";
 import { EnumHandler } from "../handlers/primitive/enum";
 import { ImplicitStringHandler, MinLengthHandler, MaxLengthHandler, PatternHandler } from "../handlers/primitive/string";
 import { MinimumHandler, MaximumHandler, ExclusiveMinimumHandler, ExclusiveMaximumHandler, MultipleOfHandler } from "../handlers/primitive/number";
-import { MinItemsHandler, MaxItemsHandler, ItemsHandler } from "../handlers/primitive/array";
+import { ImplicitArrayHandler, MinItemsHandler, MaxItemsHandler, ItemsHandler } from "../handlers/primitive/array";
 import { TupleHandler } from "../handlers/primitive/tuple";
 import { PropertiesHandler } from "../handlers/primitive/object";
 
@@ -32,8 +32,9 @@ const primitiveHandlers: PrimitiveHandler[] = [
     new EnumHandler(),
     new TypeHandler(),
     
-    // Implicit type detection - must run before other string handlers
+    // Implicit type detection - must run before other constraints
     new ImplicitStringHandler(),
+    new ImplicitArrayHandler(),
     
     // String constraints
     new MinLengthHandler(),
@@ -118,7 +119,16 @@ export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema | boolean):
         allowedSchemas.push(types.tuple);
     }
     if (types.object !== false) {
-        allowedSchemas.push(types.object || z.object({}).passthrough());
+        if (types.object) {
+            // Use the explicit object schema from handlers
+            allowedSchemas.push(types.object);
+        } else {
+            // Use custom validator that rejects arrays for default object schema
+            const objectSchema = z.custom<object>((val) => {
+                return typeof val === 'object' && val !== null && !Array.isArray(val);
+            }, "Must be an object, not an array");
+            allowedSchemas.push(objectSchema);
+        }
     }
     
     // Create base schema
@@ -128,7 +138,17 @@ export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema | boolean):
     } else if (allowedSchemas.length === 1) {
         zodSchema = allowedSchemas[0];
     } else {
-        zodSchema = z.union(allowedSchemas as [z.ZodTypeAny, z.ZodTypeAny, ...z.ZodTypeAny[]]);
+        // Check if this is an unconstrained schema (all default types enabled)
+        const hasConstraints = Object.keys(schema).some(key => 
+            key !== '$schema' && key !== 'title' && key !== 'description'
+        );
+        
+        if (!hasConstraints) {
+            // Empty schema with no constraints should be z.any()
+            zodSchema = z.any();
+        } else {
+            zodSchema = z.union(allowedSchemas as [z.ZodTypeAny, z.ZodTypeAny, ...z.ZodTypeAny[]]);
+        }
     }
     
     // Phase 2: Apply refinement handlers

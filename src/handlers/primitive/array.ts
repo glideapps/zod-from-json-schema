@@ -3,11 +3,30 @@ import type { JSONSchema } from "zod/v4/core";
 import { PrimitiveHandler, TypeSchemas } from "../../core/types";
 import { convertJsonSchemaToZod } from "../../core/converter";
 
+export class ImplicitArrayHandler implements PrimitiveHandler {
+    apply(types: TypeSchemas, schema: JSONSchema.BaseSchema): void {
+        const arraySchema = schema as JSONSchema.ArraySchema;
+        
+        // If no explicit type but array constraints are present, enable array type
+        if (schema.type === undefined && 
+            (arraySchema.minItems !== undefined || 
+             arraySchema.maxItems !== undefined || 
+             arraySchema.items !== undefined || 
+             (arraySchema as any).prefixItems !== undefined)) {
+            
+            if (types.array === undefined) {
+                types.array = z.array(z.any());
+            }
+        }
+    }
+}
+
 export class MinItemsHandler implements PrimitiveHandler {
     apply(types: TypeSchemas, schema: JSONSchema.BaseSchema): void {
         const arraySchema = schema as JSONSchema.ArraySchema;
         if (arraySchema.minItems === undefined) return;
 
+        // Apply constraint when array type is enabled (explicit or implicit)
         if (types.array !== false) {
             types.array = (types.array || z.array(z.any())).min(arraySchema.minItems);
         }
@@ -19,6 +38,7 @@ export class MaxItemsHandler implements PrimitiveHandler {
         const arraySchema = schema as JSONSchema.ArraySchema;
         if (arraySchema.maxItems === undefined) return;
 
+        // Apply constraint when array type is enabled (explicit or implicit)
         if (types.array !== false) {
             types.array = (types.array || z.array(z.any())).max(arraySchema.maxItems);
         }
