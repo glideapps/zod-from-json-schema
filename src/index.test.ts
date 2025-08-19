@@ -1130,5 +1130,8 @@ describe("jsonSchemaObjectToZodRawShape", () => {
 
         // Test refinement with invalid age
         expect(() => customSchema.parse({ age: 16 })).toThrow();
+
+        // Refinement with correct age, using same format as above test to confirm error was throw for correct reason
+        expect(() => customSchema.parse({ age: 19 })).not.toThrow();
     });
 });
