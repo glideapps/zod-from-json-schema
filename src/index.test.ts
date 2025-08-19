@@ -373,8 +373,9 @@ describe("convertJsonSchemaToZod", () => {
         });
 
         it("should handle object const values", () => {
-            const jsonSchema = {
+            const jsonSchema: JSONSchema.BaseSchema = {
                 $schema: "https://json-schema.org/draft/2020-12/schema",
+                // @ts-expect-error: @TODO: Resolve, for some reason, the spec and the schema do not align on this
                 const: { key: "value" },
             };
 
@@ -393,8 +394,9 @@ describe("convertJsonSchemaToZod", () => {
         });
 
         it("should handle array const values", () => {
-            const jsonSchema = {
+            const jsonSchema: JSONSchema.BaseSchema = {
                 $schema: "https://json-schema.org/draft/2020-12/schema",
+                // @ts-expect-error: @TODO: Resolve, for some reason, the spec and the schema do not align on this
                 const: [1, 2, 3],
             };
 
