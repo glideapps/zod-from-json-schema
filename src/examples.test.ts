@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { convertJsonSchemaToZod, JSONSchema } from "./index";
+import { convertJsonSchemaToZod } from "./index";
 import { z } from "zod/v4";
+import type { JSONSchema } from "zod/v4/core";
 import examples from "./examples.json";
 
 // Helper function to find differences between objects
@@ -54,7 +55,7 @@ describe("examples tests", () => {
     it(`should correctly convert example ${index}`, () => {
       try {
         // Convert JSON schema to Zod
-        const zodSchema = convertJsonSchemaToZod(example);
+        const zodSchema = convertJsonSchemaToZod(example as unknown as JSONSchema.BaseSchema);
 
         // Convert Zod schema back to JSON schema
         const resultSchema = z.toJSONSchema(zodSchema);

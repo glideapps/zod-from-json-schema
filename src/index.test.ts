@@ -1,11 +1,12 @@
 import { describe, it, expect } from "vitest";
 import { convertJsonSchemaToZod, jsonSchemaObjectToZodRawShape } from "./index";
 import { z } from "zod/v4";
+import {JSONSchema} from "zod/v4/core";
 
 describe("convertJsonSchemaToZod", () => {
     it("should correctly convert a schema with additionalProperties: {}", () => {
         // Define a simple JSON schema
-        const jsonSchema = {
+        const jsonSchema: JSONSchema.BaseSchema = {
             $schema: "https://json-schema.org/draft/2020-12/schema",
             type: "object",
             properties: {
@@ -29,7 +30,7 @@ describe("convertJsonSchemaToZod", () => {
 
     it("should correctly convert a schema with additionalProperties: false", () => {
         // Define a JSON schema with additionalProperties: false
-        const jsonSchema = {
+        const jsonSchema: JSONSchema.BaseSchema = {
             $schema: "https://json-schema.org/draft/2020-12/schema",
             type: "object",
             properties: {
@@ -51,7 +52,7 @@ describe("convertJsonSchemaToZod", () => {
     });
 
     it("should correctly convert a schema with array type", () => {
-        const jsonSchema = {
+        const jsonSchema: JSONSchema.BaseSchema = {
             $schema: "https://json-schema.org/draft/2020-12/schema",
             type: "array",
             items: {
@@ -66,7 +67,7 @@ describe("convertJsonSchemaToZod", () => {
 
     describe("Enum handling", () => {
         it("should correctly convert a schema with string enum (no type)", () => {
-            const jsonSchema = {
+            const jsonSchema: JSONSchema.BaseSchema = {
                 $schema: "https://json-schema.org/draft/2020-12/schema",
                 enum: ["red", "green", "blue"],
             };
@@ -79,7 +80,7 @@ describe("convertJsonSchemaToZod", () => {
         });
 
         it("should correctly convert a schema with number enum (no type)", () => {
-            const jsonSchema = {
+            const jsonSchema: JSONSchema.BaseSchema = {
                 $schema: "https://json-schema.org/draft/2020-12/schema",
                 enum: [1, 2, 3],
             };
@@ -92,11 +93,11 @@ describe("convertJsonSchemaToZod", () => {
 
             const resultSchema = z.toJSONSchema(zodSchema);
             // Zod v4 converts unions to anyOf instead of enum
-            expect(resultSchema.anyOf).toEqual([{ const: 1 }, { const: 2 }, { const: 3 }]);
+            expect(resultSchema.anyOf).toEqual([{ type: "number", const: 1 }, { type: "number", const: 2 }, { type: "number", const: 3 }]);
         });
 
         it("should correctly convert a schema with boolean enum (no type)", () => {
-            const jsonSchema = {
+            const jsonSchema: JSONSchema.BaseSchema = {
                 $schema: "https://json-schema.org/draft/2020-12/schema",
                 enum: [true, false],
             };
@@ -110,11 +111,11 @@ describe("convertJsonSchemaToZod", () => {
 
             const resultSchema = z.toJSONSchema(zodSchema);
             // Zod v4 converts unions to anyOf instead of enum
-            expect(resultSchema.anyOf).toEqual([{ const: true }, { const: false }]);
+            expect(resultSchema.anyOf).toEqual([{ type: "boolean", const: true }, { type: "boolean", const: false }]);
         });
 
         it("should correctly convert a schema with mixed enum (no type)", () => {
-            const jsonSchema = {
+            const jsonSchema: JSONSchema.BaseSchema = {
                 $schema: "https://json-schema.org/draft/2020-12/schema",
                 enum: ["red", 1, true, null],
             };
@@ -131,11 +132,11 @@ describe("convertJsonSchemaToZod", () => {
 
             const resultSchema = z.toJSONSchema(zodSchema);
             // Zod v4 converts unions to anyOf instead of enum
-            expect(resultSchema.anyOf).toEqual([{ const: "red" }, { const: 1 }, { const: true }, { type: "null" }]);
+            expect(resultSchema.anyOf).toEqual([{ type: "string", const: "red" }, { type: "number", const: 1 }, { type: "boolean", const: true }, { type: "null" }]);
         });
 
         it("should correctly convert a schema with single item mixed enum (no type)", () => {
-            const jsonSchema = {
+            const jsonSchema: JSONSchema.BaseSchema = {
                 $schema: "https://json-schema.org/draft/2020-12/schema",
                 enum: [42], // Single non-string value
             };
@@ -153,7 +154,7 @@ describe("convertJsonSchemaToZod", () => {
         });
 
         it("should handle empty enum case (no type)", () => {
-            const jsonSchema = {
+            const jsonSchema: JSONSchema.BaseSchema = {
                 $schema: "https://json-schema.org/draft/2020-12/schema",
                 enum: [], // Empty enum
             };
@@ -168,7 +169,7 @@ describe("convertJsonSchemaToZod", () => {
         });
 
         it("should correctly convert a schema with string type and enum", () => {
-            const jsonSchema = {
+            const jsonSchema: JSONSchema.BaseSchema = {
                 $schema: "https://json-schema.org/draft/2020-12/schema",
                 type: "string",
                 enum: ["red", "green", "blue"],
@@ -186,7 +187,7 @@ describe("convertJsonSchemaToZod", () => {
         });
 
         it("should handle empty string enum (with type)", () => {
-            const jsonSchema = {
+            const jsonSchema: JSONSchema.BaseSchema = {
                 $schema: "https://json-schema.org/draft/2020-12/schema",
                 type: "string",
                 enum: [], // Empty enum
@@ -202,7 +203,7 @@ describe("convertJsonSchemaToZod", () => {
         });
 
         it("should correctly convert a schema with number type and enum", () => {
-            const jsonSchema = {
+            const jsonSchema: JSONSchema.BaseSchema = {
                 $schema: "https://json-schema.org/draft/2020-12/schema",
                 type: "number",
                 enum: [1, 2, 3],
@@ -220,7 +221,7 @@ describe("convertJsonSchemaToZod", () => {
         });
 
         it("should correctly convert a schema with number type and single-item enum", () => {
-            const jsonSchema = {
+            const jsonSchema: JSONSchema.BaseSchema = {
                 $schema: "https://json-schema.org/draft/2020-12/schema",
                 type: "number",
                 enum: [42],
@@ -237,7 +238,7 @@ describe("convertJsonSchemaToZod", () => {
         });
 
         it("should correctly convert a schema with boolean type and single-item enum", () => {
-            const jsonSchema = {
+            const jsonSchema: JSONSchema.BaseSchema = {
                 $schema: "https://json-schema.org/draft/2020-12/schema",
                 type: "boolean",
                 enum: [true],
@@ -258,7 +259,7 @@ describe("convertJsonSchemaToZod", () => {
         });
 
         it("should correctly convert a schema with boolean type and multiple-item enum", () => {
-            const jsonSchema = {
+            const jsonSchema: JSONSchema.BaseSchema = {
                 $schema: "https://json-schema.org/draft/2020-12/schema",
                 type: "boolean",
                 enum: [true, false],
@@ -276,7 +277,7 @@ describe("convertJsonSchemaToZod", () => {
         });
 
         it("should handle empty number enum (with type)", () => {
-            const jsonSchema = {
+            const jsonSchema: JSONSchema.BaseSchema = {
                 $schema: "https://json-schema.org/draft/2020-12/schema",
                 type: "number",
                 enum: [], // Empty enum
@@ -292,7 +293,7 @@ describe("convertJsonSchemaToZod", () => {
         });
 
         it("should handle empty boolean enum (with type)", () => {
-            const jsonSchema = {
+            const jsonSchema: JSONSchema.BaseSchema = {
                 $schema: "https://json-schema.org/draft/2020-12/schema",
                 type: "boolean",
                 enum: [], // Empty enum
@@ -311,7 +312,7 @@ describe("convertJsonSchemaToZod", () => {
 
     describe("Const value handling", () => {
         it("should correctly handle string const values", () => {
-            const jsonSchema = {
+            const jsonSchema: JSONSchema.BaseSchema = {
                 $schema: "https://json-schema.org/draft/2020-12/schema",
                 const: "fixed value",
             };
@@ -326,7 +327,7 @@ describe("convertJsonSchemaToZod", () => {
         });
 
         it("should correctly handle number const values", () => {
-            const jsonSchema = {
+            const jsonSchema: JSONSchema.BaseSchema = {
                 $schema: "https://json-schema.org/draft/2020-12/schema",
                 const: 42,
             };
@@ -341,7 +342,7 @@ describe("convertJsonSchemaToZod", () => {
         });
 
         it("should correctly handle boolean const values", () => {
-            const jsonSchema = {
+            const jsonSchema: JSONSchema.BaseSchema = {
                 $schema: "https://json-schema.org/draft/2020-12/schema",
                 const: true,
             };
@@ -356,7 +357,7 @@ describe("convertJsonSchemaToZod", () => {
         });
 
         it("should correctly handle null const values", () => {
-            const jsonSchema = {
+            const jsonSchema: JSONSchema.BaseSchema = {
                 $schema: "https://json-schema.org/draft/2020-12/schema",
                 const: null,
             };
@@ -414,7 +415,7 @@ describe("convertJsonSchemaToZod", () => {
 
     describe("Combination schemas", () => {
         it("should correctly handle anyOf", () => {
-            const jsonSchema = {
+            const jsonSchema: JSONSchema.BaseSchema = {
                 $schema: "https://json-schema.org/draft/2020-12/schema",
                 anyOf: [{ type: "string" }, { type: "number" }],
             };
@@ -428,7 +429,7 @@ describe("convertJsonSchemaToZod", () => {
         });
 
         it("should correctly handle allOf", () => {
-            const jsonSchema = {
+            const jsonSchema: JSONSchema.BaseSchema = {
                 $schema: "https://json-schema.org/draft/2020-12/schema",
                 allOf: [
                     {
@@ -457,7 +458,7 @@ describe("convertJsonSchemaToZod", () => {
         });
 
         it("should correctly handle oneOf", () => {
-            const jsonSchema = {
+            const jsonSchema: JSONSchema.BaseSchema = {
                 $schema: "https://json-schema.org/draft/2020-12/schema",
                 oneOf: [{ type: "string" }, { type: "number" }],
             };
@@ -473,7 +474,7 @@ describe("convertJsonSchemaToZod", () => {
 
     describe("Edge cases", () => {
         it("should handle null type schema", () => {
-            const jsonSchema = {
+            const jsonSchema: JSONSchema.BaseSchema = {
                 $schema: "https://json-schema.org/draft/2020-12/schema",
                 type: "null",
             };
@@ -489,7 +490,7 @@ describe("convertJsonSchemaToZod", () => {
         });
 
         it("should handle empty object schema with no properties", () => {
-            const jsonSchema = {
+            const jsonSchema: JSONSchema.BaseSchema = {
                 $schema: "https://json-schema.org/draft/2020-12/schema",
                 type: "object",
             };
@@ -498,7 +499,7 @@ describe("convertJsonSchemaToZod", () => {
 
             expect(() => zodSchema.parse({})).not.toThrow();
             expect(() => zodSchema.parse({ extra: "prop" })).not.toThrow(); // By default additionalProperties is true
-            
+
             // Arrays should be rejected for explicit object type
             expect(() => zodSchema.parse([])).toThrow();
 
@@ -507,7 +508,7 @@ describe("convertJsonSchemaToZod", () => {
         });
 
         it("should handle array schema with no items", () => {
-            const jsonSchema = {
+            const jsonSchema: JSONSchema.BaseSchema = {
                 $schema: "https://json-schema.org/draft/2020-12/schema",
                 type: "array",
             };
@@ -522,7 +523,7 @@ describe("convertJsonSchemaToZod", () => {
         });
 
         it("should return z.any() for empty schema", () => {
-            const jsonSchema = {
+            const jsonSchema: JSONSchema.BaseSchema = {
                 $schema: "https://json-schema.org/draft/2020-12/schema",
             };
 
@@ -540,7 +541,7 @@ describe("convertJsonSchemaToZod", () => {
         });
 
         it("should add description to schema", () => {
-            const jsonSchema = {
+            const jsonSchema: JSONSchema.BaseSchema = {
                 $schema: "https://json-schema.org/draft/2020-12/schema",
                 type: "string",
                 description: "A test description",
@@ -556,7 +557,7 @@ describe("convertJsonSchemaToZod", () => {
     // Tests for unimplemented but supported features
     describe("String validation", () => {
         it("should support minLength and maxLength constraints", () => {
-            const jsonSchema = {
+            const jsonSchema: JSONSchema.BaseSchema = {
                 $schema: "https://json-schema.org/draft/2020-12/schema",
                 type: "string",
                 minLength: 3,
@@ -564,16 +565,16 @@ describe("convertJsonSchemaToZod", () => {
             };
 
             const zodSchema = convertJsonSchemaToZod(jsonSchema);
-            
+
             // Test that the validation works correctly
             expect(zodSchema.safeParse("hello").success).toBe(true); // 5 chars, within range
             expect(zodSchema.safeParse("hi").success).toBe(false);   // 2 chars, too short
             expect(zodSchema.safeParse("this is too long").success).toBe(false); // too long
-            
+
             // Test Unicode support
             expect(zodSchema.safeParse("💩💩💩").success).toBe(true); // 3 graphemes
             expect(zodSchema.safeParse("💩").success).toBe(false);    // 1 grapheme, too short
-            
+
             // Note: length constraints implemented with .refine() don't round-trip
             // back to JSON Schema, so we only test the validation behavior
             const resultSchema = z.toJSONSchema(zodSchema);
@@ -581,10 +582,9 @@ describe("convertJsonSchemaToZod", () => {
         });
 
         it("should support pattern constraint", () => {
-            const jsonSchema = {
+            const jsonSchema: JSONSchema.BaseSchema = {
                 $schema: "https://json-schema.org/draft/2020-12/schema",
                 type: "string",
-                format: "regex",
                 pattern: "^[a-zA-Z0-9]+$",
             };
 
@@ -596,7 +596,7 @@ describe("convertJsonSchemaToZod", () => {
 
     describe("Number validation", () => {
         it("should support minimum and maximum constraints", () => {
-            const jsonSchema = {
+            const jsonSchema: JSONSchema.BaseSchema = {
                 $schema: "https://json-schema.org/draft/2020-12/schema",
                 type: "number",
                 minimum: 0,
@@ -609,7 +609,7 @@ describe("convertJsonSchemaToZod", () => {
         });
 
         it("should support exclusiveMinimum and exclusiveMaximum constraints", () => {
-            const jsonSchema = {
+            const jsonSchema: JSONSchema.BaseSchema = {
                 $schema: "https://json-schema.org/draft/2020-12/schema",
                 type: "number",
                 exclusiveMinimum: 0,
@@ -622,19 +622,19 @@ describe("convertJsonSchemaToZod", () => {
         });
 
         it("should support multipleOf constraint", () => {
-            const jsonSchema = {
+            const jsonSchema: JSONSchema.BaseSchema = {
                 $schema: "https://json-schema.org/draft/2020-12/schema",
                 type: "number",
                 multipleOf: 5,
             };
 
             const zodSchema = convertJsonSchemaToZod(jsonSchema);
-            
+
             // Test that the validation works correctly
             expect(zodSchema.safeParse(10).success).toBe(true);
             expect(zodSchema.safeParse(15).success).toBe(true);
             expect(zodSchema.safeParse(7).success).toBe(false);
-            
+
             // Note: multipleOf constraints implemented with .refine() don't round-trip
             // back to JSON Schema, so we only test the validation behavior
             const resultSchema = z.toJSONSchema(zodSchema);
@@ -644,7 +644,7 @@ describe("convertJsonSchemaToZod", () => {
 
     describe("Array validation", () => {
         it("should support minItems and maxItems constraints", () => {
-            const jsonSchema = {
+            const jsonSchema: JSONSchema.BaseSchema = {
                 $schema: "https://json-schema.org/draft/2020-12/schema",
                 type: "array",
                 items: {
@@ -660,7 +660,7 @@ describe("convertJsonSchemaToZod", () => {
         });
 
         it("should support uniqueItems constraint", () => {
-            const jsonSchema = {
+            const jsonSchema: JSONSchema.BaseSchema = {
                 $schema: "https://json-schema.org/draft/2020-12/schema",
                 type: "array",
                 items: {
@@ -683,7 +683,7 @@ describe("convertJsonSchemaToZod", () => {
         });
 
         it("should support uniqueItems constraint with object items", () => {
-            const jsonSchema = {
+            const jsonSchema: JSONSchema.BaseSchema = {
                 $schema: "https://json-schema.org/draft/2020-12/schema",
                 type: "array",
                 items: {
@@ -717,7 +717,7 @@ describe("convertJsonSchemaToZod", () => {
 
         describe("Tuple arrays (items as array)", () => {
             it("should handle tuple array with different types", () => {
-                const jsonSchema = {
+                const jsonSchema: JSONSchema.BaseSchema = {
                     $schema: "https://json-schema.org/draft/2020-12/schema",
                     type: "array",
                     items: [{ type: "string" }, { type: "number" }, { type: "boolean" }],
@@ -738,7 +738,7 @@ describe("convertJsonSchemaToZod", () => {
             });
 
             it("should handle tuple array with single item type", () => {
-                const jsonSchema = {
+                const jsonSchema: JSONSchema.BaseSchema = {
                     $schema: "https://json-schema.org/draft/2020-12/schema",
                     type: "array",
                     items: [{ type: "string" }],
@@ -753,7 +753,7 @@ describe("convertJsonSchemaToZod", () => {
             });
 
             it("should handle empty tuple array", () => {
-                const jsonSchema = {
+                const jsonSchema: JSONSchema.BaseSchema = {
                     $schema: "https://json-schema.org/draft/2020-12/schema",
                     type: "array",
                     items: [],
@@ -766,7 +766,7 @@ describe("convertJsonSchemaToZod", () => {
             });
 
             it("should handle tuple array with complex item types", () => {
-                const jsonSchema = {
+                const jsonSchema: JSONSchema.BaseSchema = {
                     $schema: "https://json-schema.org/draft/2020-12/schema",
                     type: "array",
                     items: [
@@ -801,7 +801,7 @@ describe("convertJsonSchemaToZod", () => {
             });
 
             it("should convert tuple to proper JSON schema", () => {
-                const jsonSchema = {
+                const jsonSchema: JSONSchema.BaseSchema = {
                     $schema: "https://json-schema.org/draft/2020-12/schema",
                     type: "array",
                     items: [{ type: "string" }, { type: "number" }],
@@ -818,7 +818,7 @@ describe("convertJsonSchemaToZod", () => {
 
         describe("prefixItems (Draft 2020-12 tuples)", () => {
             it("should handle prefixItems with different types", () => {
-                const jsonSchema = {
+                const jsonSchema: JSONSchema.BaseSchema = {
                     $schema: "https://json-schema.org/draft/2020-12/schema",
                     type: "array",
                     prefixItems: [{ type: "string" }, { type: "number" }, { type: "boolean" }],
@@ -843,7 +843,7 @@ describe("convertJsonSchemaToZod", () => {
             });
 
             it("should handle prefixItems with single item type", () => {
-                const jsonSchema = {
+                const jsonSchema: JSONSchema.BaseSchema = {
                     $schema: "https://json-schema.org/draft/2020-12/schema",
                     type: "array",
                     prefixItems: [{ type: "string" }],
@@ -858,7 +858,7 @@ describe("convertJsonSchemaToZod", () => {
             });
 
             it("should handle empty prefixItems array", () => {
-                const jsonSchema = {
+                const jsonSchema: JSONSchema.BaseSchema = {
                     $schema: "https://json-schema.org/draft/2020-12/schema",
                     type: "array",
                     prefixItems: [],
@@ -872,7 +872,7 @@ describe("convertJsonSchemaToZod", () => {
             });
 
             it("should handle prefixItems with complex nested types", () => {
-                const jsonSchema = {
+                const jsonSchema: JSONSchema.BaseSchema = {
                     $schema: "https://json-schema.org/draft/2020-12/schema",
                     type: "array",
                     prefixItems: [
@@ -926,7 +926,7 @@ describe("convertJsonSchemaToZod", () => {
             });
 
             it("should validate prefixItems behavior correctly", () => {
-                const jsonSchema = {
+                const jsonSchema: JSONSchema.BaseSchema = {
                     $schema: "https://json-schema.org/draft/2020-12/schema",
                     type: "array",
                     prefixItems: [{ type: "string" }, { type: "number" }],
@@ -943,7 +943,7 @@ describe("convertJsonSchemaToZod", () => {
             });
 
             it("should handle prefixItems with constraints", () => {
-                const jsonSchema = {
+                const jsonSchema: JSONSchema.BaseSchema = {
                     $schema: "https://json-schema.org/draft/2020-12/schema",
                     type: "array",
                     prefixItems: [
@@ -962,7 +962,7 @@ describe("convertJsonSchemaToZod", () => {
             });
 
             it("should handle prefixItems with items: false (strict tuple)", () => {
-                const jsonSchema = {
+                const jsonSchema: JSONSchema.BaseSchema = {
                     $schema: "https://json-schema.org/draft/2020-12/schema",
                     type: "array",
                     prefixItems: [{ type: "string" }, { type: "number" }],
@@ -978,7 +978,7 @@ describe("convertJsonSchemaToZod", () => {
             });
 
             it("should handle prefixItems with items schema (constrained additional items)", () => {
-                const jsonSchema = {
+                const jsonSchema: JSONSchema.BaseSchema = {
                     $schema: "https://json-schema.org/draft/2020-12/schema",
                     type: "array",
                     prefixItems: [{ type: "string" }, { type: "number" }],
@@ -1000,17 +1000,19 @@ describe("convertJsonSchemaToZod", () => {
 
 describe("jsonSchemaObjectToZodRawShape", () => {
     it("should extract properties from a JSON schema", () => {
-        const jsonSchema = {
+        const jsonSchema: JSONSchema.BaseSchema = {
             type: "object",
             properties: {
                 name: { type: "string" },
                 age: { type: "integer" },
                 isActive: { type: "boolean" },
+                // @ts-expect-error: invalid schema definition to test behaviour
                 missing: undefined,
             },
             required: ["name", "age"],
         };
 
+        // @ts-expect-error: invalid schema definition to test behaviour
         const rawShape = jsonSchemaObjectToZodRawShape(jsonSchema);
 
         // Properties should exist in the raw shape
@@ -1025,28 +1027,30 @@ describe("jsonSchemaObjectToZodRawShape", () => {
     });
 
     it("should handle empty properties", () => {
-        const jsonSchema = {
+        const jsonSchema: JSONSchema.BaseSchema = {
             type: "object",
             properties: {},
         };
 
+        // @ts-expect-error: invalid schema definition to test behaviour
         const rawShape = jsonSchemaObjectToZodRawShape(jsonSchema);
         expect(Object.keys(rawShape).length).toBe(0);
         expect(rawShape).toEqual({});
     });
 
     it("should handle missing properties field", () => {
-        const jsonSchema = {
+        const jsonSchema: JSONSchema.BaseSchema = {
             type: "object",
         };
 
+        // @ts-expect-error: invalid schema definition to test behaviour
         const rawShape = jsonSchemaObjectToZodRawShape(jsonSchema);
         expect(Object.keys(rawShape).length).toBe(0);
         expect(rawShape).toEqual({});
     });
 
     it("should correctly convert nested object properties", () => {
-        const jsonSchema = {
+        const jsonSchema: JSONSchema.BaseSchema = {
             type: "object",
             properties: {
                 user: {
@@ -1054,6 +1058,7 @@ describe("jsonSchemaObjectToZodRawShape", () => {
                     properties: {
                         name: { type: "string" },
                         email: { type: "string" },
+                        // @ts-expect-error: invalid schema definition to test behaviour
                         missing: undefined,
                     },
                     required: ["name"],
@@ -1061,6 +1066,7 @@ describe("jsonSchemaObjectToZodRawShape", () => {
             },
         };
 
+        // @ts-expect-error: invalid schema definition to test behaviour
         const rawShape = jsonSchemaObjectToZodRawShape(jsonSchema);
 
         expect(rawShape).toHaveProperty("user");
@@ -1085,7 +1091,8 @@ describe("jsonSchemaObjectToZodRawShape", () => {
     });
 
     it("should be usable to build custom schemas", () => {
-        const jsonSchema = {
+        const jsonSchema: JSONSchema.BaseSchema = {
+          type: "object",
             properties: {
                 name: { type: "string" },
                 age: { type: "integer" },
@@ -1093,6 +1100,7 @@ describe("jsonSchemaObjectToZodRawShape", () => {
         };
 
         // Get the raw shape
+        // @ts-expect-error: invalid schema definition to test behaviour
         const rawShape = jsonSchemaObjectToZodRawShape(jsonSchema);
 
         // Make fields optional manually and add custom fields
