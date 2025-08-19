@@ -14,7 +14,9 @@ npm install zod-from-json-schema
 
 ## Zod 3 vs 4
 
-- If you need Zod 4, use the latest version of this package.
+Prior to Zod officially releasing an official v4 package, Zod v4 was available in the Zod 3.x branches, i.e. ^3.25.25. This package maintains legacy version 3/4 support in the 0.x version and Zod 4 support (with the official Zod 4 release) in the 1.x version. 
+
+- If you need Zod 4, you can use the ^1.0.0 branch or the ^0.4.0 branches of this repo
 - If you need Zod 3, use the latest version that's less than 0.4.0 (at the of writing that's 0.0.5).  It supports a smaller subsets of JSON Schema.
 
 ## Usage
