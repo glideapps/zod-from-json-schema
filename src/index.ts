@@ -16,9 +16,26 @@ export { createUniqueItemsValidator, isValidWithSchema } from "./core/utils";
 export function jsonSchemaObjectToZodRawShape(schema: JSONSchema.Schema): z.ZodRawShape {
     const raw: Record<string, z.ZodType> = {};
     
+    // Get the required fields set for efficient lookup
+    const requiredFields = new Set(schema.required ?? []);
+    
     for (const [key, value] of Object.entries(schema.properties ?? {})) {
         if (value === undefined) continue;
-        raw[key] = convertJsonSchemaToZod(value);
+        
+        let zodType = convertJsonSchemaToZod(value);
+        
+        // If there's a required array and the field is not in it, make it optional
+        // If there's no required array, all fields are optional by default in JSON Schema
+        if (schema.required !== undefined) {
+            if (!requiredFields.has(key)) {
+                zodType = zodType.optional();
+            }
+        } else {
+            // No required array means all fields are optional
+            zodType = zodType.optional();
+        }
+        
+        raw[key] = zodType;
     }
     return raw;
 }

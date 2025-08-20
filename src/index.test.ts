@@ -1018,10 +1018,14 @@ describe("jsonSchemaObjectToZodRawShape", () => {
         expect(rawShape).toHaveProperty("age");
         expect(rawShape).toHaveProperty("isActive");
 
-        // Verify types are correct
+        // Verify types are correct - required fields are direct types
         expect(rawShape.name instanceof z.ZodString).toBe(true);
         expect(rawShape.age instanceof z.ZodNumber).toBe(true);
-        expect(rawShape.isActive instanceof z.ZodBoolean).toBe(true);
+        
+        // isActive is not in required array, so it should be optional
+        expect(rawShape.isActive instanceof z.ZodOptional).toBe(true);
+        // Check the inner type of the optional
+        expect((rawShape.isActive as z.ZodOptional<any>)._def.innerType instanceof z.ZodBoolean).toBe(true);
     });
 
     it("should handle empty properties", () => {
@@ -1064,7 +1068,10 @@ describe("jsonSchemaObjectToZodRawShape", () => {
         const rawShape = jsonSchemaObjectToZodRawShape(jsonSchema);
 
         expect(rawShape).toHaveProperty("user");
-        expect(rawShape.user instanceof z.ZodObject).toBe(true);
+        // Since there's no required array at the top level, user field is optional
+        expect(rawShape.user instanceof z.ZodOptional).toBe(true);
+        // The inner type should be a ZodObject
+        expect((rawShape.user as z.ZodOptional<any>)._def.innerType instanceof z.ZodObject).toBe(true);
 
         // Create a schema with the raw shape to test validation
         const schema = z.object(rawShape);
@@ -1082,6 +1089,11 @@ describe("jsonSchemaObjectToZodRawShape", () => {
                 user: { email: "john@example.com" },
             }),
         ).toThrow();
+        
+        // Since user is optional at the top level, empty object should pass
+        expect(() =>
+            schema.parse({}),
+        ).not.toThrow();
     });
 
     it("should be usable to build custom schemas", () => {
@@ -1122,5 +1134,74 @@ describe("jsonSchemaObjectToZodRawShape", () => {
 
         // Test refinement with invalid age
         expect(() => customSchema.parse({ age: 16 })).toThrow();
+    });
+
+    it("should respect the required field when converting object properties", () => {
+        const jsonSchema = {
+            type: "object",
+            properties: {
+                requiredField: { type: "string" },
+                optionalField: { type: "number" },
+                anotherRequired: { type: "boolean" },
+            },
+            required: ["requiredField", "anotherRequired"],
+        };
+
+        const rawShape = jsonSchemaObjectToZodRawShape(jsonSchema);
+
+        // Create a schema to test the shape
+        const schema = z.object(rawShape);
+
+        // Required fields should be required
+        expect(() =>
+            schema.parse({
+                optionalField: 42,
+            }),
+        ).toThrow(); // Missing required fields
+
+        // Optional field should be optional
+        expect(() =>
+            schema.parse({
+                requiredField: "test",
+                anotherRequired: true,
+            }),
+        ).not.toThrow(); // Optional field missing is OK
+
+        // All fields present should work
+        expect(() =>
+            schema.parse({
+                requiredField: "test",
+                optionalField: 42,
+                anotherRequired: true,
+            }),
+        ).not.toThrow();
+    });
+
+    it("should make all fields optional when required array is not present", () => {
+        const jsonSchema = {
+            type: "object",
+            properties: {
+                field1: { type: "string" },
+                field2: { type: "number" },
+                field3: { type: "boolean" },
+            },
+            // No required field - all properties should be optional
+        };
+
+        const rawShape = jsonSchemaObjectToZodRawShape(jsonSchema);
+        const schema = z.object(rawShape);
+
+        // All fields should be optional
+        expect(() => schema.parse({})).not.toThrow();
+        expect(() => schema.parse({ field1: "test" })).not.toThrow();
+        expect(() => schema.parse({ field2: 42 })).not.toThrow();
+        expect(() => schema.parse({ field3: true })).not.toThrow();
+        expect(() =>
+            schema.parse({
+                field1: "test",
+                field2: 42,
+                field3: true,
+            }),
+        ).not.toThrow();
     });
 });
