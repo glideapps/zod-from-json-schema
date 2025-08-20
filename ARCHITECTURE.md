@@ -165,15 +165,27 @@ Given this JSON Schema:
 ## Implementation Status
 
 ### Test Results
-- **Total tests**: 1355 (999 active, 356 skipped)
-- **Passing**: 999 tests
-- **Failing**: 0 tests
-- **Skipped**: 356 tests (JSON Schema features not supported by Zod)
+- **Total tests**: 1418 (1172 passing, 246 skipped)
+- **Passing**: 1172 tests
+- **Failing**: 0 tests  
+- **Skipped**: 246 tests (JSON Schema features not yet implemented)
+- **Code Coverage**: 100% (statements, branches, functions, lines)
+
+### Recently Implemented Features
+- **Boolean property schemas**: Support for `true`/`false` as property schemas
+- **Escaped character properties**: Validation of properties with escape sequences  
+- **Contains constraints**: Array validation with `contains`, `minContains`, `maxContains`
+- **Property count validation**: `minProperties` and `maxProperties` constraints
+- **Unicode string length**: Proper grapheme cluster counting for international text
+- **Floating-point precision**: Robust `multipleOf` validation with proper precision handling
+- **OneOf semantics**: Correct "exactly one must match" validation logic
 
 ### Known Limitations
-1. **`__proto__` property validation**: Zod's `passthrough()` strips this property for security. Solved with ProtoRequiredHandler using `z.any()` when `__proto__` is required.
-2. **Unicode grapheme counting**: JavaScript uses UTF-16 code units instead of grapheme clusters. Test added to skip list as platform limitation.
-3. **Complex schema combinations**: Some edge cases with deeply nested `allOf`, `anyOf`, `oneOf` combinations may not perfectly match JSON Schema semantics.
+1. **JavaScript special properties**: Zod filters `__proto__`, `constructor`, `toString` for security
+2. **Complex schema combinations**: Some edge cases with deeply nested logical combinations
+3. **Reference resolution**: `$ref`, `$defs`, and remote references not yet implemented
+4. **Conditional schemas**: `if`/`then`/`else` constructs not supported
+5. **Advanced object validation**: `patternProperties`, `dependentSchemas`, `unevaluatedProperties`
 
 ## Benefits
 
@@ -262,6 +274,139 @@ export class MyRefinementHandler implements RefinementHandler {
   - General refinements (Not, UniqueItems)
   - Metadata handlers last
 
+## Advanced Architectural Insights
+
+### Handler State Management Pattern
+
+The `TypeSchemas` object functions as a sophisticated state machine with three distinct states per type:
+
+```typescript
+// State meanings:
+undefined  // "not yet determined" - type still under consideration
+false      // "explicitly disabled" - type ruled out by constraints  
+ZodType    // "enabled with constraints" - type with accumulated validation
+```
+
+This pattern enables powerful composition:
+```typescript
+// Respecting previous decisions
+if (types.object === false) return;
+
+// Building incrementally  
+types.object = types.object || z.object({}).passthrough();
+
+// Applying refinements to existing schemas
+types.object = baseObject.refine(validationFn, errorMessage);
+```
+
+### Critical Handler Execution Order
+
+Handler order is architectural, not arbitrary. Key dependencies:
+
+```typescript
+// 1. Type constraints must run first
+new ConstHandler(),        // Creates literal types
+new EnumHandler(),         // Creates enum constraints
+new TypeHandler(),         // Disables non-matching types
+
+// 2. Implicit detection before specific constraints
+new ImplicitStringHandler(),  // Must run before string constraints
+new ImplicitArrayHandler(),   // Must run before array constraints  
+new ImplicitObjectHandler(),  // Must run before object constraints
+
+// 3. Tuple before Items (array specialization)
+new TupleHandler(),        // Detects tuple patterns
+new ItemsHandler(),        // General array item validation
+```
+
+### Zod vs JSON Schema Impedance Mismatch
+
+**Fundamental Architectural Tension:**
+
+- **JSON Schema**: "Describe any data shape, support any property name"
+- **Zod**: "Create type-safe schemas, prevent dangerous operations"
+
+**Resolution Strategies:**
+
+1. **Security-First Approach**: Accept Zod's filtering of dangerous properties (`__proto__`)
+2. **Graceful Degradation**: Skip unsupported features rather than failing
+3. **Hybrid Validation**: Use refinements for operations Zod can't express natively
+
+### Boolean Schema Architecture
+
+JSON Schema's boolean schemas create unique challenges:
+```typescript
+true   // "Allow anything" → z.any()
+false  // "Allow nothing" → z.never()
+
+// In property schemas:
+{ properties: { foo: true, bar: false } }
+// foo: any value allowed, bar: property must not exist
+```
+
+Our architecture handles this through the boolean schema detection in the converter's main flow.
+
+### Union Schema vs Object Schema Decision Tree
+
+The architecture makes critical decisions about schema structure:
+
+```typescript
+// When to create union schemas:
+allowedSchemas.length > 1 → z.union([...])
+
+// When to create object schemas:
+zodSchema instanceof z.ZodObject → build proper object shape
+
+// When to use refinements:
+!(zodSchema instanceof z.ZodObject) → apply property validation via refinement
+```
+
+This pattern appears throughout the refinement handlers and explains why some validations work differently in different contexts.
+
+### Refinement Composition Architecture
+
+Refinements **compose** rather than replace, enabling complex validation stacks:
+
+```typescript
+// Multiple refinements stack cleanly:
+schema
+  .refine(oneOfValidation, "oneOf constraint")
+  .refine(allOfValidation, "allOf constraint")  
+  .refine(propertyValidation, "property constraint")
+  .refine(customValidation, "custom constraint")
+```
+
+This architectural choice allows JSON Schema's additive constraint model to work naturally.
+
+### Coverage-Driven Architecture Validation
+
+Our comprehensive coverage work revealed the architecture has **multiple code paths** for similar operations:
+
+- Object creation via primitive handlers vs refinement handlers
+- Type union creation vs single type schemas  
+- Boolean schema handling in different contexts
+
+This redundancy provides **flexibility** but requires **comprehensive testing** to ensure all paths work correctly.
+
+### Defensive Programming Architecture
+
+Consistent patterns throughout the codebase prioritize **robustness**:
+
+```typescript
+// Type safety guards
+if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return true; // Safe fallback
+}
+
+// Robust property detection  
+const propExists = Object.getOwnPropertyDescriptor(value, propName) !== undefined;
+
+// Safe composition
+types.object = types.object || z.object({}).passthrough();
+```
+
+This reveals the architecture's **production-first mindset** - prioritizing correctness over performance.
+
 ## Future Enhancements
 
 1. **Additional JSON Schema Keywords**: Support for more keywords like `dependencies`, `if/then/else`, `contentMediaType`, etc.
@@ -269,6 +414,8 @@ export class MyRefinementHandler implements RefinementHandler {
 3. **Better Error Messages**: Provide more descriptive validation error messages
 4. **Schema Version Support**: Handle different JSON Schema draft versions
 5. **Bidirectional Conversion**: Improve Zod to JSON Schema conversion fidelity
+6. **Advanced Union Handling**: Better support for complex union scenarios that arise from JSON Schema's flexibility
+7. **Security Model Documentation**: Formal documentation of security vs compatibility tradeoffs
 
 ## Architectural Evolution
 
