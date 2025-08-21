@@ -1,1742 +1,1326 @@
 [
     {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {},
-        "additionalProperties": false
+                "additionalProperties": false,
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
     },
     {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {
             "tab": {
                 "type": "string"
             }
         },
-        "required": [
-            "tab"
-        ],
-        "additionalProperties": false
+        "required": ["tab"],
+        "additionalProperties": false,
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
     },
     {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {
             "table": {
                 "type": "string"
             }
         },
-        "required": [
-            "table"
-        ],
-        "additionalProperties": false
+        "required": ["table"],
+        "additionalProperties": false,
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
     },
     {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {
             "mode": {
-                "type": "string",
-                "enum": [
-                    "Dashboard",
-                    "Data",
-                    "Layout",
-                    "Workflows",
-                    "Settings"
-                ]
+                "enum": ["Dashboard", "Data", "Layout", "Workflows", "Settings"]
             }
         },
-        "required": [
-            "mode"
-        ],
-        "additionalProperties": false
+        "required": ["mode"],
+        "additionalProperties": false,
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
     },
     {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {
             "filter": {
-                "description": "Filter the apps by name or description. Looks for substrings.",
-                "type": "string"
+                "type": "string",
+                "description": "Filter the apps by name or description. Looks for substrings."
             }
         },
-        "additionalProperties": false
+                "additionalProperties": false,
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
     },
     {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {
             "kind": {
-                "description": "The kind of the component. Must be exactly 'ai-custom-chat-component'",
-                "type": "string",
-                "const": "ai-custom-chat-component"
+                "const": "ai-custom-chat-component",
+                "description": "The kind of the component. Must be exactly 'ai-custom-chat-component'"
             },
             "builderDisplayName": {
-                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\"",
-                "type": "string"
+                "type": "string",
+                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\""
             },
             "prompt": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
                         "type": "string"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             },
             "uuid": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
                         "type": "string"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             }
         },
-        "required": [
-            "kind",
-            "builderDisplayName",
-            "prompt",
-            "uuid"
-        ],
-        "additionalProperties": false
+        "required": ["kind", "builderDisplayName", "prompt", "uuid"],
+        "additionalProperties": false,
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
     },
     {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {
             "kind": {
-                "description": "The kind of the component. Must be exactly 'hero'",
-                "type": "string",
-                "const": "hero"
+                "const": "hero",
+                "description": "The kind of the component. Must be exactly 'hero'"
             },
             "builderDisplayName": {
-                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\"",
-                "type": "string"
+                "type": "string",
+                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\""
             },
             "title": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
                         "type": "string"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             },
             "titleEmphasized": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
                         "type": "string"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             },
             "subtitle": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
                         "type": "string"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             },
             "image": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
-                        "type": "string",
                         "const": "https://picsum.photos/seed/picsum/200/300"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             },
             "headerImage": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
-                        "type": "string",
                         "const": "https://picsum.photos/seed/picsum/200/300"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             }
         },
-        "required": [
-            "kind",
-            "builderDisplayName",
-            "title",
-            "titleEmphasized",
-            "subtitle",
-            "image",
-            "headerImage"
-        ],
-        "additionalProperties": false
+        "required": ["kind", "builderDisplayName", "title", "titleEmphasized", "subtitle", "image", "headerImage"],
+        "additionalProperties": false,
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
     },
     {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {
             "kind": {
-                "description": "The kind of the component. Must be exactly 'fields'",
-                "type": "string",
-                "const": "fields"
+                "const": "fields",
+                "description": "The kind of the component. Must be exactly 'fields'"
             },
             "builderDisplayName": {
-                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\"",
-                "type": "string"
+                "type": "string",
+                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\""
             },
             "title": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
                         "type": "string"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             }
         },
-        "required": [
-            "kind",
-            "builderDisplayName",
-            "title"
-        ],
-        "additionalProperties": false
+        "required": ["kind", "builderDisplayName", "title"],
+        "additionalProperties": false,
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
     },
     {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {
             "kind": {
-                "description": "The kind of the component. Must be exactly 'page-location'",
-                "type": "string",
-                "const": "page-location"
+                "const": "page-location",
+                "description": "The kind of the component. Must be exactly 'page-location'"
             },
             "builderDisplayName": {
-                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\"",
-                "type": "string"
+                "type": "string",
+                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\""
             },
             "value": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
                         "type": "string"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             },
             "label": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
                         "type": "string"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             }
         },
-        "required": [
-            "kind",
-            "builderDisplayName",
-            "value",
-            "label"
-        ],
-        "additionalProperties": false
+        "required": ["kind", "builderDisplayName", "value", "label"],
+        "additionalProperties": false,
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
     },
     {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {
             "kind": {
-                "description": "The kind of the component. Must be exactly 'page-image'",
-                "type": "string",
-                "const": "page-image"
+                "const": "page-image",
+                "description": "The kind of the component. Must be exactly 'page-image'"
             },
             "builderDisplayName": {
-                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\"",
-                "type": "string"
+                "type": "string",
+                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\""
             },
             "title": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
                         "type": "string"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             },
             "image": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
-                        "type": "string",
                         "const": "https://picsum.photos/seed/picsum/200/300"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             },
             "caption": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
                         "type": "string"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             },
             "alt": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
                         "type": "string"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             }
         },
-        "required": [
-            "kind",
-            "builderDisplayName",
-            "title",
-            "image",
-            "caption",
-            "alt"
-        ],
-        "additionalProperties": false
+        "required": ["kind", "builderDisplayName", "title", "image", "caption", "alt"],
+        "additionalProperties": false,
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
     },
     {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {
             "kind": {
-                "description": "The kind of the component. Must be exactly 'page-simple-image'",
-                "type": "string",
-                "const": "page-simple-image"
+                "const": "page-simple-image",
+                "description": "The kind of the component. Must be exactly 'page-simple-image'"
             },
             "builderDisplayName": {
-                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\"",
-                "type": "string"
+                "type": "string",
+                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\""
             },
             "image": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
-                        "type": "string",
                         "const": "https://picsum.photos/seed/picsum/200/300"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             },
             "alt": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
                         "type": "string"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             }
         },
-        "required": [
-            "kind",
-            "builderDisplayName",
-            "image",
-            "alt"
-        ],
-        "additionalProperties": false
+        "required": ["kind", "builderDisplayName", "image", "alt"],
+        "additionalProperties": false,
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
     },
     {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {
             "kind": {
-                "description": "The kind of the component. Must be exactly 'page-video'",
-                "type": "string",
-                "const": "page-video"
+                "const": "page-video",
+                "description": "The kind of the component. Must be exactly 'page-video'"
             },
             "builderDisplayName": {
-                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\"",
-                "type": "string"
+                "type": "string",
+                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\""
             },
             "title": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
                         "type": "string"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             },
             "caption": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
                         "type": "string"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             }
         },
-        "required": [
-            "kind",
-            "builderDisplayName",
-            "title",
-            "caption"
-        ],
-        "additionalProperties": false
+        "required": ["kind", "builderDisplayName", "title", "caption"],
+        "additionalProperties": false,
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
     },
     {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {
             "kind": {
-                "description": "The kind of the component. Must be exactly 'page-simple-video'",
-                "type": "string",
-                "const": "page-simple-video"
+                "const": "page-simple-video",
+                "description": "The kind of the component. Must be exactly 'page-simple-video'"
             },
             "builderDisplayName": {
-                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\"",
-                "type": "string"
+                "type": "string",
+                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\""
             }
         },
-        "required": [
-            "kind",
-            "builderDisplayName"
-        ],
-        "additionalProperties": false
+        "required": ["kind", "builderDisplayName"],
+        "additionalProperties": false,
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
     },
     {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {
             "kind": {
-                "description": "The kind of the component. Must be exactly 'big-numbers'",
-                "type": "string",
-                "const": "big-numbers"
+                "const": "big-numbers",
+                "description": "The kind of the component. Must be exactly 'big-numbers'"
             },
             "builderDisplayName": {
-                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\"",
-                "type": "string"
+                "type": "string",
+                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\""
             },
             "title": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
                         "type": "string"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             }
         },
-        "required": [
-            "kind",
-            "builderDisplayName",
-            "title"
-        ],
-        "additionalProperties": false
+        "required": ["kind", "builderDisplayName", "title"],
+        "additionalProperties": false,
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
     },
     {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {
             "kind": {
-                "description": "The kind of the component. Must be exactly 'page-web-view'",
-                "type": "string",
-                "const": "page-web-view"
+                "const": "page-web-view",
+                "description": "The kind of the component. Must be exactly 'page-web-view'"
             },
             "builderDisplayName": {
-                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\"",
-                "type": "string"
+                "type": "string",
+                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\""
             }
         },
-        "required": [
-            "kind",
-            "builderDisplayName"
-        ],
-        "additionalProperties": false
+        "required": ["kind", "builderDisplayName"],
+        "additionalProperties": false,
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
     },
     {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {
             "kind": {
-                "description": "The kind of the component. Must be exactly 'page-progress'",
-                "type": "string",
-                "const": "page-progress"
+                "const": "page-progress",
+                "description": "The kind of the component. Must be exactly 'page-progress'"
             },
             "builderDisplayName": {
-                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\"",
-                "type": "string"
+                "type": "string",
+                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\""
             },
             "title": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
                         "type": "string"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             },
             "description": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
                         "type": "string"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             }
         },
-        "required": [
-            "kind",
-            "builderDisplayName",
-            "title",
-            "description"
-        ],
-        "additionalProperties": false
+        "required": ["kind", "builderDisplayName", "title", "description"],
+        "additionalProperties": false,
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
     },
     {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {
             "kind": {
-                "description": "The kind of the component. Must be exactly 'page-audio'",
-                "type": "string",
-                "const": "page-audio"
+                "const": "page-audio",
+                "description": "The kind of the component. Must be exactly 'page-audio'"
             },
             "builderDisplayName": {
-                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\"",
-                "type": "string"
+                "type": "string",
+                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\""
             }
         },
-        "required": [
-            "kind",
-            "builderDisplayName"
-        ],
-        "additionalProperties": false
+        "required": ["kind", "builderDisplayName"],
+        "additionalProperties": false,
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
     },
     {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {
             "kind": {
-                "description": "The kind of the component. Must be exactly 'page-audio-recorder'",
-                "type": "string",
-                "const": "page-audio-recorder"
+                "const": "page-audio-recorder",
+                "description": "The kind of the component. Must be exactly 'page-audio-recorder'"
             },
             "builderDisplayName": {
-                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\"",
-                "type": "string"
+                "type": "string",
+                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\""
             },
             "saveTo": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
                         "type": "string"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             },
             "title": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
                         "type": "string"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             },
             "recordText": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
                         "type": "string"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             },
             "uploadingText": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
                         "type": "string"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             }
         },
-        "required": [
-            "kind",
-            "builderDisplayName",
-            "saveTo",
-            "title",
-            "recordText",
-            "uploadingText"
-        ],
-        "additionalProperties": false
+        "required": ["kind", "builderDisplayName", "saveTo", "title", "recordText", "uploadingText"],
+        "additionalProperties": false,
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
     },
     {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {
             "kind": {
-                "description": "The kind of the component. Must be exactly 'container'",
-                "type": "string",
-                "const": "container"
+                "const": "container",
+                "description": "The kind of the component. Must be exactly 'container'"
             },
             "builderDisplayName": {
-                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\"",
-                "type": "string"
+                "type": "string",
+                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\""
             },
             "backgroundImage": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
-                        "type": "string",
                         "const": "https://picsum.photos/seed/picsum/200/300"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             }
         },
-        "required": [
-            "kind",
-            "builderDisplayName",
-            "backgroundImage"
-        ],
-        "additionalProperties": false
+        "required": ["kind", "builderDisplayName", "backgroundImage"],
+        "additionalProperties": false,
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
     },
     {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {
             "kind": {
-                "description": "The kind of the component. Must be exactly 'page-separator'",
-                "type": "string",
-                "const": "page-separator"
+                "const": "page-separator",
+                "description": "The kind of the component. Must be exactly 'page-separator'"
             },
             "builderDisplayName": {
-                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\"",
-                "type": "string"
+                "type": "string",
+                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\""
             }
         },
-        "required": [
-            "kind",
-            "builderDisplayName"
-        ],
-        "additionalProperties": false
+        "required": ["kind", "builderDisplayName"],
+        "additionalProperties": false,
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
     },
     {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {
             "kind": {
-                "description": "The kind of the component. Must be exactly 'internal-separator'",
-                "type": "string",
-                "const": "internal-separator"
+                "const": "internal-separator",
+                "description": "The kind of the component. Must be exactly 'internal-separator'"
             },
             "builderDisplayName": {
-                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\"",
-                "type": "string"
+                "type": "string",
+                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\""
             }
         },
-        "required": [
-            "kind",
-            "builderDisplayName"
-        ],
-        "additionalProperties": false
+        "required": ["kind", "builderDisplayName"],
+        "additionalProperties": false,
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
     },
     {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {
             "kind": {
-                "description": "The kind of the component. Must be exactly 'text'",
-                "type": "string",
-                "const": "text"
+                "const": "text",
+                "description": "The kind of the component. Must be exactly 'text'"
             },
             "builderDisplayName": {
-                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\"",
-                "type": "string"
+                "type": "string",
+                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\""
             },
             "text": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
                         "type": "string"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             }
         },
-        "required": [
-            "kind",
-            "builderDisplayName",
-            "text"
-        ],
-        "additionalProperties": false
+        "required": ["kind", "builderDisplayName", "text"],
+        "additionalProperties": false,
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
     },
     {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {
             "kind": {
-                "description": "The kind of the component. Must be exactly 'page-note'",
-                "type": "string",
-                "const": "page-note"
+                "const": "page-note",
+                "description": "The kind of the component. Must be exactly 'page-note'"
             },
             "builderDisplayName": {
-                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\"",
-                "type": "string"
+                "type": "string",
+                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\""
             },
             "text": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
                         "type": "string"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             },
             "label": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
                         "type": "string"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             }
         },
-        "required": [
-            "kind",
-            "builderDisplayName",
-            "text",
-            "label"
-        ],
-        "additionalProperties": false
+        "required": ["kind", "builderDisplayName", "text", "label"],
+        "additionalProperties": false,
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
     },
     {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {
             "kind": {
-                "description": "The kind of the component. Must be exactly 'page-rich-text'",
-                "type": "string",
-                "const": "page-rich-text"
+                "const": "page-rich-text",
+                "description": "The kind of the component. Must be exactly 'page-rich-text'"
             },
             "builderDisplayName": {
-                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\"",
-                "type": "string"
+                "type": "string",
+                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\""
             },
             "text": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
                         "type": "string"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             }
         },
-        "required": [
-            "kind",
-            "builderDisplayName",
-            "text"
-        ],
-        "additionalProperties": false
+        "required": ["kind", "builderDisplayName", "text"],
+        "additionalProperties": false,
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
     },
     {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {
             "kind": {
-                "description": "The kind of the component. Must be exactly 'page-hint'",
-                "type": "string",
-                "const": "page-hint"
+                "const": "page-hint",
+                "description": "The kind of the component. Must be exactly 'page-hint'"
             },
             "builderDisplayName": {
-                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\"",
-                "type": "string"
+                "type": "string",
+                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\""
             },
             "description": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
                         "type": "string"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             },
             "actionTitle": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
                         "type": "string"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             }
         },
-        "required": [
-            "kind",
-            "builderDisplayName",
-            "description",
-            "actionTitle"
-        ],
-        "additionalProperties": false
+        "required": ["kind", "builderDisplayName", "description", "actionTitle"],
+        "additionalProperties": false,
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
     },
     {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {
             "kind": {
-                "description": "The kind of the component. Must be exactly 'buttons-block'",
-                "type": "string",
-                "const": "buttons-block"
+                "const": "buttons-block",
+                "description": "The kind of the component. Must be exactly 'buttons-block'"
             },
             "builderDisplayName": {
-                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\"",
-                "type": "string"
+                "type": "string",
+                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\""
             }
         },
-        "required": [
-            "kind",
-            "builderDisplayName"
-        ],
-        "additionalProperties": false
+        "required": ["kind", "builderDisplayName"],
+        "additionalProperties": false,
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
     },
     {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {
             "kind": {
-                "description": "The kind of the component. Must be exactly 'dynamic-button-bar'",
-                "type": "string",
-                "const": "dynamic-button-bar"
+                "const": "dynamic-button-bar",
+                "description": "The kind of the component. Must be exactly 'dynamic-button-bar'"
             },
             "builderDisplayName": {
-                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\"",
-                "type": "string"
+                "type": "string",
+                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\""
             },
             "title": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
                         "type": "string"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             },
             "description": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
                         "type": "string"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             }
         },
-        "required": [
-            "kind",
-            "builderDisplayName",
-            "title",
-            "description"
-        ],
-        "additionalProperties": false
+        "required": ["kind", "builderDisplayName", "title", "description"],
+        "additionalProperties": false,
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
     },
     {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {
             "kind": {
-                "description": "The kind of the component. Must be exactly 'page-button'",
-                "type": "string",
-                "const": "page-button"
+                "const": "page-button",
+                "description": "The kind of the component. Must be exactly 'page-button'"
             },
             "builderDisplayName": {
-                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\"",
-                "type": "string"
+                "type": "string",
+                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\""
             },
             "title": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
                         "type": "string"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             }
         },
-        "required": [
-            "kind",
-            "builderDisplayName",
-            "title"
-        ],
-        "additionalProperties": false
+        "required": ["kind", "builderDisplayName", "title"],
+        "additionalProperties": false,
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
     },
     {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {
             "kind": {
-                "description": "The kind of the component. Must be exactly 'page-link'",
-                "type": "string",
-                "const": "page-link"
+                "const": "page-link",
+                "description": "The kind of the component. Must be exactly 'page-link'"
             },
             "builderDisplayName": {
-                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\"",
-                "type": "string"
+                "type": "string",
+                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\""
             },
             "title": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
                         "type": "string"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             },
             "caption": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
                         "type": "string"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             }
         },
-        "required": [
-            "kind",
-            "builderDisplayName",
-            "title",
-            "caption"
-        ],
-        "additionalProperties": false
+        "required": ["kind", "builderDisplayName", "title", "caption"],
+        "additionalProperties": false,
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
     },
     {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {
             "kind": {
-                "description": "The kind of the component. Must be exactly 'page-action-row'",
-                "type": "string",
-                "const": "page-action-row"
+                "const": "page-action-row",
+                "description": "The kind of the component. Must be exactly 'page-action-row'"
             },
             "builderDisplayName": {
-                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\"",
-                "type": "string"
+                "type": "string",
+                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\""
             },
             "text": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
                         "type": "string"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             },
             "label": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
                         "type": "string"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             },
             "image": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
-                        "type": "string",
                         "const": "https://picsum.photos/seed/picsum/200/300"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             }
         },
-        "required": [
-            "kind",
-            "builderDisplayName",
-            "text",
-            "label",
-            "image"
-        ],
-        "additionalProperties": false
+        "required": ["kind", "builderDisplayName", "text", "label", "image"],
+        "additionalProperties": false,
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
     },
     {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {
             "kind": {
-                "description": "The kind of the component. Must be exactly 'page-rating'",
-                "type": "string",
-                "const": "page-rating"
+                "const": "page-rating",
+                "description": "The kind of the component. Must be exactly 'page-rating'"
             },
             "builderDisplayName": {
-                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\"",
-                "type": "string"
+                "type": "string",
+                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\""
             },
             "text": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
                         "type": "string"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             },
             "label": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
                         "type": "string"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             },
             "image": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
-                        "type": "string",
                         "const": "https://picsum.photos/seed/picsum/200/300"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             }
         },
-        "required": [
-            "kind",
-            "builderDisplayName",
-            "text",
-            "label",
-            "image"
-        ],
-        "additionalProperties": false
+        "required": ["kind", "builderDisplayName", "text", "label", "image"],
+        "additionalProperties": false,
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
     },
     {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {
             "kind": {
-                "description": "The kind of the component. Must be exactly 'contact-form'",
-                "type": "string",
-                "const": "contact-form"
+                "const": "contact-form",
+                "description": "The kind of the component. Must be exactly 'contact-form'"
             },
             "builderDisplayName": {
-                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\"",
-                "type": "string"
+                "type": "string",
+                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\""
             },
             "title": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
                         "type": "string"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             },
             "description": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
                         "type": "string"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             }
         },
-        "required": [
-            "kind",
-            "builderDisplayName",
-            "title",
-            "description"
-        ],
-        "additionalProperties": false
+        "required": ["kind", "builderDisplayName", "title", "description"],
+        "additionalProperties": false,
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
     },
     {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {
             "kind": {
-                "description": "The kind of the component. Must be exactly 'form-container'",
-                "type": "string",
-                "const": "form-container"
+                "const": "form-container",
+                "description": "The kind of the component. Must be exactly 'form-container'"
             },
             "builderDisplayName": {
-                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\"",
-                "type": "string"
+                "type": "string",
+                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\""
             }
         },
-        "required": [
-            "kind",
-            "builderDisplayName"
-        ],
-        "additionalProperties": false
+        "required": ["kind", "builderDisplayName"],
+        "additionalProperties": false,
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
     },
     {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {
             "kind": {
-                "description": "The kind of the component. Must be exactly 'breadcrumbs'",
-                "type": "string",
-                "const": "breadcrumbs"
+                "const": "breadcrumbs",
+                "description": "The kind of the component. Must be exactly 'breadcrumbs'"
             },
             "builderDisplayName": {
-                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\"",
-                "type": "string"
+                "type": "string",
+                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\""
             }
         },
-        "required": [
-            "kind",
-            "builderDisplayName"
-        ],
-        "additionalProperties": false
+        "required": ["kind", "builderDisplayName"],
+        "additionalProperties": false,
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
     },
     {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {
             "kind": {
-                "description": "The kind of the component. Must be exactly 'inline-scanner'",
-                "type": "string",
-                "const": "inline-scanner"
+                "const": "inline-scanner",
+                "description": "The kind of the component. Must be exactly 'inline-scanner'"
             },
             "builderDisplayName": {
-                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\"",
-                "type": "string"
+                "type": "string",
+                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\""
             },
             "writeTo": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
                         "type": "string"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             }
         },
-        "required": [
-            "kind",
-            "builderDisplayName",
-            "writeTo"
-        ],
-        "additionalProperties": false
+        "required": ["kind", "builderDisplayName", "writeTo"],
+        "additionalProperties": false,
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
     },
     {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {
             "kind": {
-                "description": "The kind of the component. Must be exactly 'page-signature-field'",
-                "type": "string",
-                "const": "page-signature-field"
+                "const": "page-signature-field",
+                "description": "The kind of the component. Must be exactly 'page-signature-field'"
             },
             "builderDisplayName": {
-                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\"",
-                "type": "string"
+                "type": "string",
+                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\""
             },
             "signature": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
-                        "type": "string",
                         "const": "https://picsum.photos/seed/picsum/200/300"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             },
             "title": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
                         "type": "string"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             }
         },
-        "required": [
-            "kind",
-            "builderDisplayName",
-            "signature",
-            "title"
-        ],
-        "additionalProperties": false
+        "required": ["kind", "builderDisplayName", "signature", "title"],
+        "additionalProperties": false,
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
     },
     {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {
             "kind": {
-                "description": "The kind of the component. Must be exactly 'page-stopwatch'",
-                "type": "string",
-                "const": "page-stopwatch"
+                "const": "page-stopwatch",
+                "description": "The kind of the component. Must be exactly 'page-stopwatch'"
             },
             "builderDisplayName": {
-                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\"",
-                "type": "string"
+                "type": "string",
+                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\""
             }
         },
-        "required": [
-            "kind",
-            "builderDisplayName"
-        ],
-        "additionalProperties": false
+        "required": ["kind", "builderDisplayName"],
+        "additionalProperties": false,
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
     },
     {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {
             "kind": {
-                "description": "The kind of the component. Must be exactly 'page-spinner'",
-                "type": "string",
-                "const": "page-spinner"
+                "const": "page-spinner",
+                "description": "The kind of the component. Must be exactly 'page-spinner'"
             },
             "builderDisplayName": {
-                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\"",
-                "type": "string"
+                "type": "string",
+                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\""
             }
         },
-        "required": [
-            "kind",
-            "builderDisplayName"
-        ],
-        "additionalProperties": false
+        "required": ["kind", "builderDisplayName"],
+        "additionalProperties": false,
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
     },
     {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {
             "kind": {
-                "description": "The kind of the component. Must be exactly 'ai-custom-component'",
-                "type": "string",
-                "const": "ai-custom-component"
+                "const": "ai-custom-component",
+                "description": "The kind of the component. Must be exactly 'ai-custom-component'"
             },
             "builderDisplayName": {
-                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\"",
-                "type": "string"
+                "type": "string",
+                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\""
             },
             "prompt": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
                         "type": "string"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             },
             "html": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
                         "type": "string"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             }
         },
-        "required": [
-            "kind",
-            "builderDisplayName",
-            "prompt",
-            "html"
-        ],
-        "additionalProperties": false
+        "required": ["kind", "builderDisplayName", "prompt", "html"],
+        "additionalProperties": false,
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
     },
     {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {
             "kind": {
-                "description": "The kind of the component. Must be exactly 'page-renderable-content'",
-                "type": "string",
-                "const": "page-renderable-content"
+                "const": "page-renderable-content",
+                "description": "The kind of the component. Must be exactly 'page-renderable-content'"
             },
             "builderDisplayName": {
-                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\"",
-                "type": "string"
+                "type": "string",
+                "description": "The display name of the component in the component palette. Should be a short one or two word description of the component. For example: \"Profile\" or \"Employees\" or \"Reorder\""
             },
             "descriptions": {
                 "type": "object",
                 "properties": {
                     "kind": {
-                        "description": "Must be exactly 'string'",
-                        "type": "string",
-                        "const": "string"
+                        "const": "string",
+                        "description": "Must be exactly 'string'"
                     },
                     "value": {
                         "type": "string"
                     }
                 },
-                "required": [
-                    "kind",
-                    "value"
-                ],
+                "required": ["kind", "value"],
                 "additionalProperties": false
             }
         },
-        "required": [
-            "kind",
-            "builderDisplayName",
-            "descriptions"
-        ],
-        "additionalProperties": false
+        "required": ["kind", "builderDisplayName", "descriptions"],
+        "additionalProperties": false,
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
     }
 ]
