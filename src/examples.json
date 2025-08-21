@@ -2,7 +2,7 @@
     {
         "type": "object",
         "properties": {},
-                "additionalProperties": false,
+        "additionalProperties": false,
         "$schema": "https://json-schema.org/draft/2020-12/schema"
     },
     {
@@ -46,7 +46,7 @@
                 "description": "Filter the apps by name or description. Looks for substrings."
             }
         },
-                "additionalProperties": false,
+        "additionalProperties": false,
         "$schema": "https://json-schema.org/draft/2020-12/schema"
     },
     {
