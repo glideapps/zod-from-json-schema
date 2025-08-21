@@ -2,7 +2,6 @@
     {
         "type": "object",
         "properties": {},
-        "required": [],
         "additionalProperties": false,
         "$schema": "https://json-schema.org/draft/2020-12/schema"
     },
@@ -32,9 +31,11 @@
         "type": "object",
         "properties": {
             "mode": {
-                "enum": ["Dashboard", "Data", "Layout", "Workflows", "Settings"]
+                "enum": ["Dashboard", "Data", "Layout", "Workflows", "Settings"],
+                "type": "string"
             }
         },
+
         "required": ["mode"],
         "additionalProperties": false,
         "$schema": "https://json-schema.org/draft/2020-12/schema"
@@ -47,7 +48,6 @@
                 "description": "Filter the apps by name or description. Looks for substrings."
             }
         },
-        "required": [],
         "additionalProperties": false,
         "$schema": "https://json-schema.org/draft/2020-12/schema"
     },
@@ -56,7 +56,8 @@
         "properties": {
             "kind": {
                 "const": "ai-custom-chat-component",
-                "description": "The kind of the component. Must be exactly 'ai-custom-chat-component'"
+                "description": "The kind of the component. Must be exactly 'ai-custom-chat-component'",
+                "type": "string"
             },
             "builderDisplayName": {
                 "type": "string",
@@ -67,7 +68,8 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
                         "type": "string"
@@ -81,7 +83,8 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
                         "type": "string"
@@ -100,7 +103,8 @@
         "properties": {
             "kind": {
                 "const": "hero",
-                "description": "The kind of the component. Must be exactly 'hero'"
+                "description": "The kind of the component. Must be exactly 'hero'",
+                "type": "string"
             },
             "builderDisplayName": {
                 "type": "string",
@@ -111,7 +115,8 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
                         "type": "string"
@@ -125,7 +130,8 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
                         "type": "string"
@@ -139,7 +145,8 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
                         "type": "string"
@@ -153,10 +160,12 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
-                        "const": "https://picsum.photos/seed/picsum/200/300"
+                        "const": "https://picsum.photos/seed/picsum/200/300",
+                        "type": "string"
                     }
                 },
                 "required": ["kind", "value"],
@@ -167,10 +176,12 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
-                        "const": "https://picsum.photos/seed/picsum/200/300"
+                        "const": "https://picsum.photos/seed/picsum/200/300",
+                        "type": "string"
                     }
                 },
                 "required": ["kind", "value"],
@@ -186,7 +197,8 @@
         "properties": {
             "kind": {
                 "const": "fields",
-                "description": "The kind of the component. Must be exactly 'fields'"
+                "description": "The kind of the component. Must be exactly 'fields'",
+                "type": "string"
             },
             "builderDisplayName": {
                 "type": "string",
@@ -197,7 +209,8 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
                         "type": "string"
@@ -216,7 +229,8 @@
         "properties": {
             "kind": {
                 "const": "page-location",
-                "description": "The kind of the component. Must be exactly 'page-location'"
+                "description": "The kind of the component. Must be exactly 'page-location'",
+                "type": "string"
             },
             "builderDisplayName": {
                 "type": "string",
@@ -227,7 +241,8 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
                         "type": "string"
@@ -241,7 +256,8 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
                         "type": "string"
@@ -260,7 +276,8 @@
         "properties": {
             "kind": {
                 "const": "page-image",
-                "description": "The kind of the component. Must be exactly 'page-image'"
+                "description": "The kind of the component. Must be exactly 'page-image'",
+                "type": "string"
             },
             "builderDisplayName": {
                 "type": "string",
@@ -271,7 +288,8 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
                         "type": "string"
@@ -285,10 +303,12 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
-                        "const": "https://picsum.photos/seed/picsum/200/300"
+                        "const": "https://picsum.photos/seed/picsum/200/300",
+                        "type": "string"
                     }
                 },
                 "required": ["kind", "value"],
@@ -299,7 +319,8 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
                         "type": "string"
@@ -313,7 +334,8 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
                         "type": "string"
@@ -332,7 +354,8 @@
         "properties": {
             "kind": {
                 "const": "page-simple-image",
-                "description": "The kind of the component. Must be exactly 'page-simple-image'"
+                "description": "The kind of the component. Must be exactly 'page-simple-image'",
+                "type": "string"
             },
             "builderDisplayName": {
                 "type": "string",
@@ -343,10 +366,12 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
-                        "const": "https://picsum.photos/seed/picsum/200/300"
+                        "const": "https://picsum.photos/seed/picsum/200/300",
+                        "type": "string"
                     }
                 },
                 "required": ["kind", "value"],
@@ -357,7 +382,8 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
                         "type": "string"
@@ -376,7 +402,8 @@
         "properties": {
             "kind": {
                 "const": "page-video",
-                "description": "The kind of the component. Must be exactly 'page-video'"
+                "description": "The kind of the component. Must be exactly 'page-video'",
+                "type": "string"
             },
             "builderDisplayName": {
                 "type": "string",
@@ -387,7 +414,8 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
                         "type": "string"
@@ -401,7 +429,8 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
                         "type": "string"
@@ -420,7 +449,8 @@
         "properties": {
             "kind": {
                 "const": "page-simple-video",
-                "description": "The kind of the component. Must be exactly 'page-simple-video'"
+                "description": "The kind of the component. Must be exactly 'page-simple-video'",
+                "type": "string"
             },
             "builderDisplayName": {
                 "type": "string",
@@ -436,7 +466,8 @@
         "properties": {
             "kind": {
                 "const": "big-numbers",
-                "description": "The kind of the component. Must be exactly 'big-numbers'"
+                "description": "The kind of the component. Must be exactly 'big-numbers'",
+                "type": "string"
             },
             "builderDisplayName": {
                 "type": "string",
@@ -447,7 +478,8 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
                         "type": "string"
@@ -466,7 +498,8 @@
         "properties": {
             "kind": {
                 "const": "page-web-view",
-                "description": "The kind of the component. Must be exactly 'page-web-view'"
+                "description": "The kind of the component. Must be exactly 'page-web-view'",
+                "type": "string"
             },
             "builderDisplayName": {
                 "type": "string",
@@ -482,7 +515,8 @@
         "properties": {
             "kind": {
                 "const": "page-progress",
-                "description": "The kind of the component. Must be exactly 'page-progress'"
+                "description": "The kind of the component. Must be exactly 'page-progress'",
+                "type": "string"
             },
             "builderDisplayName": {
                 "type": "string",
@@ -493,7 +527,8 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
                         "type": "string"
@@ -507,7 +542,8 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
                         "type": "string"
@@ -526,7 +562,8 @@
         "properties": {
             "kind": {
                 "const": "page-audio",
-                "description": "The kind of the component. Must be exactly 'page-audio'"
+                "description": "The kind of the component. Must be exactly 'page-audio'",
+                "type": "string"
             },
             "builderDisplayName": {
                 "type": "string",
@@ -542,7 +579,8 @@
         "properties": {
             "kind": {
                 "const": "page-audio-recorder",
-                "description": "The kind of the component. Must be exactly 'page-audio-recorder'"
+                "description": "The kind of the component. Must be exactly 'page-audio-recorder'",
+                "type": "string"
             },
             "builderDisplayName": {
                 "type": "string",
@@ -553,7 +591,8 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
                         "type": "string"
@@ -567,7 +606,8 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
                         "type": "string"
@@ -581,7 +621,8 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
                         "type": "string"
@@ -595,7 +636,8 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
                         "type": "string"
@@ -614,7 +656,8 @@
         "properties": {
             "kind": {
                 "const": "container",
-                "description": "The kind of the component. Must be exactly 'container'"
+                "description": "The kind of the component. Must be exactly 'container'",
+                "type": "string"
             },
             "builderDisplayName": {
                 "type": "string",
@@ -625,10 +668,12 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
-                        "const": "https://picsum.photos/seed/picsum/200/300"
+                        "const": "https://picsum.photos/seed/picsum/200/300",
+                        "type": "string"
                     }
                 },
                 "required": ["kind", "value"],
@@ -644,7 +689,8 @@
         "properties": {
             "kind": {
                 "const": "page-separator",
-                "description": "The kind of the component. Must be exactly 'page-separator'"
+                "description": "The kind of the component. Must be exactly 'page-separator'",
+                "type": "string"
             },
             "builderDisplayName": {
                 "type": "string",
@@ -660,7 +706,8 @@
         "properties": {
             "kind": {
                 "const": "internal-separator",
-                "description": "The kind of the component. Must be exactly 'internal-separator'"
+                "description": "The kind of the component. Must be exactly 'internal-separator'",
+                "type": "string"
             },
             "builderDisplayName": {
                 "type": "string",
@@ -676,7 +723,8 @@
         "properties": {
             "kind": {
                 "const": "text",
-                "description": "The kind of the component. Must be exactly 'text'"
+                "description": "The kind of the component. Must be exactly 'text'",
+                "type": "string"
             },
             "builderDisplayName": {
                 "type": "string",
@@ -687,7 +735,8 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
                         "type": "string"
@@ -706,7 +755,8 @@
         "properties": {
             "kind": {
                 "const": "page-note",
-                "description": "The kind of the component. Must be exactly 'page-note'"
+                "description": "The kind of the component. Must be exactly 'page-note'",
+                "type": "string"
             },
             "builderDisplayName": {
                 "type": "string",
@@ -717,7 +767,8 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
                         "type": "string"
@@ -731,7 +782,8 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
                         "type": "string"
@@ -750,7 +802,8 @@
         "properties": {
             "kind": {
                 "const": "page-rich-text",
-                "description": "The kind of the component. Must be exactly 'page-rich-text'"
+                "description": "The kind of the component. Must be exactly 'page-rich-text'",
+                "type": "string"
             },
             "builderDisplayName": {
                 "type": "string",
@@ -761,7 +814,8 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
                         "type": "string"
@@ -780,7 +834,8 @@
         "properties": {
             "kind": {
                 "const": "page-hint",
-                "description": "The kind of the component. Must be exactly 'page-hint'"
+                "description": "The kind of the component. Must be exactly 'page-hint'",
+                "type": "string"
             },
             "builderDisplayName": {
                 "type": "string",
@@ -791,7 +846,8 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
                         "type": "string"
@@ -805,7 +861,8 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
                         "type": "string"
@@ -824,7 +881,8 @@
         "properties": {
             "kind": {
                 "const": "buttons-block",
-                "description": "The kind of the component. Must be exactly 'buttons-block'"
+                "description": "The kind of the component. Must be exactly 'buttons-block'",
+                "type": "string"
             },
             "builderDisplayName": {
                 "type": "string",
@@ -840,7 +898,8 @@
         "properties": {
             "kind": {
                 "const": "dynamic-button-bar",
-                "description": "The kind of the component. Must be exactly 'dynamic-button-bar'"
+                "description": "The kind of the component. Must be exactly 'dynamic-button-bar'",
+                "type": "string"
             },
             "builderDisplayName": {
                 "type": "string",
@@ -851,7 +910,8 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
                         "type": "string"
@@ -865,7 +925,8 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
                         "type": "string"
@@ -884,7 +945,8 @@
         "properties": {
             "kind": {
                 "const": "page-button",
-                "description": "The kind of the component. Must be exactly 'page-button'"
+                "description": "The kind of the component. Must be exactly 'page-button'",
+                "type": "string"
             },
             "builderDisplayName": {
                 "type": "string",
@@ -895,7 +957,8 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
                         "type": "string"
@@ -914,7 +977,8 @@
         "properties": {
             "kind": {
                 "const": "page-link",
-                "description": "The kind of the component. Must be exactly 'page-link'"
+                "description": "The kind of the component. Must be exactly 'page-link'",
+                "type": "string"
             },
             "builderDisplayName": {
                 "type": "string",
@@ -925,7 +989,8 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
                         "type": "string"
@@ -939,7 +1004,8 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
                         "type": "string"
@@ -958,7 +1024,8 @@
         "properties": {
             "kind": {
                 "const": "page-action-row",
-                "description": "The kind of the component. Must be exactly 'page-action-row'"
+                "description": "The kind of the component. Must be exactly 'page-action-row'",
+                "type": "string"
             },
             "builderDisplayName": {
                 "type": "string",
@@ -969,7 +1036,8 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
                         "type": "string"
@@ -983,7 +1051,8 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
                         "type": "string"
@@ -997,10 +1066,12 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
-                        "const": "https://picsum.photos/seed/picsum/200/300"
+                        "const": "https://picsum.photos/seed/picsum/200/300",
+                        "type": "string"
                     }
                 },
                 "required": ["kind", "value"],
@@ -1016,7 +1087,8 @@
         "properties": {
             "kind": {
                 "const": "page-rating",
-                "description": "The kind of the component. Must be exactly 'page-rating'"
+                "description": "The kind of the component. Must be exactly 'page-rating'",
+                "type": "string"
             },
             "builderDisplayName": {
                 "type": "string",
@@ -1027,7 +1099,8 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
                         "type": "string"
@@ -1041,7 +1114,8 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
                         "type": "string"
@@ -1055,10 +1129,12 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
-                        "const": "https://picsum.photos/seed/picsum/200/300"
+                        "const": "https://picsum.photos/seed/picsum/200/300",
+                        "type": "string"
                     }
                 },
                 "required": ["kind", "value"],
@@ -1074,7 +1150,8 @@
         "properties": {
             "kind": {
                 "const": "contact-form",
-                "description": "The kind of the component. Must be exactly 'contact-form'"
+                "description": "The kind of the component. Must be exactly 'contact-form'",
+                "type": "string"
             },
             "builderDisplayName": {
                 "type": "string",
@@ -1085,7 +1162,8 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
                         "type": "string"
@@ -1099,7 +1177,8 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
                         "type": "string"
@@ -1118,7 +1197,8 @@
         "properties": {
             "kind": {
                 "const": "form-container",
-                "description": "The kind of the component. Must be exactly 'form-container'"
+                "description": "The kind of the component. Must be exactly 'form-container'",
+                "type": "string"
             },
             "builderDisplayName": {
                 "type": "string",
@@ -1134,7 +1214,8 @@
         "properties": {
             "kind": {
                 "const": "breadcrumbs",
-                "description": "The kind of the component. Must be exactly 'breadcrumbs'"
+                "description": "The kind of the component. Must be exactly 'breadcrumbs'",
+                "type": "string"
             },
             "builderDisplayName": {
                 "type": "string",
@@ -1150,7 +1231,8 @@
         "properties": {
             "kind": {
                 "const": "inline-scanner",
-                "description": "The kind of the component. Must be exactly 'inline-scanner'"
+                "description": "The kind of the component. Must be exactly 'inline-scanner'",
+                "type": "string"
             },
             "builderDisplayName": {
                 "type": "string",
@@ -1161,7 +1243,8 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
                         "type": "string"
@@ -1180,7 +1263,8 @@
         "properties": {
             "kind": {
                 "const": "page-signature-field",
-                "description": "The kind of the component. Must be exactly 'page-signature-field'"
+                "description": "The kind of the component. Must be exactly 'page-signature-field'",
+                "type": "string"
             },
             "builderDisplayName": {
                 "type": "string",
@@ -1191,10 +1275,12 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
-                        "const": "https://picsum.photos/seed/picsum/200/300"
+                        "const": "https://picsum.photos/seed/picsum/200/300",
+                        "type": "string"
                     }
                 },
                 "required": ["kind", "value"],
@@ -1205,7 +1291,8 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
                         "type": "string"
@@ -1224,7 +1311,8 @@
         "properties": {
             "kind": {
                 "const": "page-stopwatch",
-                "description": "The kind of the component. Must be exactly 'page-stopwatch'"
+                "description": "The kind of the component. Must be exactly 'page-stopwatch'",
+                "type": "string"
             },
             "builderDisplayName": {
                 "type": "string",
@@ -1240,7 +1328,8 @@
         "properties": {
             "kind": {
                 "const": "page-spinner",
-                "description": "The kind of the component. Must be exactly 'page-spinner'"
+                "description": "The kind of the component. Must be exactly 'page-spinner'",
+                "type": "string"
             },
             "builderDisplayName": {
                 "type": "string",
@@ -1256,7 +1345,8 @@
         "properties": {
             "kind": {
                 "const": "ai-custom-component",
-                "description": "The kind of the component. Must be exactly 'ai-custom-component'"
+                "description": "The kind of the component. Must be exactly 'ai-custom-component'",
+                "type": "string"
             },
             "builderDisplayName": {
                 "type": "string",
@@ -1267,7 +1357,8 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
                         "type": "string"
@@ -1281,7 +1372,8 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
                         "type": "string"
@@ -1300,7 +1392,8 @@
         "properties": {
             "kind": {
                 "const": "page-renderable-content",
-                "description": "The kind of the component. Must be exactly 'page-renderable-content'"
+                "description": "The kind of the component. Must be exactly 'page-renderable-content'",
+                "type": "string"
             },
             "builderDisplayName": {
                 "type": "string",
@@ -1311,7 +1404,8 @@
                 "properties": {
                     "kind": {
                         "const": "string",
-                        "description": "Must be exactly 'string'"
+                        "description": "Must be exactly 'string'",
+                        "type": "string"
                     },
                     "value": {
                         "type": "string"

@@ -1,7 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { convertJsonSchemaToZod, JSONSchema } from "./index";
+import { convertJsonSchemaToZod } from "./index";
 import { z } from "zod/v4";
-import examples from "./examples.json";
+import type { JSONSchema } from "zod/v4/core";
+import jsonExampleData from "./examples.json" assert { type: "json"};
+const examples = jsonExampleData as JSONSchema.BaseSchema[];
+
 
 // Helper function to find differences between objects
 function findDifferences(original: any, result: any, path = ""): string[] {

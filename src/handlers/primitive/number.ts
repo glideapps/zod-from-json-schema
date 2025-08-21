@@ -38,7 +38,11 @@ export class ExclusiveMinimumHandler implements PrimitiveHandler {
         if (types.number !== false) {
             const currentNumber = types.number || z.number();
             if (currentNumber instanceof z.ZodNumber) {
-                types.number = currentNumber.gt(numberSchema.exclusiveMinimum);
+                if (typeof numberSchema.exclusiveMinimum === "number") {
+                    types.number = currentNumber.gt(numberSchema.exclusiveMinimum);
+                } else {
+                    types.number = false;
+                }
             }
         }
     }
@@ -52,7 +56,11 @@ export class ExclusiveMaximumHandler implements PrimitiveHandler {
         if (types.number !== false) {
             const currentNumber = types.number || z.number();
             if (currentNumber instanceof z.ZodNumber) {
-                types.number = currentNumber.lt(numberSchema.exclusiveMaximum);
+                if (typeof numberSchema.exclusiveMaximum === "number") {
+                    types.number = currentNumber.lt(numberSchema.exclusiveMaximum);
+                } else {
+                    types.number = false;
+                }
             }
         }
     }
