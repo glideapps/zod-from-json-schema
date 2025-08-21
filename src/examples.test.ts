@@ -2,7 +2,9 @@ import { describe, it, expect } from "vitest";
 import { convertJsonSchemaToZod } from "./index";
 import { z } from "zod/v4";
 import type { JSONSchema } from "zod/v4/core";
-import examples from "./examples.json";
+import jsonExampleData from "./examples.json" assert { type: "json"};
+const examples = jsonExampleData as JSONSchema.BaseSchema[];
+
 
 // Helper function to find differences between objects
 function findDifferences(original: any, result: any, path = ""): string[] {
@@ -55,7 +57,7 @@ describe("examples tests", () => {
     it(`should correctly convert example ${index}`, () => {
       try {
         // Convert JSON schema to Zod
-        const zodSchema = convertJsonSchemaToZod(example as unknown as JSONSchema.BaseSchema);
+        const zodSchema = convertJsonSchemaToZod(example);
 
         // Convert Zod schema back to JSON schema
         const resultSchema = z.toJSONSchema(zodSchema);
