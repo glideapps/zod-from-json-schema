@@ -20,7 +20,7 @@ Zod 4 is available both as the package version 4, but also as part of the versio
 |---|--------------------|
 | v4 proper  | latest    |
 | v4 via 3.x | ^0.4.2    |
-| v3 | ^0.0.5            |
+| v3 | ^0.1.0            |
 
 Note that the older package for Zod 3 supports a smaller subset of JSON schema than the latest.  New features will only be added to the latest.
 
