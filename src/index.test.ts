@@ -714,10 +714,11 @@ describe("jsonSchemaObjectToZodRawShape", () => {
     expect(rawShape).toHaveProperty("age");
     expect(rawShape).toHaveProperty("isActive");
     
-    // Verify types are correct
+    // Verify types are correct - required fields should be their base types
     expect(rawShape.name instanceof z.ZodString).toBe(true);
     expect(rawShape.age instanceof z.ZodNumber).toBe(true);
-    expect(rawShape.isActive instanceof z.ZodBoolean).toBe(true);
+    // Non-required fields should be optional
+    expect(rawShape.isActive instanceof z.ZodOptional).toBe(true);
   });
 
   it("should handle empty properties", () => {
@@ -759,7 +760,10 @@ describe("jsonSchemaObjectToZodRawShape", () => {
     const rawShape = jsonSchemaObjectToZodRawShape(jsonSchema);
     
     expect(rawShape).toHaveProperty("user");
-    expect(rawShape.user instanceof z.ZodObject).toBe(true);
+    // Since user is not in the required array at the top level, it should be optional
+    expect(rawShape.user instanceof z.ZodOptional).toBe(true);
+    // The inner type should be a ZodObject
+    expect((rawShape.user as z.ZodOptional<any>)._def.innerType instanceof z.ZodObject).toBe(true);
     
     // Create a schema with the raw shape to test validation
     const schema = z.object(rawShape);

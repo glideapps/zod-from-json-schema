@@ -319,8 +319,28 @@ export function convertJsonSchemaToZod(schema: JSONSchema): z.ZodTypeAny {
  */
 export function jsonSchemaObjectToZodRawShape(schema: JSONSchema): z.ZodRawShape {
     let raw: z.ZodRawShape = {};
-    for (const [key, value] of Object.entries(schema.properties ?? {})) {
-        raw[key] = convertJsonSchemaToZod(value);
+
+    // Get the required fields set for efficient lookup
+    const requiredArray = Array.isArray(schema.required) ? schema.required : [];
+    const requiredFields = new Set<string>(requiredArray);
+
+    // Process each property
+    for (const [key, propSchema] of Object.entries(schema.properties ?? {})) {
+        let zodSchema = convertJsonSchemaToZod(propSchema);
+
+        // If there's a required array and the field is not in it, make it optional
+        // If there's no required array, all fields are optional by default in JSON Schema
+        if (requiredArray.length > 0) {
+            if (!requiredFields.has(key)) {
+                zodSchema = zodSchema.optional();
+            }
+        } else {
+            // No required array means all fields are optional
+            zodSchema = zodSchema.optional();
+        }
+
+        raw[key] = zodSchema;
     }
+
     return raw;
 }
