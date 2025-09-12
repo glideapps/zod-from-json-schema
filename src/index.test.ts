@@ -816,4 +816,32 @@ describe("jsonSchemaObjectToZodRawShape", () => {
     // Test refinement with invalid age
     expect(() => customSchema.parse({ age: 16 })).toThrow();
   });
+
+  it("should skip properties with undefined schemas", () => {
+    const jsonSchema = {
+      type: "object",
+      properties: {
+        name: { type: "string" },
+        undefinedProp: undefined,
+        age: { type: "integer" },
+        anotherUndefined: undefined
+      },
+      required: ["name"]
+    };
+
+    const rawShape = jsonSchemaObjectToZodRawShape(jsonSchema);
+    
+    // Should only have name and age properties
+    expect(rawShape).toHaveProperty("name");
+    expect(rawShape).toHaveProperty("age");
+    expect(rawShape).not.toHaveProperty("undefinedProp");
+    expect(rawShape).not.toHaveProperty("anotherUndefined");
+    
+    // Verify correct types
+    expect(rawShape.name instanceof z.ZodString).toBe(true);
+    expect(rawShape.age instanceof z.ZodOptional).toBe(true);
+    
+    // The shape should only have 2 properties
+    expect(Object.keys(rawShape).length).toBe(2);
+  });
 });
