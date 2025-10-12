@@ -242,7 +242,7 @@ This library provides comprehensive support for JSON Schema Draft 2020-12 featur
 The following JSON Schema features are **not yet implemented**:
 
 ### References and Definitions
-- `$ref` - JSON Pointer references (basic Zod v4 support exists but complex cases fail)
+- `$ref` - JSON Pointer references
 - `$defs` / `definitions` - Schema definitions for reuse
 - Remote references (`$id` resolution)
 - `$dynamicRef` / `$dynamicAnchor` - Dynamic references
