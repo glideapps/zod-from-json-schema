@@ -25,6 +25,7 @@ import { ConstComplexHandler } from "../handlers/refinement/constComplex";
 import { MetadataHandler } from "../handlers/refinement/metadata";
 import { ProtoRequiredHandler } from "../handlers/refinement/protoRequired";
 import { ContainsHandler } from "../handlers/refinement/contains";
+import { DefaultHandler } from "../handlers/refinement/default";
 
 // Initialize handlers
 const primitiveHandlers: PrimitiveHandler[] = [
@@ -67,6 +68,7 @@ const refinementHandlers: RefinementHandler[] = [
     new ProtoRequiredHandler(),
     new EnumComplexHandler(),
     new ConstComplexHandler(),
+    new DefaultHandler(),
     
     // Logical combinations
     new AllOfHandler(),

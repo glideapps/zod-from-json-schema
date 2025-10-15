@@ -1217,4 +1217,40 @@ describe("jsonSchemaObjectToZodRawShape", () => {
             }),
         ).not.toThrow();
     });
+
+    it("schema with defaults should parse empty objects", () => {
+        const jsonSchema = {
+            type: "object",
+            properties: {
+                field1: { type: "string", default: "test" },
+                field2: { type: "number", default: 42 },
+                field3: { type: "boolean", default: true },
+                field4: { type: "string", enum: ["test1", "test2"], default: "test2" },
+                field5: {
+                    type: "object",
+                    default: { name: "test", age: 10, isActive: true },
+                    properties: {
+                        name: { type: "string" },
+                        age: { type: "integer", minimum: -43, maximum: 120 },
+                        isActive: { type: "boolean" },
+                    },
+                    required: ["name", "age", "isActive"],
+                }
+            },
+            // No required field - all properties should be optional
+        };
+
+        const rawShape = jsonSchemaObjectToZodRawShape(jsonSchema);
+        const schema = z.object(rawShape);
+
+        // All fields should be optional
+        expect(() => schema.parse({})).not.toThrow();
+        expect(schema.parse({})).toEqual({
+            field1: "test",
+            field2: 42,
+            field3: true,
+            field4: "test2",
+            field5: { name: "test", age: 10, isActive: true },
+        })
+    });
 });
