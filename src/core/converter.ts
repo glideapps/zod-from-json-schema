@@ -6,11 +6,27 @@ import { PrimitiveHandler, RefinementHandler, TypeSchemas } from "./types";
 import { TypeHandler } from "../handlers/primitive/type";
 import { ConstHandler } from "../handlers/primitive/const";
 import { EnumHandler } from "../handlers/primitive/enum";
-import { ImplicitStringHandler, MinLengthHandler, MaxLengthHandler, PatternHandler } from "../handlers/primitive/string";
-import { MinimumHandler, MaximumHandler, ExclusiveMinimumHandler, ExclusiveMaximumHandler, MultipleOfHandler } from "../handlers/primitive/number";
+import {
+    ImplicitStringHandler,
+    MinLengthHandler,
+    MaxLengthHandler,
+    PatternHandler,
+} from "../handlers/primitive/string";
+import {
+    MinimumHandler,
+    MaximumHandler,
+    ExclusiveMinimumHandler,
+    ExclusiveMaximumHandler,
+    MultipleOfHandler,
+} from "../handlers/primitive/number";
 import { ImplicitArrayHandler, MinItemsHandler, MaxItemsHandler, ItemsHandler } from "../handlers/primitive/array";
 import { TupleHandler } from "../handlers/primitive/tuple";
-import { PropertiesHandler, ImplicitObjectHandler, MaxPropertiesHandler, MinPropertiesHandler } from "../handlers/primitive/object";
+import {
+    PropertiesHandler,
+    ImplicitObjectHandler,
+    MaxPropertiesHandler,
+    MinPropertiesHandler,
+} from "../handlers/primitive/object";
 
 // Import refinement handlers
 import { NotHandler } from "../handlers/refinement/not";
@@ -33,30 +49,30 @@ const primitiveHandlers: PrimitiveHandler[] = [
     new ConstHandler(),
     new EnumHandler(),
     new TypeHandler(),
-    
+
     // Implicit type detection - must run before other constraints
     new ImplicitStringHandler(),
     new ImplicitArrayHandler(),
     new ImplicitObjectHandler(),
-    
+
     // String constraints
     new MinLengthHandler(),
     new MaxLengthHandler(),
     new PatternHandler(),
-    
+
     // Number constraints
     new MinimumHandler(),
     new MaximumHandler(),
     new ExclusiveMinimumHandler(),
     new ExclusiveMaximumHandler(),
     new MultipleOfHandler(),
-    
+
     // Array constraints - TupleHandler must run before ItemsHandler
     new TupleHandler(),
     new MinItemsHandler(),
     new MaxItemsHandler(),
     new ItemsHandler(),
-    
+
     // Object constraints
     new MaxPropertiesHandler(),
     new MinPropertiesHandler(),
@@ -68,24 +84,24 @@ const refinementHandlers: RefinementHandler[] = [
     new ProtoRequiredHandler(),
     new EnumComplexHandler(),
     new ConstComplexHandler(),
-    new DefaultHandler(),
-    
+
     // Logical combinations
     new AllOfHandler(),
     new AnyOfHandler(),
     new OneOfHandler(),
-    
+
     // Type-specific refinements
     new PrefixItemsHandler(),
     new ObjectPropertiesHandler(),
-    
+
     // Array refinements
     new ContainsHandler(),
-    
+
     // Other refinements
     new NotHandler(),
     new UniqueItemsHandler(),
-    
+    new DefaultHandler(),
+
     // Metadata last
     new MetadataHandler(),
 ];
@@ -101,14 +117,14 @@ export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema | boolean):
 
     // Phase 1: Initialize type schemas and apply primitive handlers
     const types: TypeSchemas = {};
-    
+
     for (const handler of primitiveHandlers) {
         handler.apply(types, schema);
     }
-    
+
     // Build array of allowed type schemas
     const allowedSchemas: z.ZodTypeAny[] = [];
-    
+
     if (types.string !== false) {
         allowedSchemas.push(types.string || z.string());
     }
@@ -134,12 +150,12 @@ export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema | boolean):
         } else {
             // Use custom validator that rejects arrays for default object schema
             const objectSchema = z.custom<object>((val) => {
-                return typeof val === 'object' && val !== null && !Array.isArray(val);
+                return typeof val === "object" && val !== null && !Array.isArray(val);
             }, "Must be an object, not an array");
             allowedSchemas.push(objectSchema);
         }
     }
-    
+
     // Create base schema
     let zodSchema: z.ZodTypeAny;
     if (allowedSchemas.length === 0) {
@@ -148,10 +164,10 @@ export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema | boolean):
         zodSchema = allowedSchemas[0];
     } else {
         // Check if this is an unconstrained schema (all default types enabled)
-        const hasConstraints = Object.keys(schema).some(key => 
-            key !== '$schema' && key !== 'title' && key !== 'description'
+        const hasConstraints = Object.keys(schema).some(
+            (key) => key !== "$schema" && key !== "title" && key !== "description",
         );
-        
+
         if (!hasConstraints) {
             // Empty schema with no constraints should be z.any()
             zodSchema = z.any();
@@ -159,11 +175,11 @@ export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema | boolean):
             zodSchema = z.union(allowedSchemas as [z.ZodTypeAny, z.ZodTypeAny, ...z.ZodTypeAny[]]);
         }
     }
-    
+
     // Phase 2: Apply refinement handlers
     for (const handler of refinementHandlers) {
         zodSchema = handler.apply(zodSchema, schema);
     }
-    
+
     return zodSchema;
 }

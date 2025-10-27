@@ -1,12 +1,17 @@
 import { z } from "zod/v4";
 import type { JSONSchema } from "zod/v4/core";
 import { RefinementHandler } from "../../core/types";
-import { deepEqual } from "../../core/utils";
 
 export class DefaultHandler implements RefinementHandler {
     apply(zodSchema: z.ZodTypeAny, schema: JSONSchema.BaseSchema): z.ZodTypeAny {
-        if (!schema.default) return zodSchema;
+        const { default: v } = schema;
 
-        return zodSchema.default(schema.default);
+        if (v === undefined) return zodSchema;
+        if (!zodSchema.safeParse(v).success) {
+            // should we error-log here?
+            return zodSchema;
+        }
+
+        return zodSchema.default(v);
     }
 }

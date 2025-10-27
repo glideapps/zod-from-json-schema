@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { convertJsonSchemaToZod, jsonSchemaObjectToZodRawShape } from "./index";
 import { z } from "zod/v4";
-import {JSONSchema} from "zod/v4/core";
+import { JSONSchema } from "zod/v4/core";
 
 describe("convertJsonSchemaToZod", () => {
     it("should correctly convert a schema with additionalProperties: {}", () => {
@@ -93,7 +93,11 @@ describe("convertJsonSchemaToZod", () => {
 
             const resultSchema = z.toJSONSchema(zodSchema);
             // Zod v4 converts unions to anyOf instead of enum
-            expect(resultSchema.anyOf).toEqual([{ type: "number", const: 1 }, { type: "number", const: 2 }, { type: "number", const: 3 }]);
+            expect(resultSchema.anyOf).toEqual([
+                { type: "number", const: 1 },
+                { type: "number", const: 2 },
+                { type: "number", const: 3 },
+            ]);
         });
 
         it("should correctly convert a schema with boolean enum (no type)", () => {
@@ -111,7 +115,10 @@ describe("convertJsonSchemaToZod", () => {
 
             const resultSchema = z.toJSONSchema(zodSchema);
             // Zod v4 converts unions to anyOf instead of enum
-            expect(resultSchema.anyOf).toEqual([{ type: "boolean", const: true }, { type: "boolean", const: false }]);
+            expect(resultSchema.anyOf).toEqual([
+                { type: "boolean", const: true },
+                { type: "boolean", const: false },
+            ]);
         });
 
         it("should correctly convert a schema with mixed enum (no type)", () => {
@@ -132,7 +139,12 @@ describe("convertJsonSchemaToZod", () => {
 
             const resultSchema = z.toJSONSchema(zodSchema);
             // Zod v4 converts unions to anyOf instead of enum
-            expect(resultSchema.anyOf).toEqual([{ type: "string", const: "red" }, { type: "number", const: 1 }, { type: "boolean", const: true }, { type: "null" }]);
+            expect(resultSchema.anyOf).toEqual([
+                { type: "string", const: "red" },
+                { type: "number", const: 1 },
+                { type: "boolean", const: true },
+                { type: "null" },
+            ]);
         });
 
         it("should correctly convert a schema with single item mixed enum (no type)", () => {
@@ -570,12 +582,12 @@ describe("convertJsonSchemaToZod", () => {
 
             // Test that the validation works correctly
             expect(zodSchema.safeParse("hello").success).toBe(true); // 5 chars, within range
-            expect(zodSchema.safeParse("hi").success).toBe(false);   // 2 chars, too short
+            expect(zodSchema.safeParse("hi").success).toBe(false); // 2 chars, too short
             expect(zodSchema.safeParse("this is too long").success).toBe(false); // too long
 
             // Test Unicode support
             expect(zodSchema.safeParse("💩💩💩").success).toBe(true); // 3 graphemes
-            expect(zodSchema.safeParse("💩").success).toBe(false);    // 1 grapheme, too short
+            expect(zodSchema.safeParse("💩").success).toBe(false); // 1 grapheme, too short
 
             // Note: length constraints implemented with .refine() don't round-trip
             // back to JSON Schema, so we only test the validation behavior
@@ -1025,7 +1037,7 @@ describe("jsonSchemaObjectToZodRawShape", () => {
         // Verify types are correct - required fields are direct types
         expect(rawShape.name instanceof z.ZodString).toBe(true);
         expect(rawShape.age instanceof z.ZodNumber).toBe(true);
-        
+
         // isActive is not in required array, so it should be optional
         expect(rawShape.isActive instanceof z.ZodOptional).toBe(true);
         // Check the inner type of the optional
@@ -1097,16 +1109,14 @@ describe("jsonSchemaObjectToZodRawShape", () => {
                 user: { email: "john@example.com" },
             }),
         ).toThrow();
-        
+
         // Since user is optional at the top level, empty object should pass
-        expect(() =>
-            schema.parse({}),
-        ).not.toThrow();
+        expect(() => schema.parse({})).not.toThrow();
     });
 
     it("should be usable to build custom schemas", () => {
         const jsonSchema: JSONSchema.BaseSchema = {
-          type: "object",
+            type: "object",
             properties: {
                 name: { type: "string" },
                 age: { type: "integer" },
@@ -1235,7 +1245,8 @@ describe("jsonSchemaObjectToZodRawShape", () => {
                         isActive: { type: "boolean" },
                     },
                     required: ["name", "age", "isActive"],
-                }
+                },
+                field6: { type: "string", default: 42 },
             },
             // No required field - all properties should be optional
         };
@@ -1251,6 +1262,7 @@ describe("jsonSchemaObjectToZodRawShape", () => {
             field3: true,
             field4: "test2",
             field5: { name: "test", age: 10, isActive: true },
-        })
+            // `field6` doesn't get the default, because it's not the correct type
+        });
     });
 });
