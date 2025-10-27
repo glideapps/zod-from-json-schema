@@ -233,6 +233,7 @@ This library provides comprehensive support for JSON Schema Draft 2020-12 featur
 ### Additional Features
 - `title` - Schema titles (carried over to Zod schemas)
 - `description` - Schema descriptions (carried over to Zod schemas)
+- `default` - Default value annotation, but ignored if it doesn't conform to the schema
 - Boolean schemas (`true` = allow anything, `false` = allow nothing)
 - Implicit type detection from constraints
 - Comprehensive error messages

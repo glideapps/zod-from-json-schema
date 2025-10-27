@@ -1,6 +1,6 @@
 {
     "name": "zod-from-json-schema",
-    "version": "0.5.0",
+    "version": "0.5.1",
     "description": "Creates Zod types from JSON Schema at runtime",
     "main": "dist/index.js",
     "module": "dist/index.mjs",
