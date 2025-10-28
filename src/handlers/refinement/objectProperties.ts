@@ -16,6 +16,7 @@ export class ObjectPropertiesHandler implements RefinementHandler {
         const propertyEntries = objectSchema.properties
             ? Object.entries(objectSchema.properties).filter(([, propSchema]) => propSchema !== undefined)
             : [];
+        // Cache converted property schemas so we only pay the conversion cost once per property.
         const propertySchemas = new Map<string, z.ZodTypeAny>();
         for (const [propName, propSchema] of propertyEntries) {
             propertySchemas.set(propName, convertJsonSchemaToZod(propSchema));
@@ -52,8 +53,7 @@ export class ObjectPropertiesHandler implements RefinementHandler {
         const hasPatternConstraints = patternEntries.length > 0;
         const needsAdditionalFalseRefinement =
             objectSchema.additionalProperties === false && hasPatternConstraints;
-        const needsAdditionalSchemaRefinement =
-            additionalSchema !== undefined && !isDirectObject;
+        const needsAdditionalSchemaRefinement = additionalSchema !== undefined && !isDirectObject;
 
         const requiresRefinementForObject =
             hasPatternConstraints || needsAdditionalSchemaRefinement || needsAdditionalFalseRefinement;
@@ -71,15 +71,14 @@ export class ObjectPropertiesHandler implements RefinementHandler {
 
                 // Apply properties constraint
                 for (const [propName] of propertyEntries) {
-                    const descriptor = Object.getOwnPropertyDescriptor(value, propName);
-                    const propExists = descriptor !== undefined;
+                    if (!Object.prototype.hasOwnProperty.call(value, propName)) {
+                        continue;
+                    }
 
-                    if (propExists) {
-                        const propValue = descriptor?.value ?? (value as Record<string, unknown>)[propName];
-                        const zodPropSchema = propertySchemas.get(propName)!;
-                        if (!zodPropSchema.safeParse(propValue).success) {
-                            return false;
-                        }
+                    const propValue = (value as Record<string, unknown>)[propName];
+                    const zodPropSchema = propertySchemas.get(propName)!;
+                    if (!zodPropSchema.safeParse(propValue).success) {
+                        return false;
                     }
                 }
 
@@ -87,9 +86,7 @@ export class ObjectPropertiesHandler implements RefinementHandler {
                 if (objectSchema.required && Array.isArray(objectSchema.required)) {
                     for (const requiredProp of objectSchema.required) {
                         // Use robust property detection for required props too
-                        const descriptor = Object.getOwnPropertyDescriptor(value, requiredProp);
-                        const propExists = descriptor !== undefined;
-                        if (!propExists) {
+                        if (!Object.prototype.hasOwnProperty.call(value, requiredProp)) {
                             return false;
                         }
                     }

@@ -12,11 +12,10 @@ function sanitizeObjectInput(input: unknown): unknown {
     const source = input as Record<PropertyKey, unknown>;
     const target: Record<PropertyKey, unknown> = Object.create(null);
 
+    // A plain assignment is enough—accessor properties will resolve through the original object,
+    // and all own keys (including "__proto__" and symbols) are preserved.
     for (const key of Reflect.ownKeys(source)) {
-        const descriptor = Object.getOwnPropertyDescriptor(source, key);
-        if (descriptor) {
-            Object.defineProperty(target, key, descriptor);
-        }
+        target[key] = source[key];
     }
 
     return target;
