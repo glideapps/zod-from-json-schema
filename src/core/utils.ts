@@ -7,19 +7,19 @@ export function deepEqual(a: any, b: any): boolean {
     if (a === b) return true;
     if (a == null || b == null) return a === b;
     if (typeof a !== typeof b) return false;
-    
+
     if (Array.isArray(a) && Array.isArray(b)) {
         if (a.length !== b.length) return false;
         return a.every((item, index) => deepEqual(item, b[index]));
     }
-    
-    if (typeof a === 'object' && typeof b === 'object') {
+
+    if (typeof a === "object" && typeof b === "object") {
         const keysA = Object.keys(a);
         const keysB = Object.keys(b);
         if (keysA.length !== keysB.length) return false;
-        return keysA.every(key => keysB.includes(key) && deepEqual(a[key], b[key]));
+        return keysA.every((key) => keysB.includes(key) && deepEqual(a[key], b[key]));
     }
-    
+
     return false;
 }
 
@@ -49,4 +49,28 @@ export function createUniqueItemsValidator() {
  */
 export function isValidWithSchema(schema: z.ZodTypeAny, value: any): boolean {
     return schema.safeParse(value).success;
+}
+
+/**
+ * Removes preprocess/pipe wrappers so downstream consumers can treat the schema as its underlying type.
+ */
+export function unwrapPreprocess(schema: z.ZodTypeAny): z.ZodTypeAny {
+    let current = schema;
+
+    while (true) {
+        const def = (current as any)?._def;
+        if (def?.effect?.type === "preprocess" && def?.schema) {
+            current = def.schema;
+            continue;
+        }
+
+        if (def?.type === "pipe" && def?.out) {
+            current = def.out;
+            continue;
+        }
+
+        break;
+    }
+
+    return current;
 }

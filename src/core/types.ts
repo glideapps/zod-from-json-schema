@@ -8,7 +8,8 @@ export interface TypeSchemas {
     null?: z.ZodNull | false;
     array?: z.ZodArray<any> | false;
     tuple?: z.ZodTuple | false;
-    object?: z.ZodObject<any> | false;
+    // Object schemas may be wrapped (preprocess/pipe), so allow any Zod type to preserve wrappers applied during conversion.
+    object?: z.ZodTypeAny | false;
 }
 
 export interface PrimitiveHandler {

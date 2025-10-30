@@ -2,6 +2,7 @@ import { z } from "zod/v4";
 import type { JSONSchema } from "zod/v4/core";
 import { RefinementHandler } from "../../core/types";
 import { convertJsonSchemaToZod } from "../../core/converter";
+import { unwrapPreprocess } from "../../core/utils";
 
 export class ObjectPropertiesHandler implements RefinementHandler {
     apply(zodSchema: z.ZodTypeAny, schema: JSONSchema.BaseSchema): z.ZodTypeAny {
@@ -12,43 +13,55 @@ export class ObjectPropertiesHandler implements RefinementHandler {
             return zodSchema;
         }
 
-        // Check if the schema is a single object type (not a union)
-        if (zodSchema instanceof z.ZodObject || zodSchema instanceof z.ZodRecord) {
-            // Build proper shape with converted property schemas
-            const shape: Record<string, z.ZodTypeAny> = {};
-            
-            if (objectSchema.properties) {
-                for (const [key, propSchema] of Object.entries(objectSchema.properties)) {
-                    if (propSchema !== undefined) {
-                        shape[key] = convertJsonSchemaToZod(propSchema);
-                    }
-                }
-            }
-            
-            // Handle required properties
-            if (objectSchema.required && Array.isArray(objectSchema.required)) {
-                const required = new Set(objectSchema.required);
-                for (const key of Object.keys(shape)) {
-                    if (!required.has(key)) {
-                        shape[key] = shape[key].optional();
-                    }
-                }
-            } else {
-                // In JSON Schema, properties are optional by default
-                for (const key of Object.keys(shape)) {
-                    shape[key] = shape[key].optional();
-                }
-            }
-            
-            // Recreate the object with proper shape
-            if (objectSchema.additionalProperties === false) {
-                return z.object(shape);
-            } else {
-                return z.object(shape).passthrough();
-            }
+        const propertyEntries = objectSchema.properties
+            ? Object.entries(objectSchema.properties).filter(([, propSchema]) => propSchema !== undefined)
+            : [];
+        // Cache converted property schemas so we only pay the conversion cost once per property.
+        const propertySchemas = new Map<string, z.ZodTypeAny>();
+        for (const [propName, propSchema] of propertyEntries) {
+            propertySchemas.set(propName, convertJsonSchemaToZod(propSchema));
         }
-        
-        // For unions or other complex types, use refinement
+
+        // Precompile patternProperties so each additional key can be checked cheaply.
+        const patternEntries =
+            objectSchema.patternProperties && typeof objectSchema.patternProperties === "object"
+                ? Object.entries(objectSchema.patternProperties)
+                      .filter(([, patternSchema]) => patternSchema !== undefined)
+                      .map(([pattern, patternSchema]) => {
+                          try {
+                              return {
+                                  regex: new RegExp(pattern),
+                                  schema: convertJsonSchemaToZod(patternSchema),
+                              };
+                          } catch {
+                              return undefined;
+                          }
+                      })
+                      .filter((entry): entry is { regex: RegExp; schema: z.ZodTypeAny } => entry !== undefined)
+                : [];
+
+        const additionalSchema =
+            objectSchema.additionalProperties && typeof objectSchema.additionalProperties === "object"
+                ? convertJsonSchemaToZod(objectSchema.additionalProperties)
+                : undefined;
+
+        const allowsAdditional =
+            objectSchema.additionalProperties === undefined || objectSchema.additionalProperties === true;
+
+        const unwrappedSchema = unwrapPreprocess(zodSchema); // Removes preprocessing wrappers so object detection works for sanitized schemas.
+        const isDirectObject = unwrappedSchema instanceof z.ZodObject || unwrappedSchema instanceof z.ZodRecord;
+        const hasPatternConstraints = patternEntries.length > 0;
+        const needsAdditionalFalseRefinement =
+            objectSchema.additionalProperties === false && hasPatternConstraints;
+        const needsAdditionalSchemaRefinement = additionalSchema !== undefined && !isDirectObject;
+
+        const requiresRefinementForObject =
+            hasPatternConstraints || needsAdditionalSchemaRefinement || needsAdditionalFalseRefinement;
+
+        if (isDirectObject && !requiresRefinementForObject) {
+            return zodSchema;
+        }
+
         return zodSchema.refine(
             (value: any) => {
                 // Only apply object constraints to objects
@@ -57,21 +70,15 @@ export class ObjectPropertiesHandler implements RefinementHandler {
                 }
 
                 // Apply properties constraint
-                if (objectSchema.properties) {
-                    for (const [propName, propSchema] of Object.entries(objectSchema.properties)) {
-                        if (propSchema !== undefined) {
-                            // Use a more robust way to check if property exists
-                            // This handles JavaScript special property names correctly
-                            const propExists = Object.getOwnPropertyDescriptor(value, propName) !== undefined;
-                            
-                            if (propExists) {
-                                const zodPropSchema = convertJsonSchemaToZod(propSchema);
-                                const propResult = zodPropSchema.safeParse(value[propName]);
-                                if (!propResult.success) {
-                                    return false;
-                                }
-                            }
-                        }
+                for (const [propName] of propertyEntries) {
+                    if (!Object.prototype.hasOwnProperty.call(value, propName)) {
+                        continue;
+                    }
+
+                    const propValue = (value as Record<string, unknown>)[propName];
+                    const zodPropSchema = propertySchemas.get(propName)!;
+                    if (!zodPropSchema.safeParse(propValue).success) {
+                        return false;
                     }
                 }
 
@@ -79,20 +86,42 @@ export class ObjectPropertiesHandler implements RefinementHandler {
                 if (objectSchema.required && Array.isArray(objectSchema.required)) {
                     for (const requiredProp of objectSchema.required) {
                         // Use robust property detection for required props too
-                        const propExists = Object.getOwnPropertyDescriptor(value, requiredProp) !== undefined;
-                        if (!propExists) {
+                        if (!Object.prototype.hasOwnProperty.call(value, requiredProp)) {
                             return false;
                         }
                     }
                 }
 
                 // Apply additionalProperties constraint
-                if (objectSchema.additionalProperties === false && objectSchema.properties) {
-                    const allowedProps = new Set(Object.keys(objectSchema.properties));
-                    for (const prop in value) {
-                        if (!allowedProps.has(prop)) {
+                const knownPropertyNames = new Set(propertyEntries.map(([key]) => key));
+                for (const [key, propValue] of Object.entries(value as Record<string, unknown>)) {
+                    if (knownPropertyNames.has(key)) {
+                        continue;
+                    }
+
+                    const matchingPatterns = patternEntries.filter((entry) => entry.regex.test(key));
+                    if (matchingPatterns.length > 0) {
+                        for (const entry of matchingPatterns) {
+                            if (!entry.schema.safeParse(propValue).success) {
+                                return false;
+                            }
+                        }
+                        continue;
+                    }
+
+                    if (objectSchema.additionalProperties === false) {
+                        return false;
+                    }
+
+                    if (additionalSchema) {
+                        if (!additionalSchema.safeParse(propValue).success) {
                             return false;
                         }
+                        continue;
+                    }
+
+                    if (!allowsAdditional) {
+                        return false;
                     }
                 }
 

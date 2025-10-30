@@ -74,9 +74,10 @@ const primitiveHandlers: PrimitiveHandler[] = [
     new ItemsHandler(),
 
     // Object constraints
+    // Build full object shape early so later refinements operate on the final structure.
+    new PropertiesHandler(),
     new MaxPropertiesHandler(),
     new MinPropertiesHandler(),
-    new PropertiesHandler(),
 ];
 
 const refinementHandlers: RefinementHandler[] = [
@@ -86,13 +87,14 @@ const refinementHandlers: RefinementHandler[] = [
     new ConstComplexHandler(),
 
     // Logical combinations
+    // Run object refinement once the base shape exists, ahead of combinator refinements.
+    new ObjectPropertiesHandler(),
     new AllOfHandler(),
     new AnyOfHandler(),
     new OneOfHandler(),
 
     // Type-specific refinements
     new PrefixItemsHandler(),
-    new ObjectPropertiesHandler(),
 
     // Array refinements
     new ContainsHandler(),
