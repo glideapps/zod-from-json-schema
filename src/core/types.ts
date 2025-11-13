@@ -9,6 +9,7 @@ export interface TypeSchemas {
     array?: z.ZodArray<any> | false;
     tuple?: z.ZodTuple | false;
     object?: z.ZodObject<any> | false;
+    file?: z.ZodFile | false;
 }
 
 export interface PrimitiveHandler {

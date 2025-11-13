@@ -6,6 +6,7 @@ import { PrimitiveHandler, RefinementHandler, TypeSchemas } from "./types";
 import { TypeHandler } from "../handlers/primitive/type";
 import { ConstHandler } from "../handlers/primitive/const";
 import { EnumHandler } from "../handlers/primitive/enum";
+import { FileHandler } from "../handlers/primitive/file";
 import {
     ImplicitStringHandler,
     MinLengthHandler,
@@ -49,6 +50,9 @@ const primitiveHandlers: PrimitiveHandler[] = [
     new ConstHandler(),
     new EnumHandler(),
     new TypeHandler(),
+
+    // File schema detection - must run before string constraints
+    new FileHandler(),
 
     // Implicit type detection - must run before other constraints
     new ImplicitStringHandler(),
@@ -154,6 +158,9 @@ export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema | boolean):
             }, "Must be an object, not an array");
             allowedSchemas.push(objectSchema);
         }
+    }
+    if (types.file !== false && types.file !== undefined) {
+        allowedSchemas.push(types.file);
     }
 
     // Create base schema
