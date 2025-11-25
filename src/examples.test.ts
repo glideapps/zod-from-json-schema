@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { convertJsonSchemaToZod } from "./index";
+import { convertJsonSchemaToZod, JSONSchema } from "./index";
 import { zodToJsonSchema } from "zod-to-json-schema";
-import examples from "./examples.json";
+import examples from "./examples.json" with { type: "json" };
 
 // Helper function to find differences between objects
 function findDifferences(original: any, result: any, path = ''): string[] {
@@ -48,7 +48,7 @@ describe("examples tests", () => {
     it(`should correctly convert example ${index}`, () => {
       try {
         // Convert JSON schema to Zod
-        const zodSchema = convertJsonSchemaToZod(example);
+        const zodSchema = convertJsonSchemaToZod(example as JSONSchema); // see https://github.com/microsoft/TypeScript/issues/32063
         
         // Convert Zod schema back to JSON schema
         const resultSchema = zodToJsonSchema(zodSchema);

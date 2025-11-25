@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { convertJsonSchemaToZod, jsonSchemaObjectToZodRawShape } from "./index";
+import { convertJsonSchemaToZod, JSONSchema, jsonSchemaObjectToZodRawShape } from "./index";
 import { zodToJsonSchema } from "zod-to-json-schema";
-import { z } from "zod";
+import { z } from "zod/v3";
 
 describe("convertJsonSchemaToZod", () => {
   it("should correctly convert a schema with additionalProperties: true", () => {
@@ -75,8 +75,12 @@ describe("convertJsonSchemaToZod", () => {
       const zodSchema = convertJsonSchemaToZod(jsonSchema);
       const resultSchema = zodToJsonSchema(zodSchema);
       
-      // For enums, we just check that the original enum values are present
-      expect(resultSchema.enum).toEqual(jsonSchema.enum);
+      if('enum' in resultSchema) {
+        // For enums, we just check that the original enum values are present
+        expect(resultSchema.enum).toEqual(jsonSchema.enum);
+      } else {
+        throw new Error("Resulting schema does not contain an enum");
+      }
     });
 
     it("should correctly convert a schema with number enum (no type)", () => {
@@ -92,7 +96,7 @@ describe("convertJsonSchemaToZod", () => {
       expect(() => zodSchema.parse(4)).toThrow();
       
       const resultSchema = zodToJsonSchema(zodSchema);
-      expect(resultSchema.enum).toEqual(jsonSchema.enum);
+      expect('enum' in resultSchema && resultSchema.enum).toEqual(jsonSchema.enum);
     });
 
     it("should correctly convert a schema with boolean enum (no type)", () => {
@@ -109,7 +113,7 @@ describe("convertJsonSchemaToZod", () => {
       expect(() => zodSchema.parse("true")).toThrow();
       
       const resultSchema = zodToJsonSchema(zodSchema);
-      expect(resultSchema.enum).toEqual(jsonSchema.enum);
+      expect('enum' in resultSchema && resultSchema.enum).toEqual(jsonSchema.enum);
     });
 
     it("should correctly convert a schema with mixed enum (no type)", () => {
@@ -129,7 +133,7 @@ describe("convertJsonSchemaToZod", () => {
       expect(() => zodSchema.parse(2)).toThrow();
       
       const resultSchema = zodToJsonSchema(zodSchema);
-      expect(resultSchema.enum).toEqual(jsonSchema.enum);
+      expect('enum' in resultSchema && resultSchema.enum).toEqual(jsonSchema.enum);
     });
 
     it("should correctly convert a schema with single item mixed enum (no type)", () => {
@@ -147,7 +151,7 @@ describe("convertJsonSchemaToZod", () => {
       
       // Should be represented as a literal in the schema
       const resultSchema = zodToJsonSchema(zodSchema);
-      expect(resultSchema.const).toEqual(42);
+      expect('const' in resultSchema && resultSchema.const).toEqual(42);
     });
     
     it("should handle empty enum case (no type)", () => {
@@ -179,8 +183,8 @@ describe("convertJsonSchemaToZod", () => {
       expect(() => zodSchema.parse("yellow")).toThrow();
       
       const resultSchema = zodToJsonSchema(zodSchema);
-      expect(resultSchema.type).toEqual("string");
-      expect(resultSchema.enum).toEqual(jsonSchema.enum);
+      expect('type' in resultSchema && resultSchema.type).toEqual("string");
+      expect('enum' in resultSchema && resultSchema.enum).toEqual(jsonSchema.enum);
     });
     
     it("should handle empty string enum (with type)", () => {
@@ -196,7 +200,7 @@ describe("convertJsonSchemaToZod", () => {
       expect(() => zodSchema.parse("any string")).not.toThrow();
       
       const resultSchema = zodToJsonSchema(zodSchema);
-      expect(resultSchema.type).toEqual("string");
+      expect('type' in resultSchema && resultSchema.type).toEqual("string");
     });
 
     it("should correctly convert a schema with number type and enum", () => {
@@ -213,8 +217,8 @@ describe("convertJsonSchemaToZod", () => {
       expect(() => zodSchema.parse(4)).toThrow();
       
       const resultSchema = zodToJsonSchema(zodSchema);
-      expect(resultSchema.type).toEqual("number");
-      expect(resultSchema.enum).toEqual(jsonSchema.enum);
+      expect('type' in resultSchema && resultSchema.type).toEqual("number");
+      expect('enum' in resultSchema && resultSchema.enum).toEqual(jsonSchema.enum);
     });
     
     it("should correctly convert a schema with number type and single-item enum", () => {
@@ -231,7 +235,7 @@ describe("convertJsonSchemaToZod", () => {
       expect(() => zodSchema.parse(43)).toThrow();
       
       const resultSchema = zodToJsonSchema(zodSchema);
-      expect(resultSchema.const).toEqual(42);
+      expect('const' in resultSchema && resultSchema.const).toEqual(42);
     });
 
     it("should correctly convert a schema with boolean type and single-item enum", () => {
@@ -251,7 +255,7 @@ describe("convertJsonSchemaToZod", () => {
       // so zod-to-json-schema might represent it differently than the original.
       // We only check that the schema correctly validates values, not its exact representation
       const resultSchema = zodToJsonSchema(zodSchema);
-      expect(resultSchema.type).toEqual("boolean");
+      expect('type' in resultSchema && resultSchema.type).toEqual("boolean");
     });
     
     it("should correctly convert a schema with boolean type and multiple-item enum", () => {
@@ -268,7 +272,7 @@ describe("convertJsonSchemaToZod", () => {
       expect(() => zodSchema.parse(false)).not.toThrow();
       
       const resultSchema = zodToJsonSchema(zodSchema);
-      expect(resultSchema.type).toEqual("boolean");
+      expect('type' in resultSchema && resultSchema.type).toEqual("boolean");
     });
     
     it("should handle empty number enum (with type)", () => {
@@ -284,7 +288,7 @@ describe("convertJsonSchemaToZod", () => {
       expect(() => zodSchema.parse(42)).not.toThrow();
       
       const resultSchema = zodToJsonSchema(zodSchema);
-      expect(resultSchema.type).toEqual("number");
+      expect('type' in resultSchema && resultSchema.type).toEqual("number");
     });
     
     it("should handle empty boolean enum (with type)", () => {
@@ -301,7 +305,7 @@ describe("convertJsonSchemaToZod", () => {
       expect(() => zodSchema.parse(false)).not.toThrow();
       
       const resultSchema = zodToJsonSchema(zodSchema);
-      expect(resultSchema.type).toEqual("boolean");
+      expect('type' in resultSchema && resultSchema.type).toEqual("boolean");
     });
   });
 
@@ -318,7 +322,7 @@ describe("convertJsonSchemaToZod", () => {
       expect(() => zodSchema.parse("other value")).toThrow();
       
       const resultSchema = zodToJsonSchema(zodSchema);
-      expect(resultSchema.const).toEqual(jsonSchema.const);
+      expect('const' in resultSchema && resultSchema.const).toEqual(jsonSchema.const);
     });
 
     it("should correctly handle number const values", () => {
@@ -333,7 +337,7 @@ describe("convertJsonSchemaToZod", () => {
       expect(() => zodSchema.parse(43)).toThrow();
       
       const resultSchema = zodToJsonSchema(zodSchema);
-      expect(resultSchema.const).toEqual(jsonSchema.const);
+      expect('const' in resultSchema && resultSchema.const).toEqual(jsonSchema.const);
     });
 
     it("should correctly handle boolean const values", () => {
@@ -348,7 +352,7 @@ describe("convertJsonSchemaToZod", () => {
       expect(() => zodSchema.parse(false)).toThrow();
       
       const resultSchema = zodToJsonSchema(zodSchema);
-      expect(resultSchema.const).toEqual(jsonSchema.const);
+      expect('const' in resultSchema && resultSchema.const).toEqual(jsonSchema.const);
     });
 
     it("should correctly handle null const values", () => {
@@ -364,7 +368,7 @@ describe("convertJsonSchemaToZod", () => {
       
       // Just verify the schema works, not the exact representation
       const resultSchema = zodToJsonSchema(zodSchema);
-      expect(resultSchema.type).toEqual("null");
+      expect('type' in resultSchema && resultSchema.type).toEqual("null");
     });
 
     it("should handle object const values", () => {
@@ -427,7 +431,7 @@ describe("convertJsonSchemaToZod", () => {
     });
 
     it("should correctly handle allOf", () => {
-      const jsonSchema = {
+      const jsonSchema: JSONSchema = {
         $schema: "http://json-schema.org/draft-07/schema#",
         allOf: [
           { 
@@ -487,7 +491,7 @@ describe("convertJsonSchemaToZod", () => {
       expect(() => zodSchema.parse("null")).toThrow();
       
       const resultSchema = zodToJsonSchema(zodSchema);
-      expect(resultSchema.type).toEqual("null");
+      expect('type' in resultSchema && resultSchema.type).toEqual("null");
     });
     
     it("should handle empty object schema with no properties", () => {
@@ -502,7 +506,7 @@ describe("convertJsonSchemaToZod", () => {
       expect(() => zodSchema.parse({ extra: "prop" })).not.toThrow(); // By default additionalProperties is true
       
       const resultSchema = zodToJsonSchema(zodSchema);
-      expect(resultSchema.type).toEqual("object");
+      expect('type' in resultSchema && resultSchema.type).toEqual("object");
     });
 
     it("should handle array schema with no items", () => {
@@ -517,7 +521,7 @@ describe("convertJsonSchemaToZod", () => {
       expect(() => zodSchema.parse([1, "string", true])).not.toThrow(); // No items means any items allowed
       
       const resultSchema = zodToJsonSchema(zodSchema);
-      expect(resultSchema.type).toEqual("array");
+      expect('type' in resultSchema && resultSchema.type).toEqual("array");
     });
 
     it("should return z.any() for empty schema", () => {
@@ -656,8 +660,8 @@ describe("convertJsonSchemaToZod", () => {
       
       // We can't do the normal round-trip test, so we'll verify key parts of the schema
       const resultSchema = zodToJsonSchema(zodSchema);
-      expect(resultSchema.type).toEqual("array");
-      expect(resultSchema.items).toEqual({ type: "string" });
+      expect('type' in resultSchema && resultSchema.type).toEqual("array");
+      expect('items' in resultSchema && resultSchema.items).toEqual({ type: "string" });
     });
     
     it("should support uniqueItems constraint with object items", () => {
@@ -818,12 +822,14 @@ describe("jsonSchemaObjectToZodRawShape", () => {
   });
 
   it("should skip properties with undefined schemas", () => {
-    const jsonSchema = {
+    const jsonSchema: JSONSchema = {
       type: "object",
       properties: {
         name: { type: "string" },
+        // @ts-expect-error
         undefinedProp: undefined,
         age: { type: "integer" },
+        // @ts-expect-error
         anotherUndefined: undefined
       },
       required: ["name"]
