@@ -2,12 +2,12 @@ import { z } from "zod/v4";
 import type { JSONSchema } from "zod/v4/core";
 import { RefinementHandler } from "../../core/types";
 import { convertJsonSchemaToZod } from "../../core/converter";
-import { unwrapPreprocess } from "../../core/utils";
+import { isHazardousPropertyName } from "../../core/utils";
 
 export class ObjectPropertiesHandler implements RefinementHandler {
     apply(zodSchema: z.ZodTypeAny, schema: JSONSchema.BaseSchema): z.ZodTypeAny {
         const objectSchema = schema as JSONSchema.ObjectSchema;
-        
+
         // Skip if no object-specific constraints
         if (!objectSchema.properties && !objectSchema.required && objectSchema.additionalProperties !== false) {
             return zodSchema;
@@ -16,6 +16,25 @@ export class ObjectPropertiesHandler implements RefinementHandler {
         const propertyEntries = objectSchema.properties
             ? Object.entries(objectSchema.properties).filter(([, propSchema]) => propSchema !== undefined)
             : [];
+
+        const hasPatternConstraints =
+            objectSchema.patternProperties !== undefined &&
+            typeof objectSchema.patternProperties === "object" &&
+            Object.keys(objectSchema.patternProperties).length > 0;
+
+        // Properties named like Object.prototype members were left out of the
+        // object shape built by PropertiesHandler; they are validated here with
+        // own-property semantics.
+        const hasHazardousProperties = propertyEntries.some(([propName]) => isHazardousPropertyName(propName));
+
+        // A plain object schema already enforces properties, required, and
+        // additionalProperties through its shape, so refinement is only needed
+        // for constraints the shape can't express.
+        const isDirectObject = zodSchema instanceof z.ZodObject || zodSchema instanceof z.ZodRecord;
+        if (isDirectObject && !hasPatternConstraints && !hasHazardousProperties) {
+            return zodSchema;
+        }
+
         // Cache converted property schemas so we only pay the conversion cost once per property.
         const propertySchemas = new Map<string, z.ZodTypeAny>();
         for (const [propName, propSchema] of propertyEntries) {
@@ -44,23 +63,6 @@ export class ObjectPropertiesHandler implements RefinementHandler {
             objectSchema.additionalProperties && typeof objectSchema.additionalProperties === "object"
                 ? convertJsonSchemaToZod(objectSchema.additionalProperties)
                 : undefined;
-
-        const allowsAdditional =
-            objectSchema.additionalProperties === undefined || objectSchema.additionalProperties === true;
-
-        const unwrappedSchema = unwrapPreprocess(zodSchema); // Removes preprocessing wrappers so object detection works for sanitized schemas.
-        const isDirectObject = unwrappedSchema instanceof z.ZodObject || unwrappedSchema instanceof z.ZodRecord;
-        const hasPatternConstraints = patternEntries.length > 0;
-        const needsAdditionalFalseRefinement =
-            objectSchema.additionalProperties === false && hasPatternConstraints;
-        const needsAdditionalSchemaRefinement = additionalSchema !== undefined && !isDirectObject;
-
-        const requiresRefinementForObject =
-            hasPatternConstraints || needsAdditionalSchemaRefinement || needsAdditionalFalseRefinement;
-
-        if (isDirectObject && !requiresRefinementForObject) {
-            return zodSchema;
-        }
 
         return zodSchema.refine(
             (value: any) => {
@@ -113,14 +115,7 @@ export class ObjectPropertiesHandler implements RefinementHandler {
                         return false;
                     }
 
-                    if (additionalSchema) {
-                        if (!additionalSchema.safeParse(propValue).success) {
-                            return false;
-                        }
-                        continue;
-                    }
-
-                    if (!allowsAdditional) {
+                    if (additionalSchema && !additionalSchema.safeParse(propValue).success) {
                         return false;
                     }
                 }

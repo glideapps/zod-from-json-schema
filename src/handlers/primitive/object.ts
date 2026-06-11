@@ -2,32 +2,15 @@ import { z } from "zod/v4";
 import type { JSONSchema } from "zod/v4/core";
 import { PrimitiveHandler, TypeSchemas } from "../../core/types";
 import { convertJsonSchemaToZod } from "../../core/converter";
-
-// Clone incoming objects onto a null-prototype so JSON Schema keywords can see "__proto__" et al. as real properties without mutating the original input.
-function sanitizeObjectInput(input: unknown): unknown {
-    if (typeof input !== "object" || input === null || Array.isArray(input)) {
-        return input;
-    }
-
-    const source = input as Record<PropertyKey, unknown>;
-    const target: Record<PropertyKey, unknown> = Object.create(null);
-
-    // A plain assignment is enough—accessor properties will resolve through the original object,
-    // and all own keys (including "__proto__" and symbols) are preserved.
-    for (const key of Reflect.ownKeys(source)) {
-        target[key] = source[key];
-    }
-
-    return target;
-}
+import { isHazardousPropertyName } from "../../core/utils";
 
 export class PropertiesHandler implements PrimitiveHandler {
     apply(types: TypeSchemas, schema: JSONSchema.BaseSchema): void {
         const objectSchema = schema as JSONSchema.ObjectSchema;
-        
+
         // Only process if object is still allowed
         if (types.object === false) return;
-        
+
         const hasPropertyKeywords =
             objectSchema.properties !== undefined ||
             (Array.isArray(objectSchema.required) && objectSchema.required.length > 0) ||
@@ -37,61 +20,86 @@ export class PropertiesHandler implements PrimitiveHandler {
             return;
         }
 
-        // Track whether patternProperties will supply their own allowance so we avoid locking the schema down too early.
         const hasPatternProperties =
             objectSchema.patternProperties !== undefined &&
             typeof objectSchema.patternProperties === "object" &&
             Object.keys(objectSchema.patternProperties).length > 0;
 
-        const requiredSet = Array.isArray(objectSchema.required)
-            ? new Set<string>(objectSchema.required)
-            : undefined;
+        const requiredSet = new Set<string>(Array.isArray(objectSchema.required) ? objectSchema.required : []);
+
+        // Properties whose names collide with Object.prototype members can't be
+        // expressed in the shape; ObjectPropertiesHandler validates them with
+        // own-property semantics instead.
+        let hasHazardousProperties = false;
 
         const shape: Record<string, z.ZodTypeAny> = {};
+
+        // Required keys whose presence the shape itself can't enforce: hazardous
+        // names, keys without a property schema, and property schemas that accept
+        // undefined (e.g. the empty schema), which Zod treats as satisfiable by a
+        // missing key.
+        const presenceCheckKeys: string[] = [];
 
         if (objectSchema.properties) {
             for (const [key, propSchema] of Object.entries(objectSchema.properties)) {
                 if (propSchema === undefined) continue;
 
-                const propertyZod = convertJsonSchemaToZod(propSchema);
-                const isRequired = requiredSet ? requiredSet.has(key) : false;
-
-                if (requiredSet) {
-                    requiredSet.delete(key);
+                if (isHazardousPropertyName(key)) {
+                    hasHazardousProperties = true;
+                    if (requiredSet.delete(key)) {
+                        presenceCheckKeys.push(key);
+                    }
+                    continue;
                 }
 
-                shape[key] = isRequired ? propertyZod : propertyZod.optional();
+                const propertyZod = convertJsonSchemaToZod(propSchema);
+                if (requiredSet.delete(key)) {
+                    shape[key] = propertyZod;
+                    if (propertyZod.safeParse(undefined).success) {
+                        presenceCheckKeys.push(key);
+                    }
+                } else {
+                    shape[key] = propertyZod.optional();
+                }
             }
         }
 
-        if (requiredSet && requiredSet.size > 0) {
-            for (const key of requiredSet) {
-                shape[key] = z.any();
-            }
+        // Required keys without a property schema: enforce presence only.
+        for (const key of requiredSet) {
+            presenceCheckKeys.push(key);
         }
 
-        let objectZod = z.object(shape);
+        let objectZod: z.ZodObject<any> = z.object(shape);
+
+        // With patternProperties or hazardous property names in play, the shape
+        // alone can't decide which extra keys are allowed; ObjectPropertiesHandler
+        // enforces additionalProperties in those cases, so stay permissive here.
+        const deferUnknownKeys = hasPatternProperties || hasHazardousProperties;
 
         if (objectSchema.additionalProperties === false) {
-            objectZod = hasPatternProperties ? objectZod.passthrough() : objectZod.strict();
-        } else if (
-            objectSchema.additionalProperties !== undefined &&
-            objectSchema.additionalProperties !== true
-        ) {
-            if (typeof objectSchema.additionalProperties === "object") {
-                const additionalSchema = convertJsonSchemaToZod(objectSchema.additionalProperties);
-                objectZod = hasPatternProperties ? objectZod.passthrough() : objectZod.catchall(additionalSchema);
-            } else {
-                objectZod = objectZod.passthrough();
-            }
+            objectZod = deferUnknownKeys ? objectZod.passthrough() : objectZod.strict();
+        } else if (typeof objectSchema.additionalProperties === "object") {
+            objectZod = deferUnknownKeys
+                ? objectZod.passthrough()
+                : objectZod.catchall(convertJsonSchemaToZod(objectSchema.additionalProperties));
         } else {
             objectZod = objectZod.passthrough();
         }
 
-        // Preprocess ensures downstream refinements receive the sanitized clone while preserving the high-level object shape.
-        const objectWithPreprocess = z.preprocess(sanitizeObjectInput, objectZod);
+        // Refinements run on Zod's parse output, which strips own "__proto__"
+        // keys for security, so presence of "__proto__" can't be enforced here.
+        // (ProtoRequiredHandler covers the untyped-schema case.)
+        const enforcibleKeys = presenceCheckKeys.filter((key) => key !== "__proto__");
 
-        types.object = objectWithPreprocess;
+        if (enforcibleKeys.length > 0) {
+            types.object = objectZod.refine(
+                (value: Record<string, unknown>) =>
+                    enforcibleKeys.every((key) => Object.prototype.hasOwnProperty.call(value, key)),
+                { message: `Missing required properties: ${enforcibleKeys.join(", ")}` },
+            );
+        } else {
+            types.object = objectZod;
+        }
     }
 }
 

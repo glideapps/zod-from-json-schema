@@ -7,19 +7,19 @@ export function deepEqual(a: any, b: any): boolean {
     if (a === b) return true;
     if (a == null || b == null) return a === b;
     if (typeof a !== typeof b) return false;
-
+    
     if (Array.isArray(a) && Array.isArray(b)) {
         if (a.length !== b.length) return false;
         return a.every((item, index) => deepEqual(item, b[index]));
     }
-
-    if (typeof a === "object" && typeof b === "object") {
+    
+    if (typeof a === 'object' && typeof b === 'object') {
         const keysA = Object.keys(a);
         const keysB = Object.keys(b);
         if (keysA.length !== keysB.length) return false;
-        return keysA.every((key) => keysB.includes(key) && deepEqual(a[key], b[key]));
+        return keysA.every(key => keysB.includes(key) && deepEqual(a[key], b[key]));
     }
-
+    
     return false;
 }
 
@@ -52,25 +52,13 @@ export function isValidWithSchema(schema: z.ZodTypeAny, value: any): boolean {
 }
 
 /**
- * Removes preprocess/pipe wrappers so downstream consumers can treat the schema as its underlying type.
+ * Checks whether a property name collides with a member of Object.prototype
+ * (e.g. "toString", "constructor", "__proto__"). Such names cannot be
+ * validated through a plain z.object() shape: when the key is absent, Zod
+ * reads the inherited value off the prototype chain instead of treating the
+ * property as missing. These properties are validated with own-property
+ * semantics in ObjectPropertiesHandler instead.
  */
-export function unwrapPreprocess(schema: z.ZodTypeAny): z.ZodTypeAny {
-    let current = schema;
-
-    while (true) {
-        const def = (current as any)?._def;
-        if (def?.effect?.type === "preprocess" && def?.schema) {
-            current = def.schema;
-            continue;
-        }
-
-        if (def?.type === "pipe" && def?.out) {
-            current = def.out;
-            continue;
-        }
-
-        break;
-    }
-
-    return current;
+export function isHazardousPropertyName(name: string): boolean {
+    return Object.prototype.hasOwnProperty.call(Object.prototype, name);
 }

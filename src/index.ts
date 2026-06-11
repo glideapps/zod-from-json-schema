@@ -1,7 +1,6 @@
 import { z } from "zod/v4";
 import type { JSONSchema } from "zod/v4/core";
 import { convertJsonSchemaToZod } from "./core/converter";
-import { unwrapPreprocess } from "./core/utils";
 
 // Re-export the main converter function
 export { convertJsonSchemaToZod };
@@ -35,28 +34,6 @@ type InferZodRawShape<T extends Record<string, any>> = {
     [K in keyof T]: InferZodTypeFromJsonSchema<T[K]>;
 };
 
-// Raw shape consumers expect "real" object types, so peel off preprocess/pipe layers that were introduced during conversion.
-function unwrapPreprocess(schema: z.ZodTypeAny): z.ZodTypeAny {
-    let current = schema;
-
-    while (true) {
-        const def = (current as any)?._def;
-        if (def?.effect?.type === "preprocess" && def?.schema) {
-            current = def.schema;
-            continue;
-        }
-
-        if (def?.type === "pipe" && def?.out) {
-            current = def.out;
-            continue;
-        }
-
-        break;
-    }
-
-    return current;
-}
-
 /**
  * Converts a JSON Schema object to a Zod raw shape with proper typing
  * @param schema The JSON Schema object to convert
@@ -83,21 +60,20 @@ export function jsonSchemaObjectToZodRawShape(schema: JSONSchema.Schema): Record
     for (const [key, value] of Object.entries(schema.properties ?? {})) {
         if (value === undefined) continue;
 
-        const zodType = convertJsonSchemaToZod(value);
-        let shapeType = unwrapPreprocess(zodType);
+        let zodType = convertJsonSchemaToZod(value);
 
         // If there's a required array and the field is not in it, make it optional
         // If there's no required array, all fields are optional by default in JSON Schema
         if (requiredArray.length > 0) {
             if (!requiredFields.has(key)) {
-                shapeType = shapeType.optional();
+                zodType = zodType.optional();
             }
         } else {
             // No required array means all fields are optional
-            shapeType = shapeType.optional();
+            zodType = zodType.optional();
         }
 
-        raw[key] = shapeType;
+        raw[key] = zodType;
     }
     return raw;
 }
