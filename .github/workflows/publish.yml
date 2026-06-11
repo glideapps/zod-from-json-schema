@@ -54,4 +54,4 @@ jobs:
         node --input-type=module -e "import * as mod from './dist/index.mjs'; console.log(typeof mod.convertJsonSchemaToZod === 'function')" # Test ESM
     
     - name: Publish to NPM
-      run: npm publish --loglevel verbose  # Authenticates via OIDC trusted publishing, no token needed
+      run: npm publish  # Authenticates via OIDC trusted publishing, no token needed
