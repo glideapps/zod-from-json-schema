@@ -217,10 +217,11 @@ This library provides comprehensive support for JSON Schema Draft 2020-12 featur
 - `properties` - Property schema definitions
 - `required` - Required property validation (supports special JavaScript property names)
 - `additionalProperties` - Controls whether additional properties are allowed
+- `patternProperties` - Regex-based property validation (partial; see [Known Limitations](#known-limitations))
 - `minProperties` - Minimum number of object properties
 - `maxProperties` - Maximum number of object properties
 
-**Special Property Support**: Correctly handles JavaScript reserved property names like `constructor`, `toString`, and `__proto__`.
+**Special Property Support**: Correctly handles JavaScript reserved property names like `constructor` and `toString` — inherited members are not mistaken for property values, and own keys are validated normally. `__proto__` is an exception; see [Known Limitations](#known-limitations).
 
 ### Schema Composition
 - `const` - Literal value constraints
@@ -249,7 +250,6 @@ The following JSON Schema features are **not yet implemented**:
 - `$dynamicRef` / `$dynamicAnchor` - Dynamic references
 
 ### Advanced Object Validation
-- `patternProperties` - Property validation based on regex patterns
 - `additionalProperties` - Fine-grained control over additional properties (basic support exists)
 - `dependentSchemas` - Schema dependencies based on property presence
 - `dependentRequired` - Required properties based on other property presence
@@ -266,6 +266,15 @@ The following JSON Schema features are **not yet implemented**:
 ### Meta-Schema Features
 - Custom vocabularies and meta-schema validation
 - Annotation collection and processing
+
+## Known Limitations
+
+Beyond the unsupported keywords above, supported features have some known gaps:
+
+- **`__proto__` properties**: Zod removes own `__proto__` keys from parsed objects to prevent prototype pollution, and this library's validation runs on Zod's parse output. As a result, a `__proto__` entry in `properties` cannot validate its value, and `required: ["__proto__"]` is only enforced for schemas without an explicit `type`.
+- **`patternProperties`**: Pattern schemas are only enforced when the schema also uses `properties`, `required`, or `additionalProperties: false` — a schema using only `patternProperties` (optionally with an `additionalProperties` schema) is not enforced. A key declared in `properties` that also matches a pattern is validated only against its `properties` schema, although JSON Schema requires both to apply.
+- **`required` interacting with `default`**: When a required property's schema has a `default`, the default fills in missing keys before validation runs, so `required` is effectively not enforced for that property.
+- **`unevaluatedProperties` is ignored**: In particular, discriminated unions whose `oneOf` variants differ only by `unevaluatedProperties: false` will not reject inputs that mix properties from different variants. Declaring `required` properties in each variant makes the variants distinguishable instead.
 
 ## Standards Compliance
 

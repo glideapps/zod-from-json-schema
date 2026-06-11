@@ -50,3 +50,15 @@ export function createUniqueItemsValidator() {
 export function isValidWithSchema(schema: z.ZodTypeAny, value: any): boolean {
     return schema.safeParse(value).success;
 }
+
+/**
+ * Checks whether a property name collides with a member of Object.prototype
+ * (e.g. "toString", "constructor", "__proto__"). Such names cannot be
+ * validated through a plain z.object() shape: when the key is absent, Zod
+ * reads the inherited value off the prototype chain instead of treating the
+ * property as missing. These properties are validated with own-property
+ * semantics in ObjectPropertiesHandler instead.
+ */
+export function isHazardousPropertyName(name: string): boolean {
+    return Object.prototype.hasOwnProperty.call(Object.prototype, name);
+}

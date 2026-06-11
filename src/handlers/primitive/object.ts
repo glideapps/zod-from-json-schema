@@ -1,19 +1,104 @@
 import { z } from "zod/v4";
 import type { JSONSchema } from "zod/v4/core";
 import { PrimitiveHandler, TypeSchemas } from "../../core/types";
+import { convertJsonSchemaToZod } from "../../core/converter";
+import { isHazardousPropertyName } from "../../core/utils";
 
 export class PropertiesHandler implements PrimitiveHandler {
     apply(types: TypeSchemas, schema: JSONSchema.BaseSchema): void {
         const objectSchema = schema as JSONSchema.ObjectSchema;
-        
+
         // Only process if object is still allowed
         if (types.object === false) return;
-        
-        // If object has object-specific constraints, just ensure we have an object type
-        // The actual property validation will be handled in the refinement phase
-        if (objectSchema.properties || objectSchema.required || objectSchema.additionalProperties !== undefined) {
-            // Just create a passthrough object - refinement handler will add constraints
-            types.object = types.object || z.object({}).passthrough();
+
+        const hasPropertyKeywords =
+            objectSchema.properties !== undefined ||
+            (Array.isArray(objectSchema.required) && objectSchema.required.length > 0) ||
+            objectSchema.additionalProperties !== undefined;
+
+        if (!hasPropertyKeywords) {
+            return;
+        }
+
+        const hasPatternProperties =
+            objectSchema.patternProperties !== undefined &&
+            typeof objectSchema.patternProperties === "object" &&
+            Object.keys(objectSchema.patternProperties).length > 0;
+
+        const requiredSet = new Set<string>(Array.isArray(objectSchema.required) ? objectSchema.required : []);
+
+        // Properties whose names collide with Object.prototype members can't be
+        // expressed in the shape; ObjectPropertiesHandler validates them with
+        // own-property semantics instead.
+        let hasHazardousProperties = false;
+
+        const shape: Record<string, z.ZodTypeAny> = {};
+
+        // Required keys whose presence the shape itself can't enforce: hazardous
+        // names, keys without a property schema, and property schemas that accept
+        // undefined (e.g. the empty schema), which Zod treats as satisfiable by a
+        // missing key.
+        const presenceCheckKeys: string[] = [];
+
+        if (objectSchema.properties) {
+            for (const [key, propSchema] of Object.entries(objectSchema.properties)) {
+                if (propSchema === undefined) continue;
+
+                if (isHazardousPropertyName(key)) {
+                    hasHazardousProperties = true;
+                    if (requiredSet.delete(key)) {
+                        presenceCheckKeys.push(key);
+                    }
+                    continue;
+                }
+
+                const propertyZod = convertJsonSchemaToZod(propSchema);
+                if (requiredSet.delete(key)) {
+                    shape[key] = propertyZod;
+                    if (propertyZod.safeParse(undefined).success) {
+                        presenceCheckKeys.push(key);
+                    }
+                } else {
+                    shape[key] = propertyZod.optional();
+                }
+            }
+        }
+
+        // Required keys without a property schema: enforce presence only.
+        for (const key of requiredSet) {
+            presenceCheckKeys.push(key);
+        }
+
+        let objectZod: z.ZodObject<any> = z.object(shape);
+
+        // With patternProperties or hazardous property names in play, the shape
+        // alone can't decide which extra keys are allowed; ObjectPropertiesHandler
+        // enforces additionalProperties in those cases, so stay permissive here.
+        const deferUnknownKeys = hasPatternProperties || hasHazardousProperties;
+
+        if (objectSchema.additionalProperties === false) {
+            objectZod = deferUnknownKeys ? objectZod.passthrough() : objectZod.strict();
+        } else if (typeof objectSchema.additionalProperties === "object") {
+            objectZod = deferUnknownKeys
+                ? objectZod.passthrough()
+                : objectZod.catchall(convertJsonSchemaToZod(objectSchema.additionalProperties));
+        } else {
+            objectZod = objectZod.passthrough();
+        }
+
+        // Refinements run on Zod's parse output, which strips own "__proto__"
+        // keys for security, so presence of "__proto__" can't be enforced here.
+        // (ProtoRequiredHandler covers the untyped-schema case.)
+        const enforcibleKeys = presenceCheckKeys.filter((key) => key !== "__proto__");
+
+        if (enforcibleKeys.length > 0) {
+            types.object = objectZod.refine(
+                (value: Record<string, unknown>) =>
+                    enforcibleKeys.every((key) => Object.prototype.hasOwnProperty.call(value, key)),
+                { message: `Missing required properties: ${enforcibleKeys.join(", ")}` },
+            );
+        } else {
+            types.object = objectZod;
         }
     }
 }
