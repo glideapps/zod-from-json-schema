@@ -1,9 +1,13 @@
 import { z } from "zod/v4";
 import type { JSONSchema } from "zod/v4/core";
 import { convertJsonSchemaToZod } from "./core/converter";
+import type { ConversionOptions } from "./core/types";
 
 // Re-export the main converter function
 export { convertJsonSchemaToZod };
+
+// Re-export conversion options for the public API
+export type { ConversionOptions } from "./core/types";
 
 // Export utilities that tests might depend on
 export { createUniqueItemsValidator, isValidWithSchema } from "./core/utils";
@@ -37,20 +41,29 @@ type InferZodRawShape<T extends Record<string, any>> = {
 /**
  * Converts a JSON Schema object to a Zod raw shape with proper typing
  * @param schema The JSON Schema object to convert
+ * @param options Optional conversion options
  * @returns A Zod raw shape for use with z.object() with inferred types
  */
 export function jsonSchemaObjectToZodRawShape<T extends JSONSchema.Schema & { properties: Record<string, any> }>(
     schema: T,
+    options?: ConversionOptions,
 ): InferZodRawShape<T["properties"]>;
 
 /**
  * Converts a JSON Schema object to a Zod raw shape
  * @param schema The JSON Schema object to convert
+ * @param options Optional conversion options
  * @returns A Zod raw shape for use with z.object()
  */
-export function jsonSchemaObjectToZodRawShape(schema: JSONSchema.Schema): Record<string, z.ZodTypeAny>;
+export function jsonSchemaObjectToZodRawShape(
+    schema: JSONSchema.Schema,
+    options?: ConversionOptions,
+): Record<string, z.ZodTypeAny>;
 
-export function jsonSchemaObjectToZodRawShape(schema: JSONSchema.Schema): Record<string, z.ZodTypeAny> {
+export function jsonSchemaObjectToZodRawShape(
+    schema: JSONSchema.Schema,
+    options?: ConversionOptions,
+): Record<string, z.ZodTypeAny> {
     const raw: Record<string, z.ZodType> = {};
 
     // Get the required fields set for efficient lookup
@@ -60,7 +73,7 @@ export function jsonSchemaObjectToZodRawShape(schema: JSONSchema.Schema): Record
     for (const [key, value] of Object.entries(schema.properties ?? {})) {
         if (value === undefined) continue;
 
-        let zodType = convertJsonSchemaToZod(value);
+        let zodType = convertJsonSchemaToZod(value, options);
 
         // If there's a required array and the field is not in it, make it optional
         // If there's no required array, all fields are optional by default in JSON Schema

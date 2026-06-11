@@ -1,16 +1,16 @@
 import { z } from "zod/v4";
 import type { JSONSchema } from "zod/v4/core";
-import { RefinementHandler } from "../../core/types";
+import { ConversionOptions, RefinementHandler } from "../../core/types";
 import { convertJsonSchemaToZod } from "../../core/converter";
 import { isValidWithSchema } from "../../core/utils";
 
 export class ContainsHandler implements RefinementHandler {
-    apply(zodSchema: z.ZodTypeAny, schema: JSONSchema.BaseSchema): z.ZodTypeAny {
+    apply(zodSchema: z.ZodTypeAny, schema: JSONSchema.BaseSchema, options: ConversionOptions): z.ZodTypeAny {
         const arraySchema = schema as JSONSchema.ArraySchema;
-        
+
         if (arraySchema.contains === undefined) return zodSchema;
 
-        const containsSchema = convertJsonSchemaToZod(arraySchema.contains);
+        const containsSchema = convertJsonSchemaToZod(arraySchema.contains, options);
         const minContains = arraySchema.minContains ?? 1;
         const maxContains = arraySchema.maxContains;
 

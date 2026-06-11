@@ -1,11 +1,11 @@
 import { z } from "zod/v4";
 import type { JSONSchema } from "zod/v4/core";
-import { PrimitiveHandler, TypeSchemas } from "../../core/types";
+import { ConversionOptions, PrimitiveHandler, TypeSchemas } from "../../core/types";
 import { convertJsonSchemaToZod } from "../../core/converter";
 import { isHazardousPropertyName } from "../../core/utils";
 
 export class PropertiesHandler implements PrimitiveHandler {
-    apply(types: TypeSchemas, schema: JSONSchema.BaseSchema): void {
+    apply(types: TypeSchemas, schema: JSONSchema.BaseSchema, options: ConversionOptions): void {
         const objectSchema = schema as JSONSchema.ObjectSchema;
 
         // Only process if object is still allowed
@@ -52,7 +52,7 @@ export class PropertiesHandler implements PrimitiveHandler {
                     continue;
                 }
 
-                const propertyZod = convertJsonSchemaToZod(propSchema);
+                const propertyZod = convertJsonSchemaToZod(propSchema, options);
                 if (requiredSet.delete(key)) {
                     shape[key] = propertyZod;
                     if (propertyZod.safeParse(undefined).success) {
@@ -81,7 +81,7 @@ export class PropertiesHandler implements PrimitiveHandler {
         } else if (typeof objectSchema.additionalProperties === "object") {
             objectZod = deferUnknownKeys
                 ? objectZod.passthrough()
-                : objectZod.catchall(convertJsonSchemaToZod(objectSchema.additionalProperties));
+                : objectZod.catchall(convertJsonSchemaToZod(objectSchema.additionalProperties, options));
         } else {
             objectZod = objectZod.passthrough();
         }

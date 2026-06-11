@@ -126,21 +126,23 @@ try {
 
 ## API Reference
 
-### `convertJsonSchemaToZod(schema)`
+### `convertJsonSchemaToZod(schema, options?)`
 
 Converts a JSON Schema object to a complete Zod schema.
 
 - **Parameters**:
   - `schema` (Object): A JSON Schema object
+  - `options` (Object, optional): Conversion options (see [Conversion Options](#conversion-options))
 - **Returns**:
   - A Zod schema that validates according to the JSON Schema
 
-### `jsonSchemaObjectToZodRawShape(schema)`
+### `jsonSchemaObjectToZodRawShape(schema, options?)`
 
 Extracts the object properties from a JSON Schema object into a Zod raw shape. This is useful when you want to combine the properties with other Zod object configurations.
 
 - **Parameters**:
   - `schema` (Object): A JSON Schema object that should have a `properties` field
+  - `options` (Object, optional): Conversion options (see [Conversion Options](#conversion-options))
 - **Returns**:
   - A `ZodRawShape` object that can be used with `z.object()`
 
@@ -170,6 +172,44 @@ const customSchema = z.object({
   message: "Age must be over 18 to continue"
 });
 ```
+
+### Conversion Options
+
+Both `convertJsonSchemaToZod` and `jsonSchemaObjectToZodRawShape` accept an optional second argument:
+
+#### `metaForSchema`
+
+A callback that lets you attach custom [Zod metadata](https://zod.dev/metadata) to the generated schemas, for example to preserve non-standard JSON Schema keys such as UI hints or documentation fields. It is called for every JSON Schema node that produces a Zod type, including nested ones (object properties, array items, union members, etc.). If it returns a non-empty object, that object is attached to the resulting Zod type via `.meta()`. The metadata is merged with the schema's `description`; a `description` key in the returned object takes precedence.
+
+```typescript
+import { convertJsonSchemaToZod } from 'zod-from-json-schema';
+
+const jsonSchema = {
+  type: "string",
+  description: "User name",
+  "x-ui-label": "Name",
+  "x-form-position": 1
+};
+
+// Preserve all "x-" prefixed keys as Zod metadata
+const zodSchema = convertJsonSchemaToZod(jsonSchema, {
+  metaForSchema: (schema) => {
+    const meta = Object.fromEntries(
+      Object.entries(schema).filter(([key]) => key.startsWith("x-"))
+    );
+    return Object.keys(meta).length > 0 ? meta : undefined;
+  }
+});
+
+zodSchema.meta();
+// => { description: "User name", "x-ui-label": "Name", "x-form-position": 1 }
+```
+
+Notes:
+
+- The callback must be pure and cheap: a schema node may be converted (and the callback invoked) more than once, and some resulting Zod types are only used internally for validation.
+- Boolean schemas (`true`/`false`) never trigger the callback, since they have no keys to harvest.
+- Metadata is attached to the Zod type a node produces directly; wrappers added afterwards (such as `.optional()` for non-required properties) sit outside it.
 
 ## Supported JSON Schema Features
 

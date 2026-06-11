@@ -1,10 +1,10 @@
 import { z } from "zod/v4";
 import type { JSONSchema } from "zod/v4/core";
-import { PrimitiveHandler, TypeSchemas } from "../../core/types";
+import { ConversionOptions, PrimitiveHandler, TypeSchemas } from "../../core/types";
 import { convertJsonSchemaToZod } from "../../core/converter";
 
 export class TupleHandler implements PrimitiveHandler {
-    apply(types: TypeSchemas, schema: JSONSchema.BaseSchema): void {
+    apply(types: TypeSchemas, schema: JSONSchema.BaseSchema, options: ConversionOptions): void {
         // Only handle arrays with tuple-style items
         if (schema.type !== "array") return;
 
@@ -17,7 +17,7 @@ export class TupleHandler implements PrimitiveHandler {
         if (types.array === false) return;
 
         // Convert each item schema to Zod schemas
-        const itemSchemas = arraySchema.items.map((itemSchema) => convertJsonSchemaToZod(itemSchema));
+        const itemSchemas = arraySchema.items.map((itemSchema) => convertJsonSchemaToZod(itemSchema, options));
 
         // Create the actual tuple
         let tuple: z.ZodTuple | false;

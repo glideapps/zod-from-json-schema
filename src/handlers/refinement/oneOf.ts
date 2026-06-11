@@ -1,14 +1,14 @@
 import { z } from "zod/v4";
 import type { JSONSchema } from "zod/v4/core";
-import { RefinementHandler } from "../../core/types";
+import { ConversionOptions, RefinementHandler } from "../../core/types";
 import { convertJsonSchemaToZod } from "../../core/converter";
 
 export class OneOfHandler implements RefinementHandler {
-    apply(zodSchema: z.ZodTypeAny, schema: JSONSchema.BaseSchema): z.ZodTypeAny {
+    apply(zodSchema: z.ZodTypeAny, schema: JSONSchema.BaseSchema, options: ConversionOptions): z.ZodTypeAny {
         if (!schema.oneOf || schema.oneOf.length === 0) return zodSchema;
 
         // Convert each oneOf schema
-        const oneOfSchemas = schema.oneOf.map(s => convertJsonSchemaToZod(s));
+        const oneOfSchemas = schema.oneOf.map(s => convertJsonSchemaToZod(s, options));
 
         // Apply oneOf validation as a refinement on top of the base schema
         // This preserves other constraints like allOf, anyOf, etc.

@@ -1,6 +1,6 @@
 import { z } from "zod/v4";
 import type { JSONSchema } from "zod/v4/core";
-import { PrimitiveHandler, RefinementHandler, TypeSchemas } from "./types";
+import { ConversionOptions, PrimitiveHandler, RefinementHandler, TypeSchemas } from "./types";
 
 // Import primitive handlers
 import { TypeHandler } from "../handlers/primitive/type";
@@ -114,8 +114,13 @@ const refinementHandlers: RefinementHandler[] = [
 
 /**
  * Converts a JSON Schema object to a Zod schema using the two-phase architecture
+ * @param schema The JSON Schema object to convert
+ * @param options Optional conversion options
  */
-export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema | boolean): z.ZodTypeAny {
+export function convertJsonSchemaToZod(
+    schema: JSONSchema.BaseSchema | boolean,
+    options: ConversionOptions = {},
+): z.ZodTypeAny {
     // Handle boolean schemas
     if (typeof schema === "boolean") {
         return schema ? z.any() : z.never();
@@ -125,7 +130,7 @@ export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema | boolean):
     const types: TypeSchemas = {};
 
     for (const handler of primitiveHandlers) {
-        handler.apply(types, schema);
+        handler.apply(types, schema, options);
     }
 
     // Build array of allowed type schemas
@@ -187,7 +192,7 @@ export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema | boolean):
 
     // Phase 2: Apply refinement handlers
     for (const handler of refinementHandlers) {
-        zodSchema = handler.apply(zodSchema, schema);
+        zodSchema = handler.apply(zodSchema, schema, options);
     }
 
     return zodSchema;
