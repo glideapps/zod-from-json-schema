@@ -568,6 +568,123 @@ describe("convertJsonSchemaToZod", () => {
         });
     });
 
+    describe("File schemas", () => {
+        it("should handle basic file schema", () => {
+            const jsonSchema: JSONSchema.BaseSchema = {
+                $schema: "https://json-schema.org/draft/2020-12/schema",
+                type: "string",
+                format: "binary",
+                contentEncoding: "binary",
+            };
+
+            const zodSchema = convertJsonSchemaToZod(jsonSchema);
+
+            // Verify it's actually a ZodFile schema
+            expect(zodSchema instanceof z.ZodFile).toBe(true);
+
+            const resultSchema = z.toJSONSchema(zodSchema);
+            expect(resultSchema).toEqual(jsonSchema);
+        });
+
+        it("should handle file schema with size constraints", () => {
+            const jsonSchema: JSONSchema.BaseSchema = {
+                $schema: "https://json-schema.org/draft/2020-12/schema",
+                type: "string",
+                format: "binary",
+                contentEncoding: "binary",
+                minLength: 1,
+                maxLength: 1048576, // 1MB
+            };
+
+            const zodSchema = convertJsonSchemaToZod(jsonSchema);
+
+            // Verify it's actually a ZodFile schema
+            expect(zodSchema instanceof z.ZodFile).toBe(true);
+
+            const resultSchema = z.toJSONSchema(zodSchema);
+            expect(resultSchema).toEqual(jsonSchema);
+        });
+
+        it("should handle file schema with MIME type constraint", () => {
+            const jsonSchema: JSONSchema.BaseSchema = {
+                $schema: "https://json-schema.org/draft/2020-12/schema",
+                type: "string",
+                format: "binary",
+                contentEncoding: "binary",
+                contentMediaType: "image/png",
+            };
+
+            const zodSchema = convertJsonSchemaToZod(jsonSchema);
+
+            // Verify it's actually a ZodFile schema
+            expect(zodSchema instanceof z.ZodFile).toBe(true);
+
+            const resultSchema = z.toJSONSchema(zodSchema);
+            expect(resultSchema).toEqual(jsonSchema);
+        });
+
+        it("should handle file schema with all constraints", () => {
+            const jsonSchema: JSONSchema.BaseSchema = {
+                $schema: "https://json-schema.org/draft/2020-12/schema",
+                type: "string",
+                format: "binary",
+                contentEncoding: "binary",
+                contentMediaType: "image/png",
+                minLength: 1,
+                maxLength: 1048576,
+            };
+
+            const zodSchema = convertJsonSchemaToZod(jsonSchema);
+
+            // Verify it's actually a ZodFile schema with all constraints
+            expect(zodSchema instanceof z.ZodFile).toBe(true);
+
+            const resultSchema = z.toJSONSchema(zodSchema);
+            expect(resultSchema).toEqual(jsonSchema);
+        });
+
+        it("should not treat regular string as file schema", () => {
+            const jsonSchema: JSONSchema.BaseSchema = {
+                $schema: "https://json-schema.org/draft/2020-12/schema",
+                type: "string",
+                format: "binary",
+                // Missing contentEncoding: "binary"
+            };
+
+            const zodSchema = convertJsonSchemaToZod(jsonSchema);
+
+            // Verify it's NOT a ZodFile schema, should be ZodString
+            expect(zodSchema instanceof z.ZodFile).toBe(false);
+            expect(zodSchema instanceof z.ZodString).toBe(true);
+
+            const resultSchema = z.toJSONSchema(zodSchema);
+
+            // Should be treated as a regular string, not a file
+            // Note: Zod doesn't preserve format hints for basic strings
+            expect(resultSchema.type).toEqual("string");
+            expect(resultSchema.contentEncoding).toBeUndefined();
+        });
+
+        it("should handle file schema with description", () => {
+            const jsonSchema: JSONSchema.BaseSchema = {
+                $schema: "https://json-schema.org/draft/2020-12/schema",
+                type: "string",
+                format: "binary",
+                contentEncoding: "binary",
+                contentMediaType: "application/pdf",
+                description: "PDF document upload",
+            };
+
+            const zodSchema = convertJsonSchemaToZod(jsonSchema);
+
+            // Verify it's actually a ZodFile schema
+            expect(zodSchema instanceof z.ZodFile).toBe(true);
+
+            const resultSchema = z.toJSONSchema(zodSchema);
+            expect(resultSchema).toEqual(jsonSchema);
+        });
+    });
+
     // Tests for unimplemented but supported features
     describe("String validation", () => {
         it("should support minLength and maxLength constraints", () => {
