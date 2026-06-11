@@ -76,6 +76,21 @@ describe("properties named like Object.prototype members", () => {
         expect(zodSchema.safeParse({ plain: 1, extra: true }).success).toBe(false);
     });
 
+    it("cannot validate __proto__ values on typed objects", () => {
+        // Zod strips own "__proto__" keys when building parse output, and the
+        // own-property refinement only sees that output, so a __proto__
+        // property schema cannot reject bad values. This documents the
+        // limitation; the conformance suite skip list has the matching entry
+        // "properties whose names are Javascript object property names |
+        // __proto__ not valid".
+        const zodSchema = convertJsonSchemaToZod({
+            type: "object",
+            properties: { ["__proto__"]: { type: "number" } },
+        } as any);
+        expect(zodSchema.safeParse(JSON.parse('{"__proto__": 12}')).success).toBe(true);
+        expect(zodSchema.safeParse(JSON.parse('{"__proto__": "bad"}')).success).toBe(true);
+    });
+
     it("validates extra keys against an additionalProperties schema alongside hazardous names", () => {
         const zodSchema = convertJsonSchemaToZod({
             type: "object",
@@ -118,6 +133,29 @@ describe("patternProperties handled through refinement", () => {
             patternProperties: { "[": { type: "number" } },
         } as any);
         expect(zodSchema.safeParse({ declared: "a", anything: "goes" }).success).toBe(true);
+    });
+});
+
+describe("additionalProperties: false on typed objects", () => {
+    it("rejects objects with extra keys instead of stripping them", () => {
+        // Before the oneOf fix, typed object schemas with
+        // additionalProperties: false parsed successfully and silently
+        // stripped unknown keys. JSON Schema requires validation to fail,
+        // which is also how the same schema without `type: "object"` already
+        // behaved.
+        const zodSchema = convertJsonSchemaToZod({
+            type: "object",
+            properties: { name: { type: "string" } },
+            additionalProperties: false,
+        } as any);
+        expect(zodSchema.safeParse({ name: "a" }).success).toBe(true);
+        expect(zodSchema.safeParse({ name: "a", extra: 1 }).success).toBe(false);
+
+        const untypedSchema = convertJsonSchemaToZod({
+            properties: { name: { type: "string" } },
+            additionalProperties: false,
+        } as any);
+        expect(untypedSchema.safeParse({ name: "a", extra: 1 }).success).toBe(false);
     });
 });
 
