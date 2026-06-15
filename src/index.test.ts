@@ -1345,6 +1345,47 @@ describe("jsonSchemaObjectToZodRawShape", () => {
         ).not.toThrow();
     });
 
+    it("should not let a __proto__ key in properties replace the returned object's prototype", () => {
+        // JSON.parse so __proto__ ends up as a real own key, mirroring how a
+        // schema would arrive from the network or a config file.
+        const jsonSchema = JSON.parse(
+            '{"type":"object","properties":{"__proto__":{"type":"string"},"x":{"type":"number"}}}',
+        );
+
+        const rawShape = jsonSchemaObjectToZodRawShape(jsonSchema);
+
+        // The returned object's prototype must still be Object.prototype,
+        // not the Zod schema that was assigned for the __proto__ entry.
+        expect(Object.getPrototypeOf(rawShape)).toBe(Object.prototype);
+
+        // for...in must not pull in Zod method names from a polluted prototype.
+        const enumerated: string[] = [];
+        for (const k in rawShape) enumerated.push(k);
+        expect(enumerated).not.toContain("parse");
+        expect(enumerated).not.toContain("safeParse");
+        expect(enumerated).not.toContain("refine");
+
+        // The unrelated property must survive.
+        expect(Object.keys(rawShape)).toContain("x");
+    });
+
+    it("should silently skip a __proto__ entry in properties so the shape remains usable", () => {
+        // __proto__ can't be validated through this helper (see README Known
+        // Limitations), so it's dropped rather than included as a broken field.
+        const jsonSchema = JSON.parse(
+            '{"type":"object","properties":{"__proto__":{"type":"string"},"x":{"type":"number"}},"required":["x"]}',
+        );
+
+        const rawShape = jsonSchemaObjectToZodRawShape(jsonSchema);
+
+        expect(Object.keys(rawShape)).toEqual(["x"]);
+        expect(rawShape).not.toHaveProperty("__proto__");
+
+        const schema = z.object({ ...rawShape });
+        expect(() => schema.parse({ x: 5 })).not.toThrow();
+        expect(() => schema.parse({ x: "not a number" })).toThrow();
+    });
+
     it("schema with defaults should parse empty objects", () => {
         const jsonSchema = {
             type: "object",
