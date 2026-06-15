@@ -1379,7 +1379,9 @@ describe("jsonSchemaObjectToZodRawShape", () => {
         const rawShape = jsonSchemaObjectToZodRawShape(jsonSchema);
 
         expect(Object.keys(rawShape)).toEqual(["x"]);
-        expect(rawShape).not.toHaveProperty("__proto__");
+        // hasOwnProperty rather than toHaveProperty / `in` — `"__proto__" in {}`
+        // is always true because of the inherited accessor on Object.prototype.
+        expect(Object.prototype.hasOwnProperty.call(rawShape, "__proto__")).toBe(false);
 
         const schema = z.object({ ...rawShape });
         expect(() => schema.parse({ x: 5 })).not.toThrow();
