@@ -1,11 +1,11 @@
 import { z } from "zod/v4";
 import type { JSONSchema } from "zod/v4/core";
-import { RefinementHandler } from "../../core/types";
+import { ConversionOptions, RefinementHandler } from "../../core/types";
 import { convertJsonSchemaToZod } from "../../core/converter";
 import { isHazardousPropertyName } from "../../core/utils";
 
 export class ObjectPropertiesHandler implements RefinementHandler {
-    apply(zodSchema: z.ZodTypeAny, schema: JSONSchema.BaseSchema): z.ZodTypeAny {
+    apply(zodSchema: z.ZodTypeAny, schema: JSONSchema.BaseSchema, options: ConversionOptions): z.ZodTypeAny {
         const objectSchema = schema as JSONSchema.ObjectSchema;
 
         // Skip if no object-specific constraints
@@ -40,7 +40,7 @@ export class ObjectPropertiesHandler implements RefinementHandler {
         // Cache converted property schemas so we only pay the conversion cost once per property.
         const propertySchemas = new Map<string, z.ZodTypeAny>();
         for (const [propName, propSchema] of propertyEntries) {
-            propertySchemas.set(propName, convertJsonSchemaToZod(propSchema));
+            propertySchemas.set(propName, convertJsonSchemaToZod(propSchema, options));
         }
 
         // Precompile patternProperties so each additional key can be checked cheaply.
@@ -52,7 +52,7 @@ export class ObjectPropertiesHandler implements RefinementHandler {
                           try {
                               return {
                                   regex: new RegExp(pattern),
-                                  schema: convertJsonSchemaToZod(patternSchema),
+                                  schema: convertJsonSchemaToZod(patternSchema, options),
                               };
                           } catch {
                               return undefined;
@@ -63,7 +63,7 @@ export class ObjectPropertiesHandler implements RefinementHandler {
 
         const additionalSchema =
             objectSchema.additionalProperties && typeof objectSchema.additionalProperties === "object"
-                ? convertJsonSchemaToZod(objectSchema.additionalProperties)
+                ? convertJsonSchemaToZod(objectSchema.additionalProperties, options)
                 : undefined;
 
         return zodSchema.refine(

@@ -1,6 +1,6 @@
 import { z } from "zod/v4";
 import type { JSONSchema } from "zod/v4/core";
-import { PrimitiveHandler, TypeSchemas } from "../../core/types";
+import { ConversionOptions, PrimitiveHandler, TypeSchemas } from "../../core/types";
 import { convertJsonSchemaToZod } from "../../core/converter";
 
 export class ImplicitArrayHandler implements PrimitiveHandler {
@@ -46,7 +46,7 @@ export class MaxItemsHandler implements PrimitiveHandler {
 }
 
 export class ItemsHandler implements PrimitiveHandler {
-    apply(types: TypeSchemas, schema: JSONSchema.BaseSchema): void {
+    apply(types: TypeSchemas, schema: JSONSchema.BaseSchema, options: ConversionOptions): void {
         const arraySchema = schema as JSONSchema.ArraySchema;
         
         // Skip if array is already disallowed
@@ -63,7 +63,7 @@ export class ItemsHandler implements PrimitiveHandler {
                  !(arraySchema as any).prefixItems) {
             
             // Convert the item schema and create the typed array
-            const itemSchema = convertJsonSchemaToZod(arraySchema.items);
+            const itemSchema = convertJsonSchemaToZod(arraySchema.items, options);
             let newArray = z.array(itemSchema);
             
             // Apply existing min/max constraints if we already had an array

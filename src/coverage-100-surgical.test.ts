@@ -19,7 +19,7 @@ describe("100% Coverage - Surgical Tests", () => {
             handler.apply(types, {
                 type: "array",
                 items: [{ type: "string" }, { type: "number" }] // Array items
-            });
+            }, {});
             
             expect(types.array).toBeDefined();
             expect(types.array).toBeInstanceOf(z.ZodArray);
@@ -48,7 +48,7 @@ describe("100% Coverage - Surgical Tests", () => {
             handler.apply(types, {
                 type: "array",
                 items: [{ type: "string" }]
-            });
+            }, {});
             
             // array should remain false, tuple should not be set
             expect(types.array).toBe(false);
