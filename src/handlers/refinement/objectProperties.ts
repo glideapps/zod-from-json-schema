@@ -8,19 +8,28 @@ export class ObjectPropertiesHandler implements RefinementHandler {
     apply(zodSchema: z.ZodTypeAny, schema: JSONSchema.BaseSchema): z.ZodTypeAny {
         const objectSchema = schema as JSONSchema.ObjectSchema;
 
+        const hasPatternConstraints =
+            objectSchema.patternProperties !== undefined &&
+            typeof objectSchema.patternProperties === "object" &&
+            Object.keys(objectSchema.patternProperties).length > 0;
+
+        const hasAdditionalPropertiesSchema =
+            typeof objectSchema.additionalProperties === "object" && objectSchema.additionalProperties !== null;
+
         // Skip if no object-specific constraints
-        if (!objectSchema.properties && !objectSchema.required && objectSchema.additionalProperties !== false) {
+        if (
+            !objectSchema.properties &&
+            !objectSchema.required &&
+            objectSchema.additionalProperties !== false &&
+            !hasAdditionalPropertiesSchema &&
+            !hasPatternConstraints
+        ) {
             return zodSchema;
         }
 
         const propertyEntries = objectSchema.properties
             ? Object.entries(objectSchema.properties).filter(([, propSchema]) => propSchema !== undefined)
             : [];
-
-        const hasPatternConstraints =
-            objectSchema.patternProperties !== undefined &&
-            typeof objectSchema.patternProperties === "object" &&
-            Object.keys(objectSchema.patternProperties).length > 0;
 
         // Properties named like Object.prototype members were left out of the
         // object shape built by PropertiesHandler; they are validated here with
