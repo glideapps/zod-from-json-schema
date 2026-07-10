@@ -1,5 +1,4 @@
 import { z } from "zod/v4";
-import type { JSONSchema } from "zod/v4/core";
 
 /**
  * Simple deep equality check for validation purposes
@@ -62,24 +61,4 @@ export function isValidWithSchema(schema: z.ZodTypeAny, value: any): boolean {
  */
 export function isHazardousPropertyName(name: string): boolean {
     return Object.prototype.hasOwnProperty.call(Object.prototype, name);
-}
-
-/**
- * Checks whether a schema constrains an own "__proto__" key, via `required`
- * or a `properties` entry. For such schemas, ProtoPropertyHandler validates
- * against the raw input (Zod strips own "__proto__" keys from parse output),
- * and it also re-runs the value-inspecting refinements — complex enum/const
- * equality and minProperties/maxProperties counting — on the raw input, so
- * the corresponding handlers must skip these schemas.
- *
- * The `properties` entry is read via Object.getOwnPropertyDescriptor; the
- * "__proto__" accessor itself is never used.
- */
-export function schemaConstrainsProtoProperty(schema: JSONSchema.BaseSchema): boolean {
-    const objectSchema = schema as JSONSchema.ObjectSchema;
-    if (objectSchema.required?.includes("__proto__")) return true;
-    return (
-        objectSchema.properties !== undefined &&
-        Object.getOwnPropertyDescriptor(objectSchema.properties, "__proto__")?.value !== undefined
-    );
 }

@@ -59,11 +59,11 @@ export function jsonSchemaObjectToZodRawShape(schema: JSONSchema.Schema): Record
 
     for (const [key, value] of Object.entries(schema.properties ?? {})) {
         if (value === undefined) continue;
-        // A raw z.object() shape can't express a __proto__ property (Zod
-        // strips own __proto__ keys from parse output — see README Known
-        // Limitations; full support lives in convertJsonSchemaToZod). Skip it
-        // explicitly so the assignment below doesn't invoke the __proto__
-        // setter and replace this object's prototype.
+        // __proto__ can't be validated through this helper anyway (the parsed
+        // object's __proto__ accessor returns Object.prototype, not the field
+        // value — see README Known Limitations). Skip it explicitly so the
+        // assignment below doesn't invoke the __proto__ setter and replace
+        // this object's prototype.
         if (key === "__proto__") continue;
 
         let zodType = convertJsonSchemaToZod(value);

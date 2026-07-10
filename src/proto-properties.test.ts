@@ -87,6 +87,26 @@ describe("__proto__ property validation on raw input", () => {
         expect(zodSchema.safeParse({}).success).toBe(true);
     });
 
+    it("treats a boolean true schema for __proto__ as unconstrained", () => {
+        const zodSchema = convertJsonSchemaToZod({
+            properties: { ["__proto__"]: true },
+        } as any);
+        expect(zodSchema.safeParse(JSON.parse('{"__proto__": "anything"}')).success).toBe(true);
+        expect(zodSchema.safeParse({}).success).toBe(true);
+    });
+
+    it("keeps a declared __proto__ property exempt from additionalProperties: false", () => {
+        const zodSchema = convertJsonSchemaToZod(
+            JSON.parse(
+                '{"type":"object","properties":{"__proto__":{"type":"number"},"a":{"type":"string"}},"additionalProperties":false}',
+            ),
+        );
+        expect(zodSchema.safeParse(JSON.parse('{"__proto__": 1, "a": "x"}')).success).toBe(true);
+        expect(zodSchema.safeParse(JSON.parse('{"__proto__": 2}')).success).toBe(true);
+        expect(zodSchema.safeParse(JSON.parse('{"__proto__": "bad"}')).success).toBe(false);
+        expect(zodSchema.safeParse(JSON.parse('{"b": 1}')).success).toBe(false);
+    });
+
     it("does not reject non-objects when __proto__ is required on another type", () => {
         const zodSchema = convertJsonSchemaToZod({
             type: "string",
@@ -122,6 +142,22 @@ describe("__proto__ combined with value-inspecting keywords", () => {
         expect(zodSchema.safeParse(JSON.parse('{"__proto__": 1}')).success).toBe(true);
         // Passes the property schema but is not an enum member.
         expect(zodSchema.safeParse(JSON.parse('{"__proto__": 2}')).success).toBe(false);
+    });
+
+    it("keeps the empty-enum special cases when __proto__ is constrained", () => {
+        // enum: [] without a type rejects everything; with a type it acts as
+        // no enum constraint. Own "__proto__" keys can't change either, so
+        // the __proto__ checks compose with the usual empty-enum handling.
+        const untyped = convertJsonSchemaToZod({ required: ["__proto__"], enum: [] } as any);
+        expect(untyped.safeParse(JSON.parse('{"__proto__": 1}')).success).toBe(false);
+
+        const typed = convertJsonSchemaToZod({
+            type: "object",
+            required: ["__proto__"],
+            enum: [],
+        } as any);
+        expect(typed.safeParse(JSON.parse('{"__proto__": 1}')).success).toBe(true);
+        expect(typed.safeParse({}).success).toBe(false);
     });
 
     it("matches a const value that carries an own __proto__ key", () => {

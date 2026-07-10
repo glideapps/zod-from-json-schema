@@ -111,9 +111,10 @@ const refinementHandlers: RefinementHandler[] = [
     new UniqueItemsHandler(),
     new DefaultHandler(),
 
-    // Wraps the whole schema in a raw-input check for "__proto__" keys, so
-    // it must run after every other refinement; MetadataHandler stays last
-    // so .describe() lands on the outermost schema.
+    // For schemas constraining "__proto__" keys, replaces the converted
+    // schema with a raw-input check piped into a re-conversion of the schema
+    // sans "__proto__" entries; MetadataHandler stays last so .describe()
+    // lands on the outermost schema.
     new ProtoPropertyHandler(),
 
     // Metadata last

@@ -101,11 +101,6 @@ export class ObjectPropertiesHandler implements RefinementHandler {
                 // Apply required constraint
                 if (objectSchema.required && Array.isArray(objectSchema.required)) {
                     for (const requiredProp of objectSchema.required) {
-                        // ProtoPropertyHandler enforces "__proto__" on the raw
-                        // input; by the time this refinement runs, Zod has
-                        // stripped the key, so checking here would reject
-                        // valid inputs.
-                        if (requiredProp === "__proto__") continue;
                         // Use robust property detection for required props too
                         if (!Object.prototype.hasOwnProperty.call(value, requiredProp)) {
                             return false;
