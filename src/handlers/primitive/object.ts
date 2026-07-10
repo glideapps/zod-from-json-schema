@@ -86,10 +86,9 @@ export class PropertiesHandler implements PrimitiveHandler {
             objectZod = objectZod.passthrough();
         }
 
-        // Presence of required "__proto__" stays unenforced to keep the
-        // documented __proto__ limitation consistent: Zod strips own
-        // "__proto__" keys for security, so its value can't be validated
-        // either. (ProtoRequiredHandler covers the untyped-schema case.)
+        // Zod strips own "__proto__" keys for security, so presence of
+        // "__proto__" can't be enforced here. (ProtoPropertyHandler
+        // enforces it on the raw input instead.)
         const enforcibleKeys = presenceCheckKeys.filter((key) => key !== "__proto__");
 
         if (enforcibleKeys.length > 0) {

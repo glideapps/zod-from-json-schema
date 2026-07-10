@@ -52,7 +52,6 @@
     "unevaluatedProperties|unevaluatedProperties + ref inside allOf / oneOf|a and y are valid",
     "unevaluatedProperties|unevaluatedProperties + ref inside allOf / oneOf|a and b and y are valid",
     "unevaluatedProperties|dynamic evalation inside nested refs|a is valid",
-    "properties|properties whose names are Javascript object property names|__proto__ not valid",
     "refRemote|$ref to $ref finds detached $anchor|non-number is invalid",
     "refRemote|Location-independent identifier in remote ref|string is invalid",
     "refRemote|anchor within remote ref|remote anchor invalid",

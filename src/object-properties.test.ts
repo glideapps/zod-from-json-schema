@@ -37,13 +37,12 @@ describe("required property presence", () => {
         expect(zodSchema.safeParse(JSON.parse('{"toString": 12}')).success).toBe(false);
     });
 
-    it("cannot enforce presence of required __proto__ on typed objects", () => {
+    it("enforces presence of required __proto__ on typed objects", () => {
         // Zod strips own "__proto__" keys when building parse output, so
-        // presence can't be checked there; the key is skipped rather than
-        // making every object fail.
+        // presence is checked against the raw input by ProtoPropertyHandler.
         const zodSchema = convertJsonSchemaToZod({ type: "object", required: ["__proto__"] } as any);
         expect(zodSchema.safeParse(JSON.parse('{"__proto__": 12}')).success).toBe(true);
-        expect(zodSchema.safeParse({}).success).toBe(true);
+        expect(zodSchema.safeParse({}).success).toBe(false);
     });
 });
 
@@ -192,19 +191,17 @@ describe("properties named like Object.prototype members", () => {
         expect(zodSchema.safeParse({ plain: 1, extra: true }).success).toBe(false);
     });
 
-    it("cannot validate __proto__ values on typed objects", () => {
-        // Zod strips own "__proto__" keys when building parse output, and the
-        // own-property refinement only sees that output, so a __proto__
-        // property schema cannot reject bad values. This documents the
-        // limitation; the conformance suite skip list has the matching entry
-        // "properties whose names are Javascript object property names |
-        // __proto__ not valid".
+    it("validates __proto__ values on typed objects", () => {
+        // Zod strips own "__proto__" keys when building parse output, so the
+        // __proto__ property schema is enforced against the raw input by
+        // ProtoPropertyHandler before Zod's object parsing runs.
         const zodSchema = convertJsonSchemaToZod({
             type: "object",
             properties: { ["__proto__"]: { type: "number" } },
         } as any);
         expect(zodSchema.safeParse(JSON.parse('{"__proto__": 12}')).success).toBe(true);
-        expect(zodSchema.safeParse(JSON.parse('{"__proto__": "bad"}')).success).toBe(true);
+        expect(zodSchema.safeParse(JSON.parse('{"__proto__": "bad"}')).success).toBe(false);
+        expect(zodSchema.safeParse({}).success).toBe(true);
     });
 
     it("validates extra keys against an additionalProperties schema alongside hazardous names", () => {

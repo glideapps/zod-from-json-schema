@@ -33,9 +33,9 @@ export class ObjectPropertiesHandler implements RefinementHandler {
 
         // Properties named like Object.prototype members were left out of the
         // object shape built by PropertiesHandler; they are validated here with
-        // own-property semantics. Exception: "__proto__" values still can't be
-        // checked, because Zod strips own "__proto__" keys from the parse
-        // output this refinement runs on.
+        // own-property semantics. Exception: "__proto__" is handled by
+        // ProtoPropertyHandler on the raw input, because Zod strips own
+        // "__proto__" keys from the parse output this refinement runs on.
         const hasHazardousProperties = propertyEntries.some(([propName]) => isHazardousPropertyName(propName));
 
         // A plain object schema already enforces properties, required, and
@@ -101,6 +101,11 @@ export class ObjectPropertiesHandler implements RefinementHandler {
                 // Apply required constraint
                 if (objectSchema.required && Array.isArray(objectSchema.required)) {
                     for (const requiredProp of objectSchema.required) {
+                        // ProtoPropertyHandler enforces "__proto__" on the raw
+                        // input; by the time this refinement runs, Zod has
+                        // stripped the key, so checking here would reject
+                        // valid inputs.
+                        if (requiredProp === "__proto__") continue;
                         // Use robust property detection for required props too
                         if (!Object.prototype.hasOwnProperty.call(value, requiredProp)) {
                             return false;

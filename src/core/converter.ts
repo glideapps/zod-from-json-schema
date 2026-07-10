@@ -42,7 +42,7 @@ import { PropertyNamesHandler } from "../handlers/refinement/propertyNames";
 import { EnumComplexHandler } from "../handlers/refinement/enumComplex";
 import { ConstComplexHandler } from "../handlers/refinement/constComplex";
 import { MetadataHandler } from "../handlers/refinement/metadata";
-import { ProtoRequiredHandler } from "../handlers/refinement/protoRequired";
+import { ProtoPropertyHandler } from "../handlers/refinement/protoProperty";
 import { ContainsHandler } from "../handlers/refinement/contains";
 import { DefaultHandler } from "../handlers/refinement/default";
 
@@ -88,7 +88,6 @@ const primitiveHandlers: PrimitiveHandler[] = [
 
 const refinementHandlers: RefinementHandler[] = [
     // Handle special cases first
-    new ProtoRequiredHandler(),
     new EnumComplexHandler(),
     new ConstComplexHandler(),
 
@@ -111,6 +110,11 @@ const refinementHandlers: RefinementHandler[] = [
     new IfThenElseHandler(),
     new UniqueItemsHandler(),
     new DefaultHandler(),
+
+    // Wraps the whole schema in a raw-input check for "__proto__" keys, so
+    // it must run after every other refinement; MetadataHandler stays last
+    // so .describe() lands on the outermost schema.
+    new ProtoPropertyHandler(),
 
     // Metadata last
     new MetadataHandler(),

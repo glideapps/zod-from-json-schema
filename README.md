@@ -224,7 +224,7 @@ This library provides comprehensive support for JSON Schema Draft 2020-12 featur
 - `minProperties` - Minimum number of object properties
 - `maxProperties` - Maximum number of object properties
 
-**Special Property Support**: Correctly handles JavaScript reserved property names like `constructor` and `toString` — inherited members are not mistaken for property values, and own keys are validated normally. `__proto__` is an exception; see [Known Limitations](#known-limitations).
+**Special Property Support**: Correctly handles JavaScript reserved property names like `constructor` and `toString` — inherited members are not mistaken for property values, and own keys are validated normally. `__proto__` entries in `properties` and `required` are validated against the raw input before Zod's object parsing runs (Zod strips own `__proto__` keys from parse *output* as a prototype-pollution defense, and that stripping is preserved).
 
 ### Schema Composition
 - `const` - Literal value constraints
@@ -271,7 +271,7 @@ The following JSON Schema features are **not yet implemented**:
 
 Beyond the unsupported keywords above, supported features have some known gaps:
 
-- **`__proto__` properties**: Zod removes own `__proto__` keys from parsed objects to prevent prototype pollution, and this library's validation runs on Zod's parse output. As a result, a `__proto__` entry in `properties` cannot validate its value, and `required: ["__proto__"]` is only enforced for schemas without an explicit `type`.
+- **`__proto__` properties**: `convertJsonSchemaToZod` validates `__proto__` entries in `properties` and `required` against the raw input, but two gaps remain: `jsonSchemaObjectToZodRawShape` still skips `__proto__` entries (a raw `z.object()` shape cannot express them), and `patternProperties` / `additionalProperties` schemas are not applied to an own `__proto__` key in the deferred refinement path (Zod strips the key from the parse output that refinement sees). Own `__proto__` keys are still removed from parse *output* to prevent prototype pollution.
 - **`unevaluatedProperties` is ignored**: In particular, discriminated unions whose `oneOf` variants differ only by `unevaluatedProperties: false` will not reject inputs that mix properties from different variants. Declaring `required` properties in each variant makes the variants distinguishable instead.
 
 ## Standards Compliance
