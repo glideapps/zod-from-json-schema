@@ -40,8 +40,11 @@ export class ObjectPropertiesHandler implements RefinementHandler {
 
         // A plain object schema already enforces properties, required, and
         // additionalProperties through its shape, so refinement is only needed
-        // for constraints the shape can't express.
-        const isDirectObject = zodSchema instanceof z.ZodObject || zodSchema instanceof z.ZodRecord;
+        // for constraints the shape can't express. PropertiesHandler may have
+        // piped a raw-input required-presence check in front of the object
+        // schema; unwrap the pipe so those schemas keep early-returning too.
+        const baseSchema = zodSchema instanceof z.ZodPipe ? zodSchema.out : zodSchema;
+        const isDirectObject = baseSchema instanceof z.ZodObject || baseSchema instanceof z.ZodRecord;
         if (isDirectObject && !hasPatternConstraints && !hasHazardousProperties) {
             return zodSchema;
         }

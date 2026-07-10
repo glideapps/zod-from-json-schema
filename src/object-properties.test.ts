@@ -47,6 +47,122 @@ describe("required property presence", () => {
     });
 });
 
+describe("required is enforced for properties that have a default (issue #42)", () => {
+    it("rejects a missing required property even when it has a default", () => {
+        const zodSchema = convertJsonSchemaToZod({
+            type: "object",
+            properties: { foo: { type: "string", default: "x" } },
+            required: ["foo"],
+        } as any);
+        expect(zodSchema.safeParse({}).success).toBe(false);
+    });
+
+    it("keeps validating present values and does not overwrite them", () => {
+        const zodSchema = convertJsonSchemaToZod({
+            type: "object",
+            properties: { foo: { type: "string", default: "x" } },
+            required: ["foo"],
+        } as any);
+        const good = zodSchema.safeParse({ foo: "y" });
+        expect(good.success).toBe(true);
+        expect(good.data).toEqual({ foo: "y" });
+        expect(zodSchema.safeParse({ foo: 5 }).success).toBe(false);
+    });
+
+    it("rejects non-object inputs through the piped object schema", () => {
+        const zodSchema = convertJsonSchemaToZod({
+            type: "object",
+            properties: { foo: { type: "string", default: "x" } },
+            required: ["foo"],
+        } as any);
+        expect(zodSchema.safeParse("hello").success).toBe(false);
+        expect(zodSchema.safeParse(null).success).toBe(false);
+        expect(zodSchema.safeParse([]).success).toBe(false);
+        expect(zodSchema.safeParse(42).success).toBe(false);
+    });
+
+    it("works together with additionalProperties: false", () => {
+        const zodSchema = convertJsonSchemaToZod({
+            type: "object",
+            properties: { foo: { type: "string", default: "x" } },
+            required: ["foo"],
+            additionalProperties: false,
+        } as any);
+        expect(zodSchema.safeParse({}).success).toBe(false);
+        expect(zodSchema.safeParse({ foo: "y", extra: 1 }).success).toBe(false);
+        expect(zodSchema.safeParse({ foo: "y" }).success).toBe(true);
+    });
+
+    it("enforces required-with-default when no explicit type is given", () => {
+        const zodSchema = convertJsonSchemaToZod({
+            properties: { foo: { type: "string", default: "x" } },
+            required: ["foo"],
+        } as any);
+        expect(zodSchema.safeParse({}).success).toBe(false);
+        expect(zodSchema.safeParse({ foo: "y" }).success).toBe(true);
+        // JSON Schema: required only constrains objects.
+        expect(zodSchema.safeParse("not an object").success).toBe(true);
+    });
+
+    it("enforces required-with-default in nested objects", () => {
+        const zodSchema = convertJsonSchemaToZod({
+            type: "object",
+            properties: {
+                cfg: {
+                    type: "object",
+                    properties: { mode: { type: "string", default: "auto" } },
+                    required: ["mode"],
+                },
+            },
+            required: ["cfg"],
+        } as any);
+        expect(zodSchema.safeParse({ cfg: {} }).success).toBe(false);
+        expect(zodSchema.safeParse({}).success).toBe(false);
+        expect(zodSchema.safeParse({ cfg: { mode: "m" } }).success).toBe(true);
+    });
+
+    it("keeps applying defaults for non-required missing properties", () => {
+        const zodSchema = convertJsonSchemaToZod({
+            type: "object",
+            properties: {
+                foo: { type: "string", default: "x" },
+                bar: { type: "number", default: 1 },
+            },
+            required: ["foo"],
+        } as any);
+        const result = zodSchema.safeParse({ foo: "y" });
+        expect(result.success).toBe(true);
+        expect(result.data).toEqual({ foo: "y", bar: 1 });
+    });
+
+    it("enforces required-with-default for hazardous property names", () => {
+        const zodSchema = convertJsonSchemaToZod({
+            type: "object",
+            properties: { toString: { type: "string", default: "x" } },
+            required: ["toString"],
+        } as any);
+        expect(zodSchema.safeParse({}).success).toBe(false);
+        expect(zodSchema.safeParse(JSON.parse('{"toString": "y"}')).success).toBe(true);
+    });
+
+    it("still applies a top-level default on an optional nested object", () => {
+        const zodSchema = convertJsonSchemaToZod({
+            type: "object",
+            properties: {
+                cfg: {
+                    type: "object",
+                    properties: { mode: { type: "string" } },
+                    required: ["mode"],
+                    default: { mode: "auto" },
+                },
+            },
+        } as any);
+        const result = zodSchema.safeParse({});
+        expect(result.success).toBe(true);
+        expect(result.data).toEqual({ cfg: { mode: "auto" } });
+    });
+});
+
 describe("properties named like Object.prototype members", () => {
     it("treats inherited members as absent", () => {
         const zodSchema = convertJsonSchemaToZod({
