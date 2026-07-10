@@ -279,7 +279,7 @@ Beyond the unsupported keywords above, supported features have some known gaps:
 ## Standards Compliance
 
 - **JSON Schema Draft 2020-12** - Partial support for core features of the latest JSON Schema standard
-- **Official Test Suite** - Passes the majority of tests from the official JSON Schema Test Suite ([193 tests currently skipped](./failing-tests-skip-list.json) for unsupported features)
+- **Official Test Suite** - Passes the majority of tests from the official JSON Schema Test Suite (tests for unsupported features are listed in the [skip list](./failing-tests-skip-list.json))
 
 ## License
 
