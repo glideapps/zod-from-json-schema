@@ -171,3 +171,38 @@ describe("__proto__ combined with value-inspecting keywords", () => {
         expect(zodSchema.safeParse(JSON.parse('{"__proto__": 1, "x": 2}')).success).toBe(true);
     });
 });
+
+describe("__proto__ combined with required properties that have defaults", () => {
+    // PropertiesHandler pipes a raw-input required check in front of the
+    // object schema, and ProtoPropertyHandler pipes its raw __proto__ check
+    // in front of everything. These tests pin down that the nested pipes
+    // cooperate.
+    it("enforces both a required-with-default property and a __proto__ value schema", () => {
+        const zodSchema = convertJsonSchemaToZod({
+            type: "object",
+            properties: {
+                foo: { type: "string", default: "x" },
+                ["__proto__"]: { type: "number" },
+            },
+            required: ["foo"],
+        } as any);
+
+        expect(zodSchema.safeParse({}).success).toBe(false);
+        expect(zodSchema.safeParse(JSON.parse('{"foo": "y", "__proto__": "bad"}')).success).toBe(false);
+        expect(zodSchema.safeParse(JSON.parse('{"foo": "y", "__proto__": 3}')).success).toBe(true);
+    });
+
+    it("enforces required __proto__ alongside a required-with-default property", () => {
+        const zodSchema = convertJsonSchemaToZod({
+            type: "object",
+            required: ["__proto__", "foo"],
+            properties: {
+                foo: { type: "string", default: "x" },
+            },
+        } as any);
+
+        expect(zodSchema.safeParse({}).success).toBe(false);
+        expect(zodSchema.safeParse(JSON.parse('{"__proto__": 1}')).success).toBe(false);
+        expect(zodSchema.safeParse(JSON.parse('{"__proto__": 1, "foo": "y"}')).success).toBe(true);
+    });
+});
