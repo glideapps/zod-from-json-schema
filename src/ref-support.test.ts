@@ -661,6 +661,62 @@ describe("$ref support", () => {
         });
     });
 
+    describe("items combined with prefixItems", () => {
+        it("enforces a $ref in items for elements beyond prefixItems", () => {
+            const schema = {
+                $defs: { i: { type: "integer" } },
+                type: "array",
+                prefixItems: [{ type: "string" }],
+                items: { $ref: "#/$defs/i" },
+            };
+            rejects(schema, ["a", "b"]);
+            accepts(schema, ["a", 2]);
+            accepts(schema, ["a"]);
+        });
+
+        it("enforces an $id-relative $ref in items beyond prefixItems", () => {
+            const schema = {
+                $id: "http://example.com/root.json",
+                type: "array",
+                prefixItems: [{ type: "string" }],
+                items: { $ref: "item.json" },
+                $defs: { i: { $id: "item.json", type: "integer" } },
+            };
+            rejects(schema, ["a", "b"]);
+            accepts(schema, ["a", 2]);
+        });
+
+        it("keeps prefixItems-only behavior unchanged", () => {
+            const schema = {
+                type: "array",
+                prefixItems: [{ type: "string" }],
+            };
+            accepts(schema, ["a"]);
+            accepts(schema, ["a", true, 5]);
+            rejects(schema, [1]);
+        });
+
+        it("keeps items-only $ref behavior unchanged", () => {
+            const schema = {
+                $defs: { i: { type: "integer" } },
+                type: "array",
+                items: { $ref: "#/$defs/i" },
+            };
+            accepts(schema, [1, 2]);
+            rejects(schema, [1, "b"]);
+        });
+
+        it("keeps non-ref items with prefixItems behavior unchanged", () => {
+            const schema = {
+                type: "array",
+                prefixItems: [{ type: "string" }],
+                items: { type: "integer" },
+            };
+            accepts(schema, ["a", 2]);
+            rejects(schema, ["a", "b"]);
+        });
+    });
+
     describe("jsonSchemaObjectToZodRawShape", () => {
         it("keeps refs pointing outside a property schema permissive", () => {
             const shape = jsonSchemaObjectToZodRawShape({

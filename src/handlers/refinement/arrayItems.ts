@@ -13,6 +13,15 @@ export class PrefixItemsHandler implements RefinementHandler {
             const prefixItems = (arraySchema as any).prefixItems;
             const prefixSchemas = prefixItems.map((itemSchema: any) => convertJsonSchemaToZod(itemSchema));
 
+            // Convert the additional-items schema eagerly: converting inside
+            // the refine closure would run at parse time, after the ref
+            // resolution context for this document is gone, so $refs in
+            // `items` would silently dangle and become permissive.
+            const additionalItemSchema =
+                arraySchema.items && typeof arraySchema.items === "object" && !Array.isArray(arraySchema.items)
+                    ? convertJsonSchemaToZod(arraySchema.items)
+                    : undefined;
+
             return zodSchema.refine(
                 (value: any) => {
                     if (!Array.isArray(value)) return true; // Non-arrays pass through
@@ -28,12 +37,7 @@ export class PrefixItemsHandler implements RefinementHandler {
                     if (value.length > prefixSchemas.length) {
                         if (typeof arraySchema.items === "boolean" && arraySchema.items === false) {
                             return false; // No additional items allowed
-                        } else if (
-                            arraySchema.items &&
-                            typeof arraySchema.items === "object" &&
-                            !Array.isArray(arraySchema.items)
-                        ) {
-                            const additionalItemSchema = convertJsonSchemaToZod(arraySchema.items);
+                        } else if (additionalItemSchema !== undefined) {
                             for (let i = prefixSchemas.length; i < value.length; i++) {
                                 if (!isValidWithSchema(additionalItemSchema, value[i])) {
                                     return false;
