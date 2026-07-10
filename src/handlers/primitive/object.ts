@@ -40,12 +40,20 @@ export class PropertiesHandler implements PrimitiveHandler {
         // missing key.
         const presenceCheckKeys: string[] = [];
 
+        // Zod strips own "__proto__" keys from parse output for security, so
+        // a "__proto__" property schema must be checked on the RAW input
+        // (via the pipe below) rather than by ObjectPropertiesHandler.
+        let protoValueSchema: z.ZodTypeAny | undefined;
+
         if (objectSchema.properties) {
             for (const [key, propSchema] of Object.entries(objectSchema.properties)) {
                 if (propSchema === undefined) continue;
 
                 if (isHazardousPropertyName(key)) {
                     hasHazardousProperties = true;
+                    if (key === "__proto__") {
+                        protoValueSchema = convertJsonSchemaToZod(propSchema);
+                    }
                     if (requiredSet.delete(key)) {
                         presenceCheckKeys.push(key);
                     }
@@ -87,27 +95,36 @@ export class PropertiesHandler implements PrimitiveHandler {
         }
 
         // Presence of required "__proto__" stays unenforced to keep the
-        // documented __proto__ limitation consistent: Zod strips own
-        // "__proto__" keys for security, so its value can't be validated
-        // either. (ProtoRequiredHandler covers the untyped-schema case.)
+        // documented required-__proto__ limitation consistent.
+        // (ProtoRequiredHandler covers the untyped-schema case.)
         const enforcibleKeys = presenceCheckKeys.filter((key) => key !== "__proto__");
 
-        if (enforcibleKeys.length > 0) {
-            // Check presence on the RAW input, before objectZod parses it:
-            // the parse output can't distinguish a missing key from one
-            // materialized by a `default`, and JSON Schema `required` must
-            // reject a missing key even when its schema has a default.
-            // Non-objects pass through so objectZod rejects them with its
-            // own error (the guard also keeps hasOwnProperty off null).
-            const hasRequiredKeys = (value: unknown): boolean =>
-                typeof value !== "object" || value === null || Array.isArray(value)
-                    ? true
-                    : enforcibleKeys.every((key) => Object.prototype.hasOwnProperty.call(value, key));
+        if (enforcibleKeys.length > 0 || protoValueSchema !== undefined) {
+            // Check the RAW input, before objectZod parses it: the parse
+            // output can't distinguish a missing key from one materialized
+            // by a `default` (and JSON Schema `required` must reject a
+            // missing key even when its schema has a default), and Zod
+            // strips own "__proto__" keys so their values are only visible
+            // here. Non-objects pass through so objectZod rejects them with
+            // its own error (the guard also keeps hasOwnProperty off null).
+            const checkRawInput = (value: unknown): boolean => {
+                if (typeof value !== "object" || value === null || Array.isArray(value)) {
+                    return true;
+                }
+                if (!enforcibleKeys.every((key) => Object.prototype.hasOwnProperty.call(value, key))) {
+                    return false;
+                }
+                if (protoValueSchema !== undefined && Object.prototype.hasOwnProperty.call(value, "__proto__")) {
+                    const protoValue = Object.getOwnPropertyDescriptor(value, "__proto__")!.value;
+                    return protoValueSchema.safeParse(protoValue).success;
+                }
+                return true;
+            };
 
             types.object = z
                 .any()
-                .refine(hasRequiredKeys, {
-                    message: `Missing required properties: ${enforcibleKeys.join(", ")}`,
+                .refine(checkRawInput, {
+                    message: "Object raw-input constraints validation failed",
                 })
                 .pipe(objectZod);
         } else {

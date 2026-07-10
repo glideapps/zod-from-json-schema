@@ -223,7 +223,7 @@ This library provides comprehensive support for JSON Schema Draft 2020-12 featur
 - `minProperties` - Minimum number of object properties
 - `maxProperties` - Maximum number of object properties
 
-**Special Property Support**: Correctly handles JavaScript reserved property names like `constructor` and `toString` — inherited members are not mistaken for property values, and own keys are validated normally. `__proto__` is an exception; see [Known Limitations](#known-limitations).
+**Special Property Support**: Correctly handles JavaScript reserved property names like `constructor`, `toString`, and `__proto__` — inherited members are not mistaken for property values, and own keys are validated normally (own `__proto__` values are checked on the raw input, before Zod strips them). One gap remains for `required: ["__proto__"]`; see [Known Limitations](#known-limitations).
 
 ### Schema Composition
 - `const` - Literal value constraints
@@ -273,13 +273,13 @@ The following JSON Schema features are **not yet implemented**:
 
 Beyond the unsupported keywords above, supported features have some known gaps:
 
-- **`__proto__` properties**: Zod removes own `__proto__` keys from parsed objects to prevent prototype pollution, and this library's validation runs on Zod's parse output. As a result, a `__proto__` entry in `properties` cannot validate its value, and `required: ["__proto__"]` is only enforced for schemas without an explicit `type`.
+- **`__proto__` properties**: Zod removes own `__proto__` keys from parsed objects to prevent prototype pollution. A `__proto__` entry in a schema's own `properties` is validated against the raw input before Zod strips it, but `required: ["__proto__"]` is only enforced for schemas without an explicit `type`, and `__proto__` schemas nested inside combinators (`allOf`, `anyOf`, `not`) still cannot see the stripped value.
 - **`unevaluatedProperties` is ignored**: In particular, discriminated unions whose `oneOf` variants differ only by `unevaluatedProperties: false` will not reject inputs that mix properties from different variants. Declaring `required` properties in each variant makes the variants distinguishable instead.
 
 ## Standards Compliance
 
 - **JSON Schema Draft 2020-12** - Partial support for core features of the latest JSON Schema standard
-- **Official Test Suite** - Passes the majority of tests from the official JSON Schema Test Suite ([232 tests currently skipped](./failing-tests-skip-list.json) for unsupported features)
+- **Official Test Suite** - Passes the majority of tests from the official JSON Schema Test Suite ([229 tests currently skipped](./failing-tests-skip-list.json) for unsupported features)
 
 ## License
 

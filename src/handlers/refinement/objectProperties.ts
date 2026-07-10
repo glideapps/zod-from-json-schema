@@ -33,9 +33,10 @@ export class ObjectPropertiesHandler implements RefinementHandler {
 
         // Properties named like Object.prototype members were left out of the
         // object shape built by PropertiesHandler; they are validated here with
-        // own-property semantics. Exception: "__proto__" values still can't be
-        // checked, because Zod strips own "__proto__" keys from the parse
-        // output this refinement runs on.
+        // own-property semantics. Exception: "__proto__" values can't be
+        // checked here, because Zod strips own "__proto__" keys from the parse
+        // output this refinement runs on; PropertiesHandler validates them on
+        // the raw input instead.
         const hasHazardousProperties = propertyEntries.some(([propName]) => isHazardousPropertyName(propName));
 
         // A plain object schema already enforces properties, required, and
