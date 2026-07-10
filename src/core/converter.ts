@@ -37,6 +37,7 @@ import { AnyOfHandler } from "../handlers/refinement/anyOf";
 import { OneOfHandler } from "../handlers/refinement/oneOf";
 import { PrefixItemsHandler } from "../handlers/refinement/arrayItems";
 import { ObjectPropertiesHandler } from "../handlers/refinement/objectProperties";
+import { PropertyNamesHandler } from "../handlers/refinement/propertyNames";
 import { EnumComplexHandler } from "../handlers/refinement/enumComplex";
 import { ConstComplexHandler } from "../handlers/refinement/constComplex";
 import { MetadataHandler } from "../handlers/refinement/metadata";
@@ -93,6 +94,7 @@ const refinementHandlers: RefinementHandler[] = [
     // Logical combinations
     // Run object refinement once the base shape exists, ahead of combinator refinements.
     new ObjectPropertiesHandler(),
+    new PropertyNamesHandler(),
     new AllOfHandler(),
     new AnyOfHandler(),
     new OneOfHandler(),
