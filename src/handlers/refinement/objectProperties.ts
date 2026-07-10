@@ -99,17 +99,19 @@ export class ObjectPropertiesHandler implements RefinementHandler {
                 // Apply additionalProperties constraint
                 const knownPropertyNames = new Set(propertyEntries.map(([key]) => key));
                 for (const [key, propValue] of Object.entries(value as Record<string, unknown>)) {
-                    if (knownPropertyNames.has(key)) {
-                        continue;
+                    // A key matching patternProperties must satisfy every
+                    // matching pattern schema, even when the key is also
+                    // declared in properties.
+                    const matchingPatterns = patternEntries.filter((entry) => entry.regex.test(key));
+                    for (const entry of matchingPatterns) {
+                        if (!entry.schema.safeParse(propValue).success) {
+                            return false;
+                        }
                     }
 
-                    const matchingPatterns = patternEntries.filter((entry) => entry.regex.test(key));
-                    if (matchingPatterns.length > 0) {
-                        for (const entry of matchingPatterns) {
-                            if (!entry.schema.safeParse(propValue).success) {
-                                return false;
-                            }
-                        }
+                    // Keys covered by properties or patternProperties are
+                    // not "additional".
+                    if (knownPropertyNames.has(key) || matchingPatterns.length > 0) {
                         continue;
                     }
 

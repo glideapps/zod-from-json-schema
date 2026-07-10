@@ -211,3 +211,77 @@ describe("oneOf combined with object constraints", () => {
         expect(allOfSchema.safeParse({ n: 20 }).success).toBe(false);
     });
 });
+
+describe("keys declared in properties also validate against patternProperties (issue #40)", () => {
+    it("rejects a declared property that violates a matching pattern schema", () => {
+        const zodSchema = convertJsonSchemaToZod({
+            type: "object",
+            properties: { foo: { type: "string" } },
+            patternProperties: { "^foo$": { minLength: 2 } },
+        } as any);
+        expect(zodSchema.safeParse({ foo: "a" }).success).toBe(false);
+        expect(zodSchema.safeParse({ foo: "ab" }).success).toBe(true);
+    });
+
+    it("still rejects a declared property that violates its own property schema", () => {
+        const zodSchema = convertJsonSchemaToZod({
+            type: "object",
+            properties: { foo: { type: "string" } },
+            patternProperties: { "^foo$": { minLength: 2 } },
+        } as any);
+        expect(zodSchema.safeParse({ foo: 42 }).success).toBe(false);
+    });
+
+    it("requires a declared property to satisfy every matching pattern schema", () => {
+        const zodSchema = convertJsonSchemaToZod({
+            type: "object",
+            properties: { foo: { type: "string" } },
+            patternProperties: { "^f": { minLength: 2 }, "oo$": { maxLength: 3 } },
+        } as any);
+        expect(zodSchema.safeParse({ foo: "ab" }).success).toBe(true);
+        expect(zodSchema.safeParse({ foo: "a" }).success).toBe(false);
+        expect(zodSchema.safeParse({ foo: "abcd" }).success).toBe(false);
+    });
+
+    it("does not apply non-matching pattern schemas to declared properties", () => {
+        const zodSchema = convertJsonSchemaToZod({
+            type: "object",
+            properties: { bar: { type: "string" } },
+            patternProperties: { "^foo$": { type: "number" } },
+        } as any);
+        expect(zodSchema.safeParse({ bar: "hello" }).success).toBe(true);
+    });
+
+    it("treats pattern-matching declared keys as evaluated under additionalProperties: false", () => {
+        const zodSchema = convertJsonSchemaToZod({
+            type: "object",
+            properties: { foo: { type: "string" } },
+            patternProperties: { "^foo$": { minLength: 2 } },
+            additionalProperties: false,
+        } as any);
+        expect(zodSchema.safeParse({ foo: "ab" }).success).toBe(true);
+        expect(zodSchema.safeParse({ foo: "a" }).success).toBe(false);
+        expect(zodSchema.safeParse({ foo: "ab", other: 1 }).success).toBe(false);
+    });
+
+    it("does not run the additionalProperties schema on declared keys that match a pattern", () => {
+        const zodSchema = convertJsonSchemaToZod({
+            type: "object",
+            properties: { foo: { type: "string" } },
+            patternProperties: { "^foo$": { minLength: 2 } },
+            additionalProperties: { type: "number" },
+        } as any);
+        expect(zodSchema.safeParse({ foo: "ab", other: 5 }).success).toBe(true);
+        expect(zodSchema.safeParse({ foo: "ab", other: "nope" }).success).toBe(false);
+    });
+
+    it("validates declared pattern-matching keys on untyped schemas too", () => {
+        const zodSchema = convertJsonSchemaToZod({
+            properties: { foo: { type: "array", maxItems: 3 } },
+            patternProperties: { "f.o": { minItems: 2 } },
+            additionalProperties: { type: "integer" },
+        } as any);
+        expect(zodSchema.safeParse({ foo: [] }).success).toBe(false);
+        expect(zodSchema.safeParse({ foo: [1, 2] }).success).toBe(true);
+    });
+});
