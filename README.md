@@ -232,6 +232,7 @@ This library provides comprehensive support for JSON Schema Draft 2020-12 featur
 - `allOf` - Intersection validation (basic cases)
 - `oneOf` - Exclusive union validation (exactly one schema must match)
 - `not` - Negation validation
+- `if` / `then` / `else` - Conditional schema application
 
 ### Additional Features
 - `title` - Schema titles (carried over to Zod schemas)
@@ -261,9 +262,6 @@ The following JSON Schema features are **not yet implemented**:
 ### Advanced Array Validation
 - `unevaluatedItems` - Items not covered by schema evaluation
 - Complex `prefixItems` scenarios with additional item control
-
-### Conditional Schemas
-- `if` / `then` / `else` - Conditional schema application
 
 ### Meta-Schema Features
 - Custom vocabularies and meta-schema validation

@@ -31,6 +31,7 @@ import {
 
 // Import refinement handlers
 import { NotHandler } from "../handlers/refinement/not";
+import { IfThenElseHandler } from "../handlers/refinement/ifThenElse";
 import { UniqueItemsHandler } from "../handlers/refinement/uniqueItems";
 import { AllOfHandler } from "../handlers/refinement/allOf";
 import { AnyOfHandler } from "../handlers/refinement/anyOf";
@@ -105,6 +106,7 @@ const refinementHandlers: RefinementHandler[] = [
 
     // Other refinements
     new NotHandler(),
+    new IfThenElseHandler(),
     new UniqueItemsHandler(),
     new DefaultHandler(),
 
