@@ -44,6 +44,7 @@ import { ConstComplexHandler } from "../handlers/refinement/constComplex";
 import { MetadataHandler } from "../handlers/refinement/metadata";
 import { ProtoRequiredHandler } from "../handlers/refinement/protoRequired";
 import { ContainsHandler } from "../handlers/refinement/contains";
+import { DependentRequiredHandler } from "../handlers/refinement/dependentRequired";
 import { DefaultHandler } from "../handlers/refinement/default";
 
 // Initialize handlers
@@ -107,6 +108,7 @@ const refinementHandlers: RefinementHandler[] = [
     new ContainsHandler(),
 
     // Other refinements
+    new DependentRequiredHandler(),
     new NotHandler(),
     new IfThenElseHandler(),
     new UniqueItemsHandler(),
