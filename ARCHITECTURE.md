@@ -80,6 +80,7 @@ interface RefinementHandler {
 #### Implemented Refinement Handlers:
 
 **✅ Legitimate Refinement Handlers (Zod doesn't support natively):**
+- **RefHandler**: Resolves `$ref`/`$dynamicRef` targets within the document (see `src/core/refs.ts`) and enforces them conjunctively; runs first so later refinements wrap the result
 - **UniqueItemsHandler**: Custom validation for array uniqueness (Zod has no native unique constraint)
 - **NotHandler**: Complex logical negation validation (Zod has no native `.not()`)
 - **AllOfHandler**: Complex schema intersection logic

@@ -1,6 +1,7 @@
 import { z } from "zod/v4";
 import type { JSONSchema } from "zod/v4/core";
 import { PrimitiveHandler, RefinementHandler, TypeSchemas } from "./types";
+import { NON_CONSTRAINT_KEYS, runConversion } from "./refs";
 
 // Import primitive handlers
 import { TypeHandler } from "../handlers/primitive/type";
@@ -47,6 +48,7 @@ import { ProtoRequiredHandler } from "../handlers/refinement/protoRequired";
 import { ContainsHandler } from "../handlers/refinement/contains";
 import { DependentRequiredHandler } from "../handlers/refinement/dependentRequired";
 import { DefaultHandler } from "../handlers/refinement/default";
+import { RefHandler } from "../handlers/refinement/ref";
 
 // Initialize handlers
 const primitiveHandlers: PrimitiveHandler[] = [
@@ -89,6 +91,9 @@ const primitiveHandlers: PrimitiveHandler[] = [
 ];
 
 const refinementHandlers: RefinementHandler[] = [
+    // Reference resolution first, so later refinements wrap the result
+    new RefHandler(),
+
     // Handle special cases first
     new ProtoRequiredHandler(),
     new EnumComplexHandler(),
@@ -124,6 +129,14 @@ const refinementHandlers: RefinementHandler[] = [
  * Converts a JSON Schema object to a Zod schema using the two-phase architecture
  */
 export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema | boolean): z.ZodTypeAny {
+    return runConversion(schema, convertSchemaNode);
+}
+
+/**
+ * Converts a single schema node, without reference bookkeeping (that is
+ * handled by runConversion, which wraps every call to this function).
+ */
+function convertSchemaNode(schema: JSONSchema.BaseSchema | boolean): z.ZodTypeAny {
     // Handle boolean schemas
     if (typeof schema === "boolean") {
         return schema ? z.any() : z.never();
@@ -181,9 +194,7 @@ export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema | boolean):
         zodSchema = allowedSchemas[0];
     } else {
         // Check if this is an unconstrained schema (all default types enabled)
-        const hasConstraints = Object.keys(schema).some(
-            (key) => key !== "$schema" && key !== "title" && key !== "description",
-        );
+        const hasConstraints = Object.keys(schema).some((key) => !NON_CONSTRAINT_KEYS.has(key));
 
         if (!hasConstraints) {
             // Empty schema with no constraints should be z.any()

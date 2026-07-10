@@ -237,6 +237,17 @@ This library provides comprehensive support for JSON Schema Draft 2020-12 featur
 - `not` - Negation validation
 - `if` / `then` / `else` - Conditional schema application
 
+### References and Definitions
+- `$ref` - Internal references, including JSON pointer fragments (with `~0`/`~1` and percent-encoding escapes) and references to arbitrary schema locations (e.g. `#/properties/foo`)
+- `$defs` / `definitions` - Schema definitions for reuse
+- `$id` - Intra-document base URI resolution (nearest-parent bases, relative and absolute URIs, URN and `file:` bases)
+- `$anchor` - Location-independent identifiers, scoped to their schema resource
+- `$dynamicRef` / `$dynamicAnchor` - Resolved statically, like `$ref`/`$anchor` (no dynamic scoping; see [Known Limitations](#known-limitations))
+- Recursive and mutually recursive references
+- Sibling keywords next to `$ref` apply conjunctively (Draft 2020-12 semantics)
+
+Remote/external references (documents other than the one being converted) are not yet supported and are ignored; see [Known Limitations](#known-limitations).
+
 ### Additional Features
 - `title` - Schema titles (carried over to Zod schemas)
 - `description` - Schema descriptions (carried over to Zod schemas)
@@ -250,10 +261,8 @@ This library provides comprehensive support for JSON Schema Draft 2020-12 featur
 The following JSON Schema features are **not yet implemented**:
 
 ### References and Definitions
-- `$ref` - JSON Pointer references
-- `$defs` / `definitions` - Schema definitions for reuse
-- Remote references (`$id` resolution)
-- `$dynamicRef` / `$dynamicAnchor` - Dynamic references
+- Remote/external references (referencing documents other than the one being converted)
+- True dynamic scoping for `$dynamicRef` / `$dynamicAnchor` (they are resolved statically)
 
 ### Advanced Object Validation
 - `additionalProperties` - Fine-grained control over additional properties (basic support exists)
@@ -272,6 +281,10 @@ The following JSON Schema features are **not yet implemented**:
 Beyond the unsupported keywords above, supported features have some known gaps:
 
 - **`__proto__` properties**: Zod removes own `__proto__` keys from parsed objects to prevent prototype pollution, and this library's validation runs on Zod's parse output. As a result, a `__proto__` entry in `properties` cannot validate its value, and `required: ["__proto__"]` is only enforced for schemas without an explicit `type`.
+- **Unresolvable references are ignored**: A `$ref`/`$dynamicRef` that cannot be resolved within the document (remote URIs, unknown anchors, dangling pointers) does not constrain the value at all; the rest of the schema still applies.
+- **`$dynamicRef` is resolved statically**: Dynamic scoping is not implemented; `$dynamicRef` behaves like `$ref` (and `$dynamicAnchor` like `$anchor`), which matches the spec whenever the dynamic anchor is bookended in the same schema resource.
+- **Degenerate reference cycles**: Reference chains that lead back to themselves without making progress on the data are dropped (treated as unresolvable) when the cycle consists purely of `$ref`/`$dynamicRef` edges. Cycles that pass through applicators that don't consume data (e.g. `not` or `allOf`) are not detected and will recurse at validation time.
+- **Deeply recursive data**: Validating recursive schemas against deeply nested data (on the order of a few hundred nesting levels, engine-dependent) can exhaust the JavaScript call stack.
 - **`unevaluatedProperties` is ignored**: In particular, discriminated unions whose `oneOf` variants differ only by `unevaluatedProperties: false` will not reject inputs that mix properties from different variants. Declaring `required` properties in each variant makes the variants distinguishable instead.
 
 ## Standards Compliance
