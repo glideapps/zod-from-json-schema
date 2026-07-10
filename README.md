@@ -272,7 +272,7 @@ The following JSON Schema features are **not yet implemented**:
 Beyond the unsupported keywords above, supported features have some known gaps:
 
 - **`__proto__` properties**: Zod removes own `__proto__` keys from parsed objects to prevent prototype pollution, and this library's validation runs on Zod's parse output. As a result, a `__proto__` entry in `properties` cannot validate its value, and `required: ["__proto__"]` is only enforced for schemas without an explicit `type`.
-- **`patternProperties`**: Pattern schemas are only enforced when the schema also uses `properties`, `required`, or `additionalProperties: false` — a schema using only `patternProperties` (optionally with an `additionalProperties` schema) is not enforced. A key declared in `properties` that also matches a pattern is validated only against its `properties` schema, although JSON Schema requires both to apply.
+- **`patternProperties`**: Pattern schemas are only enforced when the schema also uses `properties`, `required`, or `additionalProperties: false` — a schema using only `patternProperties` (optionally with an `additionalProperties` schema) is not enforced.
 - **`required` interacting with `default`**: When a required property's schema has a `default`, the default fills in missing keys before validation runs, so `required` is effectively not enforced for that property.
 - **`unevaluatedProperties` is ignored**: In particular, discriminated unions whose `oneOf` variants differ only by `unevaluatedProperties: false` will not reject inputs that mix properties from different variants. Declaring `required` properties in each variant makes the variants distinguishable instead.
 
