@@ -221,6 +221,7 @@ This library provides comprehensive support for JSON Schema Draft 2020-12 featur
 - `additionalProperties` - Controls whether additional properties are allowed
 - `patternProperties` - Regex-based property validation (partial; see [Known Limitations](#known-limitations))
 - `propertyNames` - Validation of property names themselves
+- `dependentSchemas` - Schema dependencies based on property presence
 - `minProperties` - Minimum number of object properties
 - `maxProperties` - Maximum number of object properties
 - `dependentRequired` - Required properties based on other property presence
@@ -256,7 +257,6 @@ The following JSON Schema features are **not yet implemented**:
 
 ### Advanced Object Validation
 - `additionalProperties` - Fine-grained control over additional properties (basic support exists)
-- `dependentSchemas` - Schema dependencies based on property presence
 - `unevaluatedProperties` - Properties not covered by schema evaluation
 
 ### Advanced Array Validation
