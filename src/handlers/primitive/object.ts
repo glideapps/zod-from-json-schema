@@ -86,17 +86,30 @@ export class PropertiesHandler implements PrimitiveHandler {
             objectZod = objectZod.passthrough();
         }
 
-        // Refinements run on Zod's parse output, which strips own "__proto__"
-        // keys for security, so presence of "__proto__" can't be enforced here.
-        // (ProtoRequiredHandler covers the untyped-schema case.)
+        // Presence of required "__proto__" stays unenforced to keep the
+        // documented __proto__ limitation consistent: Zod strips own
+        // "__proto__" keys for security, so its value can't be validated
+        // either. (ProtoRequiredHandler covers the untyped-schema case.)
         const enforcibleKeys = presenceCheckKeys.filter((key) => key !== "__proto__");
 
         if (enforcibleKeys.length > 0) {
-            types.object = objectZod.refine(
-                (value: Record<string, unknown>) =>
-                    enforcibleKeys.every((key) => Object.prototype.hasOwnProperty.call(value, key)),
-                { message: `Missing required properties: ${enforcibleKeys.join(", ")}` },
-            );
+            // Check presence on the RAW input, before objectZod parses it:
+            // the parse output can't distinguish a missing key from one
+            // materialized by a `default`, and JSON Schema `required` must
+            // reject a missing key even when its schema has a default.
+            // Non-objects pass through so objectZod rejects them with its
+            // own error (the guard also keeps hasOwnProperty off null).
+            const hasRequiredKeys = (value: unknown): boolean =>
+                typeof value !== "object" || value === null || Array.isArray(value)
+                    ? true
+                    : enforcibleKeys.every((key) => Object.prototype.hasOwnProperty.call(value, key));
+
+            types.object = z
+                .any()
+                .refine(hasRequiredKeys, {
+                    message: `Missing required properties: ${enforcibleKeys.join(", ")}`,
+                })
+                .pipe(objectZod);
         } else {
             types.object = objectZod;
         }

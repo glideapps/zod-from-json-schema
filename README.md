@@ -236,7 +236,7 @@ This library provides comprehensive support for JSON Schema Draft 2020-12 featur
 ### Additional Features
 - `title` - Schema titles (carried over to Zod schemas)
 - `description` - Schema descriptions (carried over to Zod schemas)
-- `default` - Default value annotation, but ignored if it doesn't conform to the schema
+- `default` - Default value annotation, but ignored if it doesn't conform to the schema; a default never satisfies `required` for a missing property
 - Boolean schemas (`true` = allow anything, `false` = allow nothing)
 - Implicit type detection from constraints
 - Comprehensive error messages
@@ -274,7 +274,6 @@ The following JSON Schema features are **not yet implemented**:
 Beyond the unsupported keywords above, supported features have some known gaps:
 
 - **`__proto__` properties**: Zod removes own `__proto__` keys from parsed objects to prevent prototype pollution, and this library's validation runs on Zod's parse output. As a result, a `__proto__` entry in `properties` cannot validate its value, and `required: ["__proto__"]` is only enforced for schemas without an explicit `type`.
-- **`required` interacting with `default`**: When a required property's schema has a `default`, the default fills in missing keys before validation runs, so `required` is effectively not enforced for that property.
 - **`unevaluatedProperties` is ignored**: In particular, discriminated unions whose `oneOf` variants differ only by `unevaluatedProperties: false` will not reject inputs that mix properties from different variants. Declaring `required` properties in each variant makes the variants distinguishable instead.
 
 ## Standards Compliance
