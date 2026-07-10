@@ -337,17 +337,31 @@ export function runConversion(schema: JSONSchema.BaseSchema | boolean, convert: 
 }
 
 /**
+ * A converted $ref/$dynamicRef target.
+ */
+export interface ConvertedRef {
+    /** The Zod schema enforcing the reference target. */
+    schema: z.ZodTypeAny;
+    /**
+     * True when the target's conversion was still in flight (a recursive
+     * reference), in which case `schema` is a deferred memo lookup rather
+     * than the target's completed conversion.
+     */
+    deferred: boolean;
+}
+
+/**
  * Resolves and converts the $ref/$dynamicRef targets of a schema node
  * against the active conversion context. Unresolvable references (unknown
  * URIs, dangling pointers, unknown anchors, no-progress reference cycles, or
  * no active context) are omitted, preserving permissive behavior.
  * @param schema The schema node whose references should be converted
- * @returns Converted Zod schemas for each resolvable reference target
+ * @returns Converted references for each resolvable reference target
  */
-export function convertSchemaRefs(schema: JSONSchema.BaseSchema): z.ZodTypeAny[] {
+export function convertSchemaRefs(schema: JSONSchema.BaseSchema): ConvertedRef[] {
     const context = activeContext;
     if (context === undefined) return [];
-    const converted: z.ZodTypeAny[] = [];
+    const converted: ConvertedRef[] = [];
     for (const keyword of REF_KEYWORDS) {
         const referenceValue = getOwnValue(schema, keyword);
         if (typeof referenceValue !== "string") continue;
@@ -355,9 +369,12 @@ export function convertSchemaRefs(schema: JSONSchema.BaseSchema): z.ZodTypeAny[]
         if (target === NOT_RESOLVED) continue;
         if (refChainReturnsTo(schema, target, context.analysis)) continue;
         if (isSchemaObject(target) && context.inFlight.has(target)) {
-            converted.push(deferredSchema(context.memo, target));
+            converted.push({ schema: deferredSchema(context.memo, target), deferred: true });
         } else {
-            converted.push(convertMemoized(context, target as JSONSchema.BaseSchema | boolean));
+            converted.push({
+                schema: convertMemoized(context, target as JSONSchema.BaseSchema | boolean),
+                deferred: false,
+            });
         }
     }
     return converted;
