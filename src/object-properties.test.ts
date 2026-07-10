@@ -136,6 +136,73 @@ describe("patternProperties handled through refinement", () => {
     });
 });
 
+describe("patternProperties without properties, required, or additionalProperties: false (issue #39)", () => {
+    it("enforces patternProperties as the only object keyword", () => {
+        const zodSchema = convertJsonSchemaToZod({
+            type: "object",
+            patternProperties: { "^x_": { type: "number" } },
+        } as any);
+        expect(zodSchema.safeParse({ x_bad: "no" }).success).toBe(false);
+        expect(zodSchema.safeParse({ x_ok: 1 }).success).toBe(true);
+        // Non-matching keys are unconstrained since additionalProperties is absent.
+        expect(zodSchema.safeParse({ other: "anything" }).success).toBe(true);
+    });
+
+    it("checks non-matching keys against a sibling additionalProperties schema", () => {
+        const zodSchema = convertJsonSchemaToZod({
+            type: "object",
+            patternProperties: { "^x_": { type: "number" } },
+            additionalProperties: { type: "number" },
+        } as any);
+        expect(zodSchema.safeParse({ other: "no" }).success).toBe(false);
+        expect(zodSchema.safeParse({ x_a: "s" }).success).toBe(false);
+        expect(zodSchema.safeParse({ other: 3 }).success).toBe(true);
+        expect(zodSchema.safeParse({ x_a: 1 }).success).toBe(true);
+    });
+
+    it("applies patternProperties on untyped schemas and passes non-objects through", () => {
+        const zodSchema = convertJsonSchemaToZod({
+            patternProperties: { "^x_": { type: "number" } },
+        } as any);
+        expect(zodSchema.safeParse({ x_bad: "no" }).success).toBe(false);
+        expect(zodSchema.safeParse({ x_ok: 1 }).success).toBe(true);
+        expect(zodSchema.safeParse("str").success).toBe(true);
+        expect(zodSchema.safeParse(42).success).toBe(true);
+    });
+
+    it("supports boolean pattern schemas", () => {
+        const zodSchema = convertJsonSchemaToZod({
+            type: "object",
+            patternProperties: { "f.*": true, "b.*": false },
+        } as any);
+        expect(zodSchema.safeParse({ foo: 1 }).success).toBe(true);
+        expect(zodSchema.safeParse({ bar: 2 }).success).toBe(false);
+    });
+
+    it("keeps enforcing an additionalProperties schema alone via the object shape", () => {
+        const typedSchema = convertJsonSchemaToZod({
+            type: "object",
+            additionalProperties: { type: "number" },
+        } as any);
+        expect(typedSchema.safeParse({ a: "no" }).success).toBe(false);
+        expect(typedSchema.safeParse({ a: 2 }).success).toBe(true);
+
+        const untypedSchema = convertJsonSchemaToZod({
+            additionalProperties: { type: "number" },
+        } as any);
+        expect(untypedSchema.safeParse({ a: "no" }).success).toBe(false);
+        expect(untypedSchema.safeParse({ a: 2 }).success).toBe(true);
+    });
+
+    it("treats empty patternProperties as no constraint", () => {
+        const zodSchema = convertJsonSchemaToZod({
+            type: "object",
+            patternProperties: {},
+        } as any);
+        expect(zodSchema.safeParse({ anything: "goes" }).success).toBe(true);
+    });
+});
+
 describe("additionalProperties: false on typed objects", () => {
     it("rejects objects with extra keys instead of stripping them", () => {
         // Before the oneOf fix, typed object schemas with
