@@ -2,7 +2,7 @@ import { z } from "zod/v4";
 import type { JSONSchema } from "zod/v4/core";
 import { PrimitiveHandler, TypeSchemas } from "../../core/types";
 import { convertJsonSchemaToZod } from "../../core/converter";
-import { isHazardousPropertyName } from "../../core/utils";
+import { isHazardousPropertyName, schemaConstrainsProtoProperty } from "../../core/utils";
 
 export class PropertiesHandler implements PrimitiveHandler {
     apply(types: TypeSchemas, schema: JSONSchema.BaseSchema): void {
@@ -136,6 +136,11 @@ export class MaxPropertiesHandler implements PrimitiveHandler {
         const objectSchema = schema as JSONSchema.ObjectSchema;
         if (objectSchema.maxProperties === undefined) return;
 
+        // Schemas constraining "__proto__" are counted on the raw input by
+        // ProtoPropertyHandler; this refinement would count Zod's parse
+        // output, which has own "__proto__" keys stripped.
+        if (schemaConstrainsProtoProperty(schema)) return;
+
         // Apply constraint when object type is enabled (explicit or implicit)
         if (types.object !== false) {
             const baseObject = types.object || z.object({}).passthrough();
@@ -151,6 +156,11 @@ export class MinPropertiesHandler implements PrimitiveHandler {
     apply(types: TypeSchemas, schema: JSONSchema.BaseSchema): void {
         const objectSchema = schema as JSONSchema.ObjectSchema;
         if (objectSchema.minProperties === undefined) return;
+
+        // Schemas constraining "__proto__" are counted on the raw input by
+        // ProtoPropertyHandler; this refinement would count Zod's parse
+        // output, which has own "__proto__" keys stripped.
+        if (schemaConstrainsProtoProperty(schema)) return;
 
         // Apply constraint when object type is enabled (explicit or implicit)
         if (types.object !== false) {

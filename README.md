@@ -224,7 +224,7 @@ This library provides comprehensive support for JSON Schema Draft 2020-12 featur
 - `minProperties` - Minimum number of object properties
 - `maxProperties` - Maximum number of object properties
 
-**Special Property Support**: Correctly handles JavaScript reserved property names like `constructor` and `toString` — inherited members are not mistaken for property values, and own keys are validated normally. `__proto__` entries in `properties` and `required` are validated against the raw input before Zod's object parsing runs (Zod strips own `__proto__` keys from parse *output* as a prototype-pollution defense, and that stripping is preserved).
+**Special Property Support**: Correctly handles JavaScript reserved property names like `constructor` and `toString` — inherited members are not mistaken for property values, and own keys are validated normally. `__proto__` entries in `properties` and `required` are validated against the raw input before Zod's object parsing runs (Zod strips own `__proto__` keys from parse *output* as a prototype-pollution defense, and that stripping is preserved). For such schemas, `enum`/`const` equality and `minProperties`/`maxProperties` counting are also checked against the raw input, so own `__proto__` keys participate in them.
 
 ### Schema Composition
 - `const` - Literal value constraints

@@ -95,3 +95,79 @@ describe("__proto__ property validation on raw input", () => {
         expect(zodSchema.safeParse("hi").success).toBe(true);
     });
 });
+
+// Refinements that inspect the parsed value (complex enum/const deep
+// equality, minProperties/maxProperties counting) would otherwise run on
+// Zod's __proto__-stripped output. When a schema constrains "__proto__",
+// they must run on the raw input instead, so inputs that are valid per
+// JSON Schema keep being accepted.
+describe("__proto__ combined with value-inspecting keywords", () => {
+    it("matches enum members that carry an own __proto__ key", () => {
+        const zodSchema = convertJsonSchemaToZod({
+            required: ["__proto__"],
+            enum: [JSON.parse('{"__proto__": 1}'), "a"],
+        } as any);
+        expect(zodSchema.safeParse(JSON.parse('{"__proto__": 1}')).success).toBe(true);
+        expect(zodSchema.safeParse("a").success).toBe(true);
+        expect(zodSchema.safeParse(JSON.parse('{"__proto__": 2}')).success).toBe(false);
+        expect(zodSchema.safeParse("b").success).toBe(false);
+        expect(zodSchema.safeParse({}).success).toBe(false);
+    });
+
+    it("matches enum members when __proto__ has a property schema", () => {
+        const zodSchema = convertJsonSchemaToZod({
+            properties: { ["__proto__"]: { type: "number" } },
+            enum: [JSON.parse('{"__proto__": 1}')],
+        } as any);
+        expect(zodSchema.safeParse(JSON.parse('{"__proto__": 1}')).success).toBe(true);
+        // Passes the property schema but is not an enum member.
+        expect(zodSchema.safeParse(JSON.parse('{"__proto__": 2}')).success).toBe(false);
+    });
+
+    it("matches a const value that carries an own __proto__ key", () => {
+        const zodSchema = convertJsonSchemaToZod({
+            required: ["__proto__"],
+            const: JSON.parse('{"__proto__": 1}'),
+        } as any);
+        expect(zodSchema.safeParse(JSON.parse('{"__proto__": 1}')).success).toBe(true);
+        expect(zodSchema.safeParse(JSON.parse('{"__proto__": 2}')).success).toBe(false);
+        expect(zodSchema.safeParse("x").success).toBe(false);
+    });
+
+    it("counts own __proto__ keys for minProperties on untyped schemas", () => {
+        const one = convertJsonSchemaToZod({
+            required: ["__proto__"],
+            minProperties: 1,
+        } as any);
+        expect(one.safeParse(JSON.parse('{"__proto__": 1}')).success).toBe(true);
+        // Object keywords do not constrain non-objects.
+        expect(one.safeParse("hi").success).toBe(true);
+
+        const two = convertJsonSchemaToZod({
+            required: ["__proto__"],
+            minProperties: 2,
+        } as any);
+        expect(two.safeParse(JSON.parse('{"__proto__": 1, "x": 2}')).success).toBe(true);
+        expect(two.safeParse(JSON.parse('{"__proto__": 1}')).success).toBe(false);
+    });
+
+    it("counts own __proto__ keys for maxProperties on untyped schemas", () => {
+        const zodSchema = convertJsonSchemaToZod({
+            required: ["__proto__"],
+            maxProperties: 1,
+        } as any);
+        expect(zodSchema.safeParse(JSON.parse('{"__proto__": 1}')).success).toBe(true);
+        expect(zodSchema.safeParse(JSON.parse('{"__proto__": 1, "x": 2}')).success).toBe(false);
+        expect(zodSchema.safeParse("hi").success).toBe(true);
+    });
+
+    it("counts own __proto__ keys for minProperties on typed object schemas", () => {
+        const zodSchema = convertJsonSchemaToZod({
+            type: "object",
+            required: ["__proto__"],
+            minProperties: 1,
+        } as any);
+        expect(zodSchema.safeParse(JSON.parse('{"__proto__": 1}')).success).toBe(true);
+        expect(zodSchema.safeParse(JSON.parse('{"__proto__": 1, "x": 2}')).success).toBe(true);
+    });
+});
