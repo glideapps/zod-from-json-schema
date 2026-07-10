@@ -40,9 +40,17 @@ export class ExclusiveMinimumHandler implements PrimitiveHandler {
             if (currentNumber instanceof z.ZodNumber) {
                 if (typeof numberSchema.exclusiveMinimum === "number") {
                     types.number = currentNumber.gt(numberSchema.exclusiveMinimum);
-                } else {
-                    types.number = false;
+                } else if (
+                    numberSchema.exclusiveMinimum === true &&
+                    typeof numberSchema.minimum === "number"
+                ) {
+                    // Draft-4 boolean form: exclusiveMinimum: true turns
+                    // the sibling `minimum` into an exclusive bound.
+                    types.number = currentNumber.gt(numberSchema.minimum);
                 }
+                // exclusiveMinimum: false, or a boolean form without a
+                // numeric sibling minimum, is a no-op — never disable
+                // the number type.
             }
         }
     }
@@ -58,9 +66,17 @@ export class ExclusiveMaximumHandler implements PrimitiveHandler {
             if (currentNumber instanceof z.ZodNumber) {
                 if (typeof numberSchema.exclusiveMaximum === "number") {
                     types.number = currentNumber.lt(numberSchema.exclusiveMaximum);
-                } else {
-                    types.number = false;
+                } else if (
+                    numberSchema.exclusiveMaximum === true &&
+                    typeof numberSchema.maximum === "number"
+                ) {
+                    // Draft-4 boolean form: exclusiveMaximum: true turns
+                    // the sibling `maximum` into an exclusive bound.
+                    types.number = currentNumber.lt(numberSchema.maximum);
                 }
+                // exclusiveMaximum: false, or a boolean form without a
+                // numeric sibling maximum, is a no-op — never disable
+                // the number type.
             }
         }
     }

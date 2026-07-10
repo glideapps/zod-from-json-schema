@@ -198,6 +198,8 @@ This library provides comprehensive support for JSON Schema Draft 2020-12 featur
 - `exclusiveMaximum` - Exclusive maximum (less than)
 - `multipleOf` - Multiple validation with floating-point precision handling
 
+**Draft-4 Compatibility**: The legacy boolean form of `exclusiveMinimum`/`exclusiveMaximum` (e.g. `{ "minimum": 5, "exclusiveMinimum": true }`, as used by draft-4 and Swagger 2.0) is also accepted: `true` makes the sibling `minimum`/`maximum` bound exclusive, and `false` is a no-op.
+
 ### Array Validations
 - `items` - Item schema validation (supports schemas, boolean values, and arrays)
 - `prefixItems` - Tuple-style positional item validation (Draft 2020-12)
