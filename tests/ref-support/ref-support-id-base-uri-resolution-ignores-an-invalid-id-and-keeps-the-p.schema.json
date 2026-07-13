@@ -1,0 +1,9 @@
+{
+    "$id": "not a valid uri \u0000",
+    "$ref": "#/$defs/a",
+    "$defs": {
+        "a": {
+            "type": "integer"
+        }
+    }
+}

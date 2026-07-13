@@ -1,0 +1,10 @@
+{
+    "$id": "http://example.com/root.json",
+    "$ref": "other.json",
+    "$defs": {
+        "other": {
+            "$id": "other.json",
+            "type": "integer"
+        }
+    }
+}

@@ -1,0 +1,33 @@
+{
+    "oneOf": [
+        {
+            "type": "array",
+            "items": [
+                {
+                    "type": "string",
+                    "const": "TYPE_A"
+                },
+                {
+                    "type": "object",
+                    "properties": {
+                        "value": {
+                            "type": "number"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "type": "array",
+            "items": [
+                {
+                    "type": "string",
+                    "const": "TYPE_B"
+                },
+                {
+                    "type": "string"
+                }
+            ]
+        }
+    ]
+}

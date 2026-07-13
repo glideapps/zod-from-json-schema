@@ -1,0 +1,18 @@
+{
+    "$id": "http://example.com/root.json",
+    "type": "array",
+    "prefixItems": [
+        {
+            "type": "string"
+        }
+    ],
+    "items": {
+        "$ref": "item.json"
+    },
+    "$defs": {
+        "i": {
+            "$id": "item.json",
+            "type": "integer"
+        }
+    }
+}

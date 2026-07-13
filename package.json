@@ -19,6 +19,7 @@
     "scripts": {
         "build": "npm run clean && tsc -d --emitDeclarationOnly --outDir dist && node build.js",
         "test": "vitest run --coverage",
+        "test:fixtures": "vitest run tests/json-fixtures.test.ts",
         "prepublishOnly": "npm run build",
         "clean": "rm -rf dist"
     },

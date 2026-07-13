@@ -1,0 +1,9 @@
+{
+    "$ref": "#/$defs/atLeastZero",
+    "maximum": 10,
+    "$defs": {
+        "atLeastZero": {
+            "minimum": 0
+        }
+    }
+}

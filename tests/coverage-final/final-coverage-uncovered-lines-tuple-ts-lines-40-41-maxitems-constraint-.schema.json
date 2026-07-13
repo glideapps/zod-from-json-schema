@@ -1,0 +1,15 @@
+{
+    "type": "array",
+    "items": [
+        {
+            "type": "string"
+        },
+        {
+            "type": "number"
+        },
+        {
+            "type": "boolean"
+        }
+    ],
+    "maxItems": 1
+}

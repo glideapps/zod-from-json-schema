@@ -1,0 +1,7 @@
+{
+    "dependentRequired": {
+        "bar": [
+            "foo"
+        ]
+    }
+}

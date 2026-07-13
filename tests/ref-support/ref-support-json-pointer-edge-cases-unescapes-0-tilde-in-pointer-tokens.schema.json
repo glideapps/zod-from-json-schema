@@ -1,0 +1,8 @@
+{
+    "$ref": "#/$defs/tilde~0field",
+    "$defs": {
+        "tilde~field": {
+            "type": "integer"
+        }
+    }
+}

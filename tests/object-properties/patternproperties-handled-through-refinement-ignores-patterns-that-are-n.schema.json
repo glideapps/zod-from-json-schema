@@ -1,0 +1,13 @@
+{
+    "type": "object",
+    "properties": {
+        "declared": {
+            "type": "string"
+        }
+    },
+    "patternProperties": {
+        "[": {
+            "type": "number"
+        }
+    }
+}

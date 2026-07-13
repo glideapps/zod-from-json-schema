@@ -1,0 +1,7 @@
+{
+    "patternProperties": {
+        "^x_": {
+            "type": "number"
+        }
+    }
+}

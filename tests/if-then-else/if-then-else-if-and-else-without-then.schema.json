@@ -1,0 +1,8 @@
+{
+    "if": {
+        "exclusiveMaximum": 0
+    },
+    "else": {
+        "multipleOf": 2
+    }
+}

@@ -1,0 +1,8 @@
+{
+    "parentNodeId": "123",
+    "value": "456",
+    "nodeType": "INVALID",
+    "nodeSpecifics": {
+        "notes": "some notes"
+    }
+}

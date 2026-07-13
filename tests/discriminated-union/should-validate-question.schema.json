@@ -1,0 +1,62 @@
+{
+    "type": "object",
+    "required": [
+        "nodeType",
+        "parentNodeId"
+    ],
+    "properties": {
+        "parentNodeId": {
+            "type": "string"
+        },
+        "value": {
+            "type": "string"
+        }
+    },
+    "oneOf": [
+        {
+            "properties": {
+                "nodeType": {
+                    "const": "QUESTION"
+                },
+                "nodeSpecifics": {
+                    "type": "object",
+                    "properties": {
+                        "questionName": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        }
+                    },
+                    "required": [
+                        "questionName"
+                    ],
+                    "unevaluatedProperties": false
+                }
+            }
+        },
+        {
+            "properties": {
+                "nodeType": {
+                    "const": "DECISION"
+                },
+                "nodeSpecifics": {
+                    "type": "object",
+                    "properties": {
+                        "notes": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        }
+                    },
+                    "required": [
+                        "notes"
+                    ],
+                    "unevaluatedProperties": false
+                }
+            }
+        }
+    ],
+    "unevaluatedProperties": false
+}

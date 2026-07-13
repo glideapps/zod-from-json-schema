@@ -1,0 +1,10 @@
+{
+    "dependentRequired": {
+        "foo\nbar": [
+            "foo\rbar"
+        ],
+        "foo\"bar": [
+            "foo'bar"
+        ]
+    }
+}

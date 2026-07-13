@@ -1,0 +1,10 @@
+{
+    "prefixItems": [
+        {
+            "type": "string"
+        },
+        {
+            "type": "number"
+        }
+    ]
+}

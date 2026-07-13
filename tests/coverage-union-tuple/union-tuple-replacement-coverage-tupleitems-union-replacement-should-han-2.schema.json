@@ -1,0 +1,30 @@
+{
+    "allOf": [
+        {
+            "anyOf": [
+                {
+                    "type": "array",
+                    "items": [
+                        {
+                            "const": "type1"
+                        },
+                        {
+                            "type": "string"
+                        }
+                    ]
+                },
+                {
+                    "type": "array",
+                    "items": [
+                        {
+                            "const": "type2"
+                        },
+                        {
+                            "type": "number"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

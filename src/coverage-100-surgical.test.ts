@@ -1,11 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { convertJsonSchemaToZod } from "./index";
+import "./index";
 import { ItemsHandler } from "./handlers/primitive/array";
 import { EnumHandler } from "./handlers/primitive/enum";
 import { TupleHandler } from "./handlers/primitive/tuple";
 import { EnumComplexHandler } from "./handlers/refinement/enumComplex";
-import { PrefixItemsHandler } from "./handlers/refinement/arrayItems";
-// TupleItemsHandler removed - tuple handling now done in primitive phase
 import { z } from "zod/v4";
 import type { TypeSchemas } from "./core/types";
 
@@ -86,97 +84,6 @@ describe("100% Coverage - Surgical Tests", () => {
             // Test non-matching values
             expect(result.safeParse({ wrong: "object" }).success).toBe(false);
             expect(result.safeParse([4, 5, 6]).success).toBe(false);
-        });
-    });
-
-    describe("Array items now handled in primitive phase", () => {
-        it("should handle array items through converter", () => {
-            // Array items are now handled directly in primitive phase
-            const schema = {
-                type: "array",
-                minItems: 1,
-                items: { type: "number", minimum: 0 }
-            };
-            
-            const zodSchema = convertJsonSchemaToZod(schema);
-            
-            // Should work with typed array items
-            expect(zodSchema.safeParse([1, 2, 3]).success).toBe(true);
-            expect(zodSchema.safeParse([-1]).success).toBe(false);
-            expect(zodSchema.safeParse(["string"]).success).toBe(false);
-            expect(zodSchema.safeParse([]).success).toBe(false); // minItems
-        });
-    });
-
-    describe("Tuple handling now in primitive phase", () => {
-        it("should handle tuples correctly through converter", () => {
-            // Tuples are now handled directly in the primitive phase
-            const schema = {
-                type: "array",
-                items: [{ type: "string" }, { type: "number" }]
-            };
-            
-            const zodSchema = convertJsonSchemaToZod(schema);
-            
-            // Test the tuple works correctly
-            expect(zodSchema.safeParse(["hello", 42]).success).toBe(true);
-            expect(zodSchema.safeParse(["wrong", "types"]).success).toBe(false);
-        });
-
-        it("should handle tuple in union", () => {
-            const schema = {
-                anyOf: [
-                    {
-                        type: "array",
-                        items: [{ type: "string" }, { type: "number" }]
-                    },
-                    { type: "boolean" }
-                ]
-            };
-            
-            const zodSchema = convertJsonSchemaToZod(schema);
-            expect(zodSchema.safeParse(["hello", 42]).success).toBe(true);
-            expect(zodSchema.safeParse(true).success).toBe(true);
-            expect(zodSchema.safeParse(["wrong", "types"]).success).toBe(false);
-        });
-    });
-
-    describe("Integration test to ensure all paths work together", () => {
-        it("should handle complex schema that exercises multiple edge cases", () => {
-            const schema = {
-                anyOf: [
-                    {
-                        type: "array",
-                        items: [{ const: "start" }, { type: "string" }],
-                        minItems: 2,
-                        maxItems: 2
-                    },
-                    {
-                        enum: [
-                            { complex: "object" },
-                            ["complex", "array"],
-                            "simple",
-                            42
-                        ]
-                    }
-                ]
-            };
-            
-            const zodSchema = convertJsonSchemaToZod(schema);
-            
-            // Test tuple
-            expect(zodSchema.parse(["start", "value"])).toEqual(["start", "value"]);
-            
-            // Test enum values
-            expect(zodSchema.parse({ complex: "object" })).toEqual({ complex: "object" });
-            expect(zodSchema.parse(["complex", "array"])).toEqual(["complex", "array"]);
-            expect(zodSchema.parse("simple")).toBe("simple");
-            expect(zodSchema.parse(42)).toBe(42);
-            
-            // Test failures
-            expect(() => zodSchema.parse(["wrong", "start"])).toThrow();
-            expect(() => zodSchema.parse({ wrong: "object" })).toThrow();
-            expect(() => zodSchema.parse("unknown")).toThrow();
         });
     });
 });

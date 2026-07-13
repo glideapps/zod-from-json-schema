@@ -1,0 +1,12 @@
+{
+    "type": "array",
+    "items": {
+        "$dynamicRef": "#items"
+    },
+    "$defs": {
+        "foo": {
+            "$dynamicAnchor": "items",
+            "type": "string"
+        }
+    }
+}

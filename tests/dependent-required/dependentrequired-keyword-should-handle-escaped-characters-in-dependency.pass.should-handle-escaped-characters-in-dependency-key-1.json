@@ -1,0 +1,4 @@
+{
+    "foo\nbar": 1,
+    "foo\rbar": 2
+}

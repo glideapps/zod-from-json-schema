@@ -1,0 +1,9 @@
+{
+    "$id": "urn:uuid:deadbeef-1234-0000-0000-4321feebdaed",
+    "$ref": "some-relative-thing",
+    "$defs": {
+        "bar": {
+            "type": "string"
+        }
+    }
+}

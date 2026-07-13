@@ -1,0 +1,30 @@
+{
+    "anyOf": [
+        {
+            "type": "array",
+            "items": [
+                {
+                    "const": "start"
+                },
+                {
+                    "type": "string"
+                }
+            ],
+            "minItems": 2,
+            "maxItems": 2
+        },
+        {
+            "enum": [
+                {
+                    "complex": "object"
+                },
+                [
+                    "complex",
+                    "array"
+                ],
+                "simple",
+                42
+            ]
+        }
+    ]
+}

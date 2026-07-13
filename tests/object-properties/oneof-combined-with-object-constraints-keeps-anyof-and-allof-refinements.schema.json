@@ -1,0 +1,24 @@
+{
+    "type": "object",
+    "properties": {
+        "n": {
+            "type": "number"
+        }
+    },
+    "anyOf": [
+        {
+            "properties": {
+                "n": {
+                    "minimum": 10
+                }
+            }
+        },
+        {
+            "properties": {
+                "n": {
+                    "maximum": 0
+                }
+            }
+        }
+    ]
+}

@@ -1,0 +1,11 @@
+{
+    "then": {
+        "const": "yes"
+    },
+    "else": {
+        "const": "other"
+    },
+    "if": {
+        "maxLength": 4
+    }
+}

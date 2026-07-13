@@ -1,0 +1,24 @@
+{
+    "type": "object",
+    "properties": {
+        "n": {
+            "type": "number"
+        }
+    },
+    "allOf": [
+        {
+            "properties": {
+                "n": {
+                    "minimum": 0
+                }
+            }
+        },
+        {
+            "properties": {
+                "n": {
+                    "maximum": 10
+                }
+            }
+        }
+    ]
+}

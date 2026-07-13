@@ -1,0 +1,10 @@
+{
+    "$id": "file:///folder/file.json",
+    "$defs": {
+        "foo": {
+            "$id": "other.json",
+            "type": "number"
+        }
+    },
+    "$ref": "file:///folder/other.json"
+}

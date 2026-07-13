@@ -1,0 +1,16 @@
+{
+    "$ref": "#/$defs/tree",
+    "$defs": {
+        "tree": {
+            "type": "object",
+            "properties": {
+                "children": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/tree"
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,8 @@
+{
+    "type": "object",
+    "properties": {
+        "__proto__": {
+            "type": "number"
+        }
+    }
+}

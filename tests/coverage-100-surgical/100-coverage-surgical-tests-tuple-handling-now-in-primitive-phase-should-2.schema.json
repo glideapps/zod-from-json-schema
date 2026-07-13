@@ -1,0 +1,18 @@
+{
+    "anyOf": [
+        {
+            "type": "array",
+            "items": [
+                {
+                    "type": "string"
+                },
+                {
+                    "type": "number"
+                }
+            ]
+        },
+        {
+            "type": "boolean"
+        }
+    ]
+}

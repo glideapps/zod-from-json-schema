@@ -1,0 +1,12 @@
+{
+    "type": "object",
+    "properties": {
+        "toString": {
+            "type": "string",
+            "default": "x"
+        }
+    },
+    "required": [
+        "toString"
+    ]
+}

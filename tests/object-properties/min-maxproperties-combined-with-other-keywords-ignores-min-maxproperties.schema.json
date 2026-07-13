@@ -1,0 +1,5 @@
+{
+    "const": "x",
+    "minProperties": 1,
+    "maxProperties": 1
+}

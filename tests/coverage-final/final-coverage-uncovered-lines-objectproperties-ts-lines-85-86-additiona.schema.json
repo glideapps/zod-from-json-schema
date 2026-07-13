@@ -1,0 +1,15 @@
+{
+    "anyOf": [
+        {
+            "type": "string"
+        },
+        {
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false
+        }
+    ]
+}

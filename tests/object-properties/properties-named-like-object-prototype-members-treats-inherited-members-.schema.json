@@ -1,0 +1,11 @@
+{
+    "type": "object",
+    "properties": {
+        "toString": {
+            "type": "string"
+        },
+        "constructor": {
+            "type": "number"
+        }
+    }
+}

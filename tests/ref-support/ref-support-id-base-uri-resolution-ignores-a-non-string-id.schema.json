@@ -1,0 +1,9 @@
+{
+    "$id": 5,
+    "$ref": "#/$defs/a",
+    "$defs": {
+        "a": {
+            "type": "integer"
+        }
+    }
+}

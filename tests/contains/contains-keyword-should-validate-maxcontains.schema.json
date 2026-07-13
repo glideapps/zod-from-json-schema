@@ -1,0 +1,6 @@
+{
+    "contains": {
+        "const": 1
+    },
+    "maxContains": 2
+}

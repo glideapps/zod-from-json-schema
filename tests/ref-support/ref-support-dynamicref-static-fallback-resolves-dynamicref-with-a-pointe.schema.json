@@ -1,0 +1,14 @@
+{
+    "properties": {
+        "true": {
+            "$dynamicRef": "#/$defs/true"
+        },
+        "false": {
+            "$dynamicRef": "#/$defs/false"
+        }
+    },
+    "$defs": {
+        "true": true,
+        "false": false
+    }
+}

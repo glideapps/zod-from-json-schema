@@ -1,0 +1,11 @@
+{
+    "$defs": {
+        "i": {
+            "type": "integer"
+        }
+    },
+    "type": "array",
+    "items": {
+        "$ref": "#/$defs/i"
+    }
+}

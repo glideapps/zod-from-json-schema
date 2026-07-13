@@ -1,0 +1,23 @@
+{
+    "anyOf": [
+        {
+            "type": "array",
+            "items": [
+                {
+                    "type": "string",
+                    "minLength": 1
+                },
+                {
+                    "type": "number",
+                    "minimum": 0
+                }
+            ]
+        },
+        {
+            "type": "boolean"
+        },
+        {
+            "type": "null"
+        }
+    ]
+}

@@ -1,0 +1,9 @@
+{
+    "dependentSchemas": {
+        "bar": {
+            "required": [
+                "foo"
+            ]
+        }
+    }
+}

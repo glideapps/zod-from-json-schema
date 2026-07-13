@@ -1,0 +1,8 @@
+{
+    "dependentRequired": {
+        "quux": [
+            "foo",
+            "bar"
+        ]
+    }
+}

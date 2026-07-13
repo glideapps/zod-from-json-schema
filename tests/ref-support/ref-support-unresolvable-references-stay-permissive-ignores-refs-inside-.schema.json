@@ -1,0 +1,13 @@
+{
+    "$ref": "#/$defs/list/0",
+    "$defs": {
+        "list": [
+            {
+                "$ref": "#/$defs/other"
+            }
+        ],
+        "other": {
+            "type": "string"
+        }
+    }
+}

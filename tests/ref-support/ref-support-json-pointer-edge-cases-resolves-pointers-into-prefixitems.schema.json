@@ -1,0 +1,16 @@
+{
+    "type": "object",
+    "properties": {
+        "tuple": {
+            "type": "array",
+            "prefixItems": [
+                {
+                    "type": "integer"
+                }
+            ]
+        },
+        "same": {
+            "$ref": "#/properties/tuple/prefixItems/0"
+        }
+    }
+}
