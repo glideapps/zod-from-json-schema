@@ -1,6 +1,7 @@
 import { z } from "zod/v4";
 import type { JSONSchema } from "zod/v4/core";
 import { PrimitiveHandler, RefinementHandler, TypeSchemas } from "./types";
+import { NON_CONSTRAINT_KEYS, runConversion } from "./refs";
 
 // Import primitive handlers
 import { TypeHandler } from "../handlers/primitive/type";
@@ -39,12 +40,15 @@ import { OneOfHandler } from "../handlers/refinement/oneOf";
 import { PrefixItemsHandler } from "../handlers/refinement/arrayItems";
 import { ObjectPropertiesHandler } from "../handlers/refinement/objectProperties";
 import { PropertyNamesHandler } from "../handlers/refinement/propertyNames";
+import { DependentSchemasHandler } from "../handlers/refinement/dependentSchemas";
 import { EnumComplexHandler } from "../handlers/refinement/enumComplex";
 import { ConstComplexHandler } from "../handlers/refinement/constComplex";
 import { MetadataHandler } from "../handlers/refinement/metadata";
 import { ProtoPropertyHandler } from "../handlers/refinement/protoProperty";
 import { ContainsHandler } from "../handlers/refinement/contains";
+import { DependentRequiredHandler } from "../handlers/refinement/dependentRequired";
 import { DefaultHandler } from "../handlers/refinement/default";
+import { RefHandler } from "../handlers/refinement/ref";
 
 // Initialize handlers
 const primitiveHandlers: PrimitiveHandler[] = [
@@ -87,6 +91,9 @@ const primitiveHandlers: PrimitiveHandler[] = [
 ];
 
 const refinementHandlers: RefinementHandler[] = [
+    // Reference resolution first, so later refinements wrap the result
+    new RefHandler(),
+
     // Handle special cases first
     new EnumComplexHandler(),
     new ConstComplexHandler(),
@@ -95,6 +102,7 @@ const refinementHandlers: RefinementHandler[] = [
     // Run object refinement once the base shape exists, ahead of combinator refinements.
     new ObjectPropertiesHandler(),
     new PropertyNamesHandler(),
+    new DependentSchemasHandler(),
     new AllOfHandler(),
     new AnyOfHandler(),
     new OneOfHandler(),
@@ -106,6 +114,7 @@ const refinementHandlers: RefinementHandler[] = [
     new ContainsHandler(),
 
     // Other refinements
+    new DependentRequiredHandler(),
     new NotHandler(),
     new IfThenElseHandler(),
     new UniqueItemsHandler(),
@@ -125,6 +134,14 @@ const refinementHandlers: RefinementHandler[] = [
  * Converts a JSON Schema object to a Zod schema using the two-phase architecture
  */
 export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema | boolean): z.ZodTypeAny {
+    return runConversion(schema, convertSchemaNode);
+}
+
+/**
+ * Converts a single schema node, without reference bookkeeping (that is
+ * handled by runConversion, which wraps every call to this function).
+ */
+function convertSchemaNode(schema: JSONSchema.BaseSchema | boolean): z.ZodTypeAny {
     // Handle boolean schemas
     if (typeof schema === "boolean") {
         return schema ? z.any() : z.never();
@@ -182,9 +199,7 @@ export function convertJsonSchemaToZod(schema: JSONSchema.BaseSchema | boolean):
         zodSchema = allowedSchemas[0];
     } else {
         // Check if this is an unconstrained schema (all default types enabled)
-        const hasConstraints = Object.keys(schema).some(
-            (key) => key !== "$schema" && key !== "title" && key !== "description",
-        );
+        const hasConstraints = Object.keys(schema).some((key) => !NON_CONSTRAINT_KEYS.has(key));
 
         if (!hasConstraints) {
             // Empty schema with no constraints should be z.any()

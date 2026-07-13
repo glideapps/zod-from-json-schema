@@ -242,3 +242,79 @@ describe("__proto__ combined with required properties that have defaults", () =>
         expect(zodSchema.safeParse(JSON.parse('{"__proto__": 1, "foo": "y"}')).success).toBe(true);
     });
 });
+
+describe("__proto__ combined with references", () => {
+    it("preserves a sibling $ref constraint", () => {
+        const zodSchema = convertJsonSchemaToZod({
+            type: "object",
+            properties: { ["__proto__"]: { type: "number" } },
+            $ref: "#/$defs/needsFoo",
+            $defs: {
+                needsFoo: {
+                    type: "object",
+                    properties: {
+                        foo: { type: "number" },
+                        ["__proto__"]: { type: "number" },
+                    },
+                    required: ["foo", "__proto__"],
+                },
+            },
+        } as any);
+
+        expect(zodSchema.safeParse(JSON.parse('{"__proto__": 1, "foo": 2}')).success).toBe(true);
+        expect(zodSchema.safeParse(JSON.parse('{"__proto__": 1}')).success).toBe(false);
+        expect(zodSchema.safeParse(JSON.parse('{"__proto__": 1, "foo": "bad"}')).success).toBe(false);
+    });
+
+    it("keeps ignoring a no-progress self-reference", () => {
+        const zodSchema = convertJsonSchemaToZod({
+            required: ["__proto__"],
+            $ref: "#",
+        } as any);
+
+        expect(zodSchema.safeParse(JSON.parse('{"__proto__": 1}')).success).toBe(true);
+        expect(zodSchema.safeParse({}).success).toBe(false);
+    });
+});
+
+describe("__proto__ combined with other object keywords", () => {
+    it("applies propertyNames to an own __proto__ key", () => {
+        const zodSchema = convertJsonSchemaToZod({
+            properties: { ["__proto__"]: { type: "number" } },
+            propertyNames: { not: { const: "__proto__" } },
+        } as any);
+
+        expect(zodSchema.safeParse(JSON.parse('{"ok": 1}')).success).toBe(true);
+        expect(zodSchema.safeParse(JSON.parse('{"__proto__": 1}')).success).toBe(false);
+    });
+
+    it("uses an own __proto__ key as a dependentRequired trigger", () => {
+        const zodSchema = convertJsonSchemaToZod({
+            properties: { ["__proto__"]: { type: "number" } },
+            dependentRequired: { ["__proto__"]: ["foo"] },
+        } as any);
+
+        expect(zodSchema.safeParse(JSON.parse('{"__proto__": 1, "foo": 2}')).success).toBe(true);
+        expect(zodSchema.safeParse(JSON.parse('{"__proto__": 1}')).success).toBe(false);
+    });
+
+    it("allows an own __proto__ key to satisfy dependentRequired", () => {
+        const zodSchema = convertJsonSchemaToZod({
+            properties: { ["__proto__"]: { type: "number" } },
+            dependentRequired: { foo: ["__proto__"] },
+        } as any);
+
+        expect(zodSchema.safeParse(JSON.parse('{"foo": 2, "__proto__": 1}')).success).toBe(true);
+        expect(zodSchema.safeParse(JSON.parse('{"foo": 2}')).success).toBe(false);
+    });
+
+    it("uses an own __proto__ key as a dependentSchemas trigger", () => {
+        const zodSchema = convertJsonSchemaToZod({
+            properties: { ["__proto__"]: { type: "number" } },
+            dependentSchemas: { ["__proto__"]: { required: ["foo"] } },
+        } as any);
+
+        expect(zodSchema.safeParse(JSON.parse('{"__proto__": 1, "foo": 2}')).success).toBe(true);
+        expect(zodSchema.safeParse(JSON.parse('{"__proto__": 1}')).success).toBe(false);
+    });
+});

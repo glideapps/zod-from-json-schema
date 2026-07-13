@@ -2,7 +2,8 @@ import { z } from "zod/v4";
 import type { JSONSchema } from "zod/v4/core";
 import { RefinementHandler } from "../../core/types";
 import { convertJsonSchemaToZod } from "../../core/converter";
-import { deepEqual } from "../../core/utils";
+import { convertSchemaRefs } from "../../core/refs";
+import { deepEqual, isValidWithSchema } from "../../core/utils";
 
 /**
  * Checks whether a schema constrains an own "__proto__" key, via `required`
@@ -39,10 +40,11 @@ function isConstrainableObject(value: unknown): value is Record<string, unknown>
  * replaced wholesale: a reduced copy of the JSON schema — with "__proto__"
  * dropped from `required`, its `properties` entry relaxed to `true` (so it
  * still counts as a declared property for `additionalProperties`), and
- * without the value-inspecting keywords (`enum`, `const`, `minProperties`,
- * `maxProperties`, which must also observe own "__proto__" keys) — is
- * converted normally, and the constraints removed from it are checked on
- * the raw input in front of it. z.any() passes the input through
+ * without keywords that must observe raw object keys (`enum`, `const`,
+ * `minProperties`, `maxProperties`, `propertyNames`, `dependentRequired`,
+ * `dependentSchemas`, and sibling references) — is converted normally, and
+ * the constraints removed from it are checked on the raw input in front of
+ * it. z.any() passes the input through
  * untouched, so the checks observe the own "__proto__" key; `.pipe()` then
  * runs the reduced schema, keeping every other constraint (and the
  * stripped, pollution-safe output) intact.
@@ -58,7 +60,9 @@ export class ProtoPropertyHandler implements RefinementHandler {
             return zodSchema;
         }
 
-        const objectSchema = schema as JSONSchema.ObjectSchema;
+        const objectSchema = schema as JSONSchema.ObjectSchema & {
+            dependentSchemas?: Record<string, JSONSchema.BaseSchema | boolean | undefined>;
+        };
         const {
             enum: enumValues,
             const: constValue,
@@ -66,6 +70,9 @@ export class ProtoPropertyHandler implements RefinementHandler {
             maxProperties,
             required,
             properties,
+            propertyNames,
+            dependentRequired,
+            dependentSchemas,
             ...rest
         } = objectSchema;
 
@@ -93,6 +100,12 @@ export class ProtoPropertyHandler implements RefinementHandler {
         if (rawEnum === undefined && enumValues !== undefined) {
             reduced.enum = enumValues;
         }
+        // References on the copied node no longer have a document-analysis
+        // identity, and must inspect the raw value anyway. Resolve them from
+        // the original node, then omit them from the reduced conversion.
+        const rawRefs = convertSchemaRefs(schema);
+        delete (reduced as any).$ref;
+        delete (reduced as any).$dynamicRef;
 
         const protoRequired = required?.includes("__proto__") ?? false;
         const protoPropertySchema =
@@ -101,6 +114,24 @@ export class ProtoPropertyHandler implements RefinementHandler {
                 : undefined;
         const protoValueSchema =
             protoPropertySchema !== undefined ? convertJsonSchemaToZod(protoPropertySchema) : undefined;
+        const propertyNameSchema =
+            propertyNames !== undefined ? convertJsonSchemaToZod(propertyNames) : undefined;
+        const dependentRequiredEntries =
+            dependentRequired !== undefined ? Object.entries(dependentRequired) : [];
+        const dependentSchemasEntries =
+            dependentSchemas !== undefined
+                ? Object.entries(dependentSchemas)
+                      .filter(([, dependentSchema]) => dependentSchema !== undefined)
+                      .map(
+                          ([name, dependentSchema]) =>
+                              [
+                                  name,
+                                  convertJsonSchemaToZod(
+                                      dependentSchema as JSONSchema.BaseSchema | boolean,
+                                  ),
+                              ] as const,
+                      )
+                : [];
 
         return z
             .any()
@@ -131,6 +162,39 @@ export class ProtoPropertyHandler implements RefinementHandler {
                             message: `Object must have at most ${maxProperties} properties`,
                         });
                     }
+
+                    if (
+                        propertyNameSchema !== undefined &&
+                        !Object.keys(value).every((name) => propertyNameSchema.safeParse(name).success)
+                    ) {
+                        ctx.addIssue({ code: "custom", message: "Property names validation failed" });
+                    }
+                    if (
+                        !dependentRequiredEntries.every(
+                            ([name, dependents]) =>
+                                !Object.prototype.hasOwnProperty.call(value, name) ||
+                                dependents.every((dependent) =>
+                                    Object.prototype.hasOwnProperty.call(value, dependent),
+                                ),
+                        )
+                    ) {
+                        ctx.addIssue({
+                            code: "custom",
+                            message: "Missing dependent required properties",
+                        });
+                    }
+                    if (
+                        !dependentSchemasEntries.every(
+                            ([name, dependentSchema]) =>
+                                !Object.prototype.hasOwnProperty.call(value, name) ||
+                                isValidWithSchema(dependentSchema, value),
+                        )
+                    ) {
+                        ctx.addIssue({
+                            code: "custom",
+                            message: "Value does not satisfy a dependent schema",
+                        });
+                    }
                 }
 
                 if (rawEnum !== undefined && !rawEnum.some((member) => deepEqual(value, member))) {
@@ -138,6 +202,9 @@ export class ProtoPropertyHandler implements RefinementHandler {
                 }
                 if (constValue !== undefined && !deepEqual(value, constValue)) {
                     ctx.addIssue({ code: "custom", message: "Value must equal the const value" });
+                }
+                if (!rawRefs.every(({ schema: targetSchema }) => targetSchema.safeParse(value).success)) {
+                    ctx.addIssue({ code: "custom", message: "Value does not match referenced schema" });
                 }
             })
             .pipe(convertJsonSchemaToZod(reduced));
