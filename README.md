@@ -295,3 +295,7 @@ Beyond the unsupported keywords above, supported features have some known gaps:
 ## License
 
 MIT
+
+## Sponsor
+
+Sponsored by [Glide](https://glideapps.com), the platform for custom business software.
