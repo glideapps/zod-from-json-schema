@@ -1,0 +1,15 @@
+{
+    "$id": "http://example.com/root.json",
+    "$ref": "http://example.com/nested.json#foo",
+    "$defs": {
+        "a": {
+            "$id": "nested.json",
+            "$defs": {
+                "b": {
+                    "$anchor": "foo",
+                    "type": "integer"
+                }
+            }
+        }
+    }
+}

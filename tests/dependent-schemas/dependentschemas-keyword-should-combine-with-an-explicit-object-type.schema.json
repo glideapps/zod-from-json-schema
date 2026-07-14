@@ -1,0 +1,15 @@
+{
+    "type": "object",
+    "properties": {
+        "credit_card": {
+            "type": "number"
+        }
+    },
+    "dependentSchemas": {
+        "credit_card": {
+            "required": [
+                "billing_address"
+            ]
+        }
+    }
+}

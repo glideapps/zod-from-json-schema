@@ -1,0 +1,8 @@
+{
+    "$ref": "#/$defs/%ZZ",
+    "$defs": {
+        "%ZZ": {
+            "type": "integer"
+        }
+    }
+}

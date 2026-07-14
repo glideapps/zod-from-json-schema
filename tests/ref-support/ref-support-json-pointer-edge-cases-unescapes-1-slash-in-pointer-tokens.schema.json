@@ -1,0 +1,8 @@
+{
+    "$ref": "#/$defs/slash~1field",
+    "$defs": {
+        "slash/field": {
+            "type": "integer"
+        }
+    }
+}

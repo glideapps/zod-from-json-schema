@@ -1,0 +1,8 @@
+{
+    "$ref": "#/$defs/missing",
+    "$defs": {
+        "a": {
+            "type": "integer"
+        }
+    }
+}

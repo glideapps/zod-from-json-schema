@@ -1,0 +1,11 @@
+{
+    "type": "array",
+    "prefixItems": [
+        {
+            "type": "string"
+        }
+    ],
+    "items": {
+        "type": "integer"
+    }
+}

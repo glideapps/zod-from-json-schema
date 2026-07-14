@@ -1,0 +1,12 @@
+{
+    "$ref": "#/$defs/a",
+    "$dynamicRef": "#/$defs/b",
+    "$defs": {
+        "a": {
+            "minimum": 0
+        },
+        "b": {
+            "maximum": 10
+        }
+    }
+}

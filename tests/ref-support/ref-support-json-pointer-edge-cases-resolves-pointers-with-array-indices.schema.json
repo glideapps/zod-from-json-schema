@@ -1,0 +1,13 @@
+{
+    "$ref": "#/$defs/list/1",
+    "$defs": {
+        "list": [
+            {
+                "type": "string"
+            },
+            {
+                "type": "integer"
+            }
+        ]
+    }
+}

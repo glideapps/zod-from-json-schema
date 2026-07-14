@@ -1,0 +1,15 @@
+{
+    "$id": "http://example.com/root.json",
+    "type": "object",
+    "properties": {
+        "foo": {
+            "$id": "nested.json",
+            "$defs": {
+                "inner": {
+                    "type": "string"
+                }
+            },
+            "$ref": "#/$defs/inner"
+        }
+    }
+}

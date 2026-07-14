@@ -1,0 +1,16 @@
+{
+    "$defs": {
+        "i": {
+            "type": "integer"
+        }
+    },
+    "type": "array",
+    "prefixItems": [
+        {
+            "type": "string"
+        }
+    ],
+    "items": {
+        "$ref": "#/$defs/i"
+    }
+}

@@ -1,0 +1,8 @@
+{
+    "$ref": "#/$defs/percent%25field",
+    "$defs": {
+        "percent%field": {
+            "type": "integer"
+        }
+    }
+}

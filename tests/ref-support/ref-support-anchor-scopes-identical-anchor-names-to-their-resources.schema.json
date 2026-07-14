@@ -1,0 +1,20 @@
+{
+    "$id": "http://example.com/foobar",
+    "$defs": {
+        "a": {
+            "$id": "child1",
+            "allOf": [
+                {
+                    "$id": "child2",
+                    "$anchor": "my_anchor",
+                    "type": "number"
+                },
+                {
+                    "$anchor": "my_anchor",
+                    "type": "string"
+                }
+            ]
+        }
+    },
+    "$ref": "child1#my_anchor"
+}

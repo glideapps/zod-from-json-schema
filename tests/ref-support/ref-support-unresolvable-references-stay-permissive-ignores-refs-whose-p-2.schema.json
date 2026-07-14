@@ -1,0 +1,8 @@
+{
+    "$ref": "#/allOf",
+    "allOf": [
+        {
+            "type": "integer"
+        }
+    ]
+}

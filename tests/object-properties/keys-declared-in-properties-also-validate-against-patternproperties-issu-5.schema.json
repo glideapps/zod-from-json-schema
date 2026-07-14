@@ -1,0 +1,16 @@
+{
+    "type": "object",
+    "properties": {
+        "foo": {
+            "type": "string"
+        }
+    },
+    "patternProperties": {
+        "^foo$": {
+            "minLength": 2
+        }
+    },
+    "additionalProperties": {
+        "type": "number"
+    }
+}

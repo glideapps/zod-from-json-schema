@@ -1,0 +1,10 @@
+{
+    "required": [
+        "__proto__"
+    ],
+    "$defs": {
+        "a": {
+            "type": "integer"
+        }
+    }
+}

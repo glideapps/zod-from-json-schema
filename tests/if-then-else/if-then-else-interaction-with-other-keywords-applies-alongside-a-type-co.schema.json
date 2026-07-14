@@ -1,0 +1,9 @@
+{
+    "type": "integer",
+    "if": {
+        "minimum": 10
+    },
+    "then": {
+        "multipleOf": 5
+    }
+}

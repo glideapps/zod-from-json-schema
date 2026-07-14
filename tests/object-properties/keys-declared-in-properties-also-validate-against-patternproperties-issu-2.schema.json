@@ -1,0 +1,16 @@
+{
+    "type": "object",
+    "properties": {
+        "foo": {
+            "type": "string"
+        }
+    },
+    "patternProperties": {
+        "^f": {
+            "minLength": 2
+        },
+        "oo$": {
+            "maxLength": 3
+        }
+    }
+}

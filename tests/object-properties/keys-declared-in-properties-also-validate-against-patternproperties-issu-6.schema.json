@@ -1,0 +1,16 @@
+{
+    "properties": {
+        "foo": {
+            "type": "array",
+            "maxItems": 3
+        }
+    },
+    "patternProperties": {
+        "f.o": {
+            "minItems": 2
+        }
+    },
+    "additionalProperties": {
+        "type": "integer"
+    }
+}

@@ -1,0 +1,14 @@
+{
+    "dependentSchemas": {
+        "__proto__": {
+            "required": [
+                "foo"
+            ]
+        },
+        "toString": {
+            "required": [
+                "bar"
+            ]
+        }
+    }
+}

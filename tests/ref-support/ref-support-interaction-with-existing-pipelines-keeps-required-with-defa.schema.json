@@ -1,0 +1,17 @@
+{
+    "type": "object",
+    "properties": {
+        "foo": {
+            "$ref": "#/$defs/withDefault"
+        }
+    },
+    "required": [
+        "foo"
+    ],
+    "$defs": {
+        "withDefault": {
+            "type": "integer",
+            "default": 3
+        }
+    }
+}

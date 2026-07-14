@@ -1,0 +1,9 @@
+{
+    "$ref": "#foo",
+    "$defs": {
+        "a": {
+            "$anchor": "foo",
+            "type": "integer"
+        }
+    }
+}

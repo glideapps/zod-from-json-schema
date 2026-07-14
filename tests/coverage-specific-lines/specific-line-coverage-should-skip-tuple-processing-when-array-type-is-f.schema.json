@@ -1,0 +1,8 @@
+{
+    "const": 42,
+    "items": [
+        {
+            "type": "string"
+        }
+    ]
+}

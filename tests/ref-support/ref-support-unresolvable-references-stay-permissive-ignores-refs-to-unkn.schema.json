@@ -1,0 +1,8 @@
+{
+    "$ref": "#nope",
+    "$defs": {
+        "a": {
+            "$anchor": "yes"
+        }
+    }
+}

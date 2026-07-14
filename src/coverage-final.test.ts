@@ -1,5 +1,4 @@
 import { describe, it, expect } from "vitest";
-import { convertJsonSchemaToZod } from "./index";
 import { createUniqueItemsValidator } from "./core/utils";
 import { MaxLengthHandler } from "./handlers/primitive/string";
 import { z } from "zod/v4";
@@ -49,64 +48,6 @@ describe("Final Coverage - Uncovered Lines", () => {
             expect(types.string!.safeParse("hello").success).toBe(true);     // 5 chars, valid
             expect(types.string!.safeParse("this is too long").success).toBe(false); // too long
             expect(types.string!.safeParse("💩💩💩💩💩").success).toBe(true);  // 5 graphemes, valid
-        });
-    });
-
-    describe("tuple.ts lines 35-36 - minItems constraint violation", () => {
-        it("should return z.never() when minItems > tuple length", () => {
-            const schema = {
-                type: "array",
-                items: [{ type: "string" }], // Tuple with 1 item
-                minItems: 3 // But requires at least 3 items
-            };
-            
-            const zodSchema = convertJsonSchemaToZod(schema);
-            
-            // Should result in z.never() since it's impossible to satisfy
-            expect(zodSchema.safeParse(["a"]).success).toBe(false);
-            expect(zodSchema.safeParse(["a", "b", "c"]).success).toBe(false);
-            expect(zodSchema.safeParse([]).success).toBe(false);
-        });
-    });
-
-    describe("tuple.ts lines 40-41 - maxItems constraint violation", () => {
-        it("should return z.never() when maxItems < tuple length", () => {
-            const schema = {
-                type: "array", 
-                items: [{ type: "string" }, { type: "number" }, { type: "boolean" }], // Tuple with 3 items
-                maxItems: 1 // But allows at most 1 item
-            };
-            
-            const zodSchema = convertJsonSchemaToZod(schema);
-            
-            // Should result in z.never() since it's impossible to satisfy
-            expect(zodSchema.safeParse(["a"]).success).toBe(false);
-            expect(zodSchema.safeParse([]).success).toBe(false);
-            expect(zodSchema.safeParse(["a", 1, true]).success).toBe(false);
-        });
-    });
-
-    describe("objectProperties.ts lines 85-86 - additionalProperties false", () => {
-        it("should reject objects with additional properties", () => {
-            const schema = {
-                anyOf: [
-                    { type: "string" },
-                    {
-                        properties: {
-                            name: { type: "string" }
-                        },
-                        additionalProperties: false
-                    }
-                ]
-            };
-            
-            const zodSchema = convertJsonSchemaToZod(schema);
-            
-            // This should hit lines 85-86 in objectProperties refinement handler
-            // when checking for additional properties in the union case
-            expect(zodSchema.safeParse({ name: "valid" }).success).toBe(true);
-            expect(zodSchema.safeParse({ name: "valid", extra: "invalid" }).success).toBe(false);
-            expect(zodSchema.safeParse("string is also valid").success).toBe(true);
         });
     });
 });

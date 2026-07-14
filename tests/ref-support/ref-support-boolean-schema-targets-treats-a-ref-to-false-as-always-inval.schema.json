@@ -1,0 +1,6 @@
+{
+    "$ref": "#/$defs/nothing",
+    "$defs": {
+        "nothing": false
+    }
+}

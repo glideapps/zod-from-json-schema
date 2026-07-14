@@ -1,0 +1,10 @@
+{
+    "$id": "http://example.com/ref/absref.json",
+    "$defs": {
+        "a": {
+            "$id": "http://example.com/absref/foobar.json",
+            "type": "string"
+        }
+    },
+    "$ref": "/absref/foobar.json"
+}
