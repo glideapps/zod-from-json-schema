@@ -1,0 +1,10 @@
+{
+    "dependentRequired": {
+        "__proto__": [
+            "foo"
+        ],
+        "toString": [
+            "bar"
+        ]
+    }
+}

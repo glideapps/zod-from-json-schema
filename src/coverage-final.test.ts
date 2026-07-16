@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createUniqueItemsValidator } from "./core/utils";
+import { createUniqueItemsValidator, mentionsProtoKey } from "./core/utils";
 import { MaxLengthHandler } from "./handlers/primitive/string";
 import { z } from "zod/v4";
 import type { TypeSchemas } from "./core/types";
@@ -15,6 +15,21 @@ describe("Final Coverage - Uncovered Lines", () => {
             expect(validator(null)).toBe(true);
             expect(validator({})).toBe(true);
             expect(validator(true)).toBe(true);
+        });
+    });
+
+    describe("utils.ts mentionsProtoKey", () => {
+        it("detects __proto__ as a key, element, or nested key", () => {
+            expect(mentionsProtoKey(JSON.parse('{"__proto__": ["foo"]}'))).toBe(true);
+            expect(mentionsProtoKey({ a: ["__proto__"] })).toBe(true);
+            expect(mentionsProtoKey({ a: { required: ["__proto__"] } })).toBe(true);
+            expect(mentionsProtoKey({ a: ["b"], c: ["d"] })).toBe(false);
+        });
+
+        it("assumes the worst for unstringifiable configuration", () => {
+            const circular: any = { a: {} };
+            circular.a.self = circular;
+            expect(mentionsProtoKey(circular)).toBe(true);
         });
     });
 

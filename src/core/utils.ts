@@ -62,3 +62,22 @@ export function isValidWithSchema(schema: z.ZodTypeAny, value: any): boolean {
 export function isHazardousPropertyName(name: string): boolean {
     return Object.prototype.hasOwnProperty.call(Object.prototype, name);
 }
+
+/**
+ * Checks whether "__proto__" appears anywhere in a keyword's configuration
+ * (as a key, an array element, or inside a nested subschema). Zod strips own
+ * "__proto__" keys from object parse output for security, so a refinement
+ * whose configuration mentions "__proto__" must run against the raw input to
+ * keep own-property semantics; refinements that don't mention it can run on
+ * the parse output, which keeps their schemas structurally representable in
+ * z.toJSONSchema.
+ */
+export function mentionsProtoKey(value: unknown): boolean {
+    try {
+        return JSON.stringify(value).includes('"__proto__"');
+    } catch {
+        // Unstringifiable (e.g. circular) configuration: assume the worst so
+        // validation stays correct.
+        return true;
+    }
+}
