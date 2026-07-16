@@ -19,10 +19,10 @@ import { convertJsonSchemaToZod } from "./index";
  * - Custom .refine(...) checks are silently ignored (never throw), so
  *   emission is stable for refinement-based constraints and the base type
  *   still round-trips: z.string().refine(...) -> {type: "string"}.
- * - { unrepresentable: "any" } is required because the converter's
- *   permissive object base uses z.custom(...), which would otherwise throw
- *   ("Custom types cannot be represented in JSON Schema"); with the option
- *   it emits {}. This is the only non-default option we need.
+ * - { unrepresentable: "any" } is passed defensively so structural
+ *   assertions don't depend on every part being representable; since #63
+ *   the converter avoids z.custom(...) entirely, and the strict-emission
+ *   tests below verify serialization without the option.
  * - The io option defaults to "output". For ZodPipe (the required-with-
  *   default handling from #51) the output side carries the structural
  *   object schema, whereas io: "input" degrades to {}; we rely on the
@@ -230,11 +230,20 @@ describe("structural output survives z.toJSONSchema round-trips", () => {
         expect(converted.safeParse([1, "a"]).success).toBe(false);
     });
 
+    it("emits a plain union for a sibling-less anyOf", () => {
+        // With no sibling constraints there is nothing for an intersection
+        // base to add, so the converter returns the union directly (#63).
+        expect(roundTrip({ anyOf: [{ type: "string" }, { type: "number" }] })).toEqual({
+            anyOf: [{ type: "string" }, { type: "number" }],
+        });
+    });
+
     it("keeps the anyOf branch structure inside the combinator intersection", () => {
-        // anyOf is combined with the permissive base via z.intersection,
-        // which emits allOf; the second member must keep the branch types.
-        expect(roundTrip({ anyOf: [{ type: "string" }, { type: "number" }] })).toMatchObject({
-            allOf: [expect.any(Object), { anyOf: [{ type: "string" }, { type: "number" }] }],
+        // With sibling constraints, anyOf is combined with the base via
+        // z.intersection, which emits allOf; the second member must keep
+        // the branch types.
+        expect(roundTrip({ type: "string", anyOf: [{ minLength: 1 }, { maxLength: 0 }] })).toMatchObject({
+            allOf: [{ type: "string" }, expect.any(Object)],
         });
     });
 
@@ -338,5 +347,88 @@ describe("structural output survives z.toJSONSchema round-trips", () => {
         const converted = convertJsonSchemaToZod(schema as any);
         expect(converted).toBeInstanceOf(z.ZodDefault);
         expect(roundTrip(schema)).toEqual({ type: "string", default: "d" });
+    });
+});
+
+describe("strict z.toJSONSchema emission (#63, MCP SDK compatibility)", () => {
+    // @modelcontextprotocol/sdk serializes registered tool schemas with
+    // z.toJSONSchema(schema, { target: "draft-7", io: "input" }) — without
+    // unrepresentable: "any" — so any z.custom(...) part in a converted
+    // schema throws and fails the whole tools/list response.
+    function strictSerialize(schema: unknown): Record<string, unknown> {
+        const converted = convertJsonSchemaToZod(schema as any);
+        const { $schema, ...rest } = z.toJSONSchema(converted, { target: "draft-7", io: "input" });
+        return rest;
+    }
+
+    it("serializes a bare object schema", () => {
+        const converted = convertJsonSchemaToZod({ type: "object" } as any);
+        expect(strictSerialize({ type: "object" })).toMatchObject({ type: "object" });
+        // The permissive object base must still reject arrays and non-objects.
+        expect(converted.safeParse({ any: "keys", at: "all" }).success).toBe(true);
+        expect(converted.safeParse({}).success).toBe(true);
+        expect(converted.safeParse([1, 2]).success).toBe(false);
+        expect(converted.safeParse("str").success).toBe(false);
+        expect(converted.safeParse(null).success).toBe(false);
+    });
+
+    it("keeps unknown keys when parsing a bare object schema", () => {
+        const converted = convertJsonSchemaToZod({ type: "object" } as any);
+        expect(converted.parse({ a: 1, b: "two" })).toEqual({ a: 1, b: "two" });
+    });
+
+    it("serializes a sibling-less anyOf", () => {
+        const schema = {
+            anyOf: [{ type: "string" }, { type: "array", items: { type: "string" } }],
+        };
+        expect(strictSerialize(schema)).toEqual({
+            anyOf: [{ type: "string" }, { type: "array", items: { type: "string" } }],
+        });
+        const converted = convertJsonSchemaToZod(schema as any);
+        expect(converted.safeParse("one").success).toBe(true);
+        expect(converted.safeParse(["a", "b"]).success).toBe(true);
+        expect(converted.safeParse([1]).success).toBe(false);
+        expect(converted.safeParse(42).success).toBe(false);
+    });
+
+    it("serializes a sibling-less anyOf with metadata keys", () => {
+        expect(
+            strictSerialize({
+                title: "single or batch",
+                description: "either form",
+                anyOf: [{ type: "string" }, { type: "number" }],
+            }),
+        ).toMatchObject({ anyOf: [{ type: "string" }, { type: "number" }] });
+    });
+
+    it("serializes a type union that includes the permissive object base", () => {
+        expect(strictSerialize({ type: ["object", "string"] })).toMatchObject({
+            anyOf: [{ type: "string" }, { type: "object" }],
+        });
+    });
+
+    it("still enforces sibling constraints alongside anyOf", () => {
+        const schema = {
+            type: "string",
+            anyOf: [{ minLength: 3 }, { const: "a" }],
+        };
+        const converted = convertJsonSchemaToZod(schema as any);
+        expect(converted.safeParse("abc").success).toBe(true);
+        expect(converted.safeParse("a").success).toBe(true);
+        expect(converted.safeParse("ab").success).toBe(false);
+        expect(converted.safeParse(123).success).toBe(false);
+    });
+
+    it("still enforces $ref alongside a sibling-less anyOf", () => {
+        const schema = {
+            $ref: "#/$defs/short",
+            anyOf: [{ type: "string" }, { type: "number" }],
+            $defs: { short: { maxLength: 1 } },
+        };
+        const converted = convertJsonSchemaToZod(schema as any);
+        expect(converted.safeParse("a").success).toBe(true);
+        expect(converted.safeParse(7).success).toBe(true);
+        expect(converted.safeParse("ab").success).toBe(false);
+        expect(converted.safeParse(true).success).toBe(false);
     });
 });

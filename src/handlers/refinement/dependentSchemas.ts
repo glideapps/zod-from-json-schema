@@ -2,7 +2,7 @@ import { z } from "zod/v4";
 import type { JSONSchema } from "zod/v4/core";
 import { RefinementHandler } from "../../core/types";
 import { convertJsonSchemaToZod } from "../../core/converter";
-import { isValidWithSchema } from "../../core/utils";
+import { isValidWithSchema, mayDependOnProtoKey } from "../../core/utils";
 
 /**
  * Handles the `dependentSchemas` keyword (JSON Schema draft 2020-12).
@@ -35,24 +35,32 @@ export class DependentSchemasHandler implements RefinementHandler {
             return zodSchema;
         }
 
-        return zodSchema.refine(
-            (value: any) => {
-                // dependentSchemas only applies to non-array objects
-                if (
-                    typeof value !== "object" ||
-                    value === null ||
-                    Array.isArray(value)
-                ) {
-                    return true;
-                }
+        const check = (value: any): boolean => {
+            // dependentSchemas only applies to non-array objects
+            if (
+                typeof value !== "object" ||
+                value === null ||
+                Array.isArray(value)
+            ) {
+                return true;
+            }
 
-                return dependencies.every(
-                    ([key, dependentSchema]) =>
-                        !Object.prototype.hasOwnProperty.call(value, key) ||
-                        isValidWithSchema(dependentSchema, value),
-                );
-            },
-            { message: "Value does not satisfy a dependent schema" },
-        );
+            return dependencies.every(
+                ([key, dependentSchema]) =>
+                    !Object.prototype.hasOwnProperty.call(value, key) ||
+                    isValidWithSchema(dependentSchema, value),
+            );
+        };
+        const message = "Value does not satisfy a dependent schema";
+
+        // When "__proto__" is involved, the check must see the raw input:
+        // the base schema's parse output has own "__proto__" keys stripped.
+        // Only then; piping hides the base's structure from z.toJSONSchema's
+        // "input" io, which the plain refinement preserves.
+        if (mayDependOnProtoKey(dependentSchemas)) {
+            return z.any().refine(check, { message }).pipe(zodSchema);
+        }
+
+        return zodSchema.refine(check, { message });
     }
 }

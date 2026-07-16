@@ -175,11 +175,10 @@ function convertSchemaNode(schema: JSONSchema.BaseSchema | boolean): z.ZodTypeAn
             // Use the explicit object schema from handlers
             allowedSchemas.push(types.object);
         } else {
-            // Use custom validator that rejects arrays for default object schema
-            const objectSchema = z.custom<object>((val) => {
-                return typeof val === "object" && val !== null && !Array.isArray(val);
-            }, "Must be an object, not an array");
-            allowedSchemas.push(objectSchema);
+            // Default object schema: any non-array object. z.looseObject
+            // (rather than z.custom) keeps the schema representable in
+            // z.toJSONSchema, which throws on custom types (#63).
+            allowedSchemas.push(z.looseObject({}));
         }
     }
     if (types.file !== false && types.file !== undefined) {
