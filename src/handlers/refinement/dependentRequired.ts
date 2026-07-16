@@ -1,7 +1,7 @@
 import { z } from "zod/v4";
 import type { JSONSchema } from "zod/v4/core";
 import { RefinementHandler } from "../../core/types";
-import { mentionsProtoKey } from "../../core/utils";
+import { mayDependOnProtoKey } from "../../core/utils";
 
 /**
  * Handles the `dependentRequired` keyword from JSON Schema draft 2020-12.
@@ -37,7 +37,7 @@ export class DependentRequiredHandler implements RefinementHandler {
         // the base schema's parse output has own "__proto__" keys stripped.
         // Only then; piping hides the base's structure from z.toJSONSchema's
         // "input" io, which the plain refinement preserves.
-        if (mentionsProtoKey(dependentRequired)) {
+        if (mayDependOnProtoKey(dependentRequired)) {
             return z.any().refine(check, { message }).pipe(zodSchema);
         }
 

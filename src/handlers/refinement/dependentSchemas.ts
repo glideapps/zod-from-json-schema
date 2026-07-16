@@ -2,7 +2,7 @@ import { z } from "zod/v4";
 import type { JSONSchema } from "zod/v4/core";
 import { RefinementHandler } from "../../core/types";
 import { convertJsonSchemaToZod } from "../../core/converter";
-import { isValidWithSchema, mentionsProtoKey } from "../../core/utils";
+import { isValidWithSchema, mayDependOnProtoKey } from "../../core/utils";
 
 /**
  * Handles the `dependentSchemas` keyword (JSON Schema draft 2020-12).
@@ -57,7 +57,7 @@ export class DependentSchemasHandler implements RefinementHandler {
         // the base schema's parse output has own "__proto__" keys stripped.
         // Only then; piping hides the base's structure from z.toJSONSchema's
         // "input" io, which the plain refinement preserves.
-        if (mentionsProtoKey(dependentSchemas)) {
+        if (mayDependOnProtoKey(dependentSchemas)) {
             return z.any().refine(check, { message }).pipe(zodSchema);
         }
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createUniqueItemsValidator, mentionsProtoKey } from "./core/utils";
+import { createUniqueItemsValidator, mayDependOnProtoKey } from "./core/utils";
 import { MaxLengthHandler } from "./handlers/primitive/string";
 import { z } from "zod/v4";
 import type { TypeSchemas } from "./core/types";
@@ -18,18 +18,18 @@ describe("Final Coverage - Uncovered Lines", () => {
         });
     });
 
-    describe("utils.ts mentionsProtoKey", () => {
+    describe("utils.ts mayDependOnProtoKey", () => {
         it("detects __proto__ as a key, element, or nested key", () => {
-            expect(mentionsProtoKey(JSON.parse('{"__proto__": ["foo"]}'))).toBe(true);
-            expect(mentionsProtoKey({ a: ["__proto__"] })).toBe(true);
-            expect(mentionsProtoKey({ a: { required: ["__proto__"] } })).toBe(true);
-            expect(mentionsProtoKey({ a: ["b"], c: ["d"] })).toBe(false);
+            expect(mayDependOnProtoKey(JSON.parse('{"__proto__": ["foo"]}'))).toBe(true);
+            expect(mayDependOnProtoKey({ a: ["__proto__"] })).toBe(true);
+            expect(mayDependOnProtoKey({ a: { required: ["__proto__"] } })).toBe(true);
+            expect(mayDependOnProtoKey({ a: ["b"], c: ["d"] })).toBe(false);
         });
 
         it("assumes the worst for unstringifiable configuration", () => {
             const circular: any = { a: {} };
             circular.a.self = circular;
-            expect(mentionsProtoKey(circular)).toBe(true);
+            expect(mayDependOnProtoKey(circular)).toBe(true);
         });
     });
 
